@@ -1,0 +1,6 @@
+{
+    "license": "MIT",
+    "dependencies": {
+        "@moe-tech/orchestrator": "^1.0.44"
+    }
+}

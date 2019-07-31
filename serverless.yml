@@ -1,0 +1,149 @@
+#
+# Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
+# License: Public
+#
+service: ${opt:system-name, 'orchestrator'}
+
+plugins:
+  - serverless-webpack
+  - serverless-iam-roles-per-function
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: ${opt:region, 'us-west-2'}
+  stage: ${opt:stage, 'dev'}
+  deploymentPrefix: ${self:service}/${self:provider.stage}
+  environment:
+    epsagonToken: ${opt:epsagon-token, ''}
+    epsagonAppName: ${opt:epsagon-app-name, ''}
+    epsagonMetadata: ${opt:epsagon-meta, ''}
+    statusTable: ${self:custom.tables.status}
+
+custom:
+  webpack:
+    includeModules: true
+    
+  tables:
+    status: ${self:service}-${self:provider.stage}-status
+    plugins: ${self:service}-${self:provider.stage}-plugin
+  
+functions:
+  updateStatus:
+    handler: src/functions/handleSummary.updateActivityStatus
+    events:
+      - stream:
+          type: dynamodb
+          arn: 
+            Fn::GetAtt:
+              - StatusTable
+              - StreamArn
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource:
+          Fn::GetAtt:
+            - StatusTable
+            - Arn
+  initializeActivities:
+    handler: src/functions/initializeActivities.initialize
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource:
+          Fn::GetAtt:
+            - StatusTable
+            - Arn
+
+resources:
+  Resources:
+    PluginTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        KeySchema:
+          - AttributeName: orchestratorId
+            KeyType: HASH
+          - AttributeName: subscriptionArn
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: orchestratorId
+            AttributeType: S
+          - AttributeName: subscriptionArn
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.tables.plugins}
+        Tags:
+          - Key: Role
+            Value: Configuration
+          - Key: NPI
+            Value: true
+
+    StatusTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        KeySchema:
+          - AttributeName: uid
+            KeyType: HASH
+          - AttributeName: workflow
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: uid
+            AttributeType: S
+          - AttributeName: workflow
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.tables.status}
+        Tags:
+          - Key: Role
+            Value: Status
+          - Key: NPI
+            Value: true
+
+  Outputs:
+    DynamoDbPluginTableName:
+      Value: 
+        Ref: PluginTable
+      Export:
+        Name: ${self:service}-${self:provider.stage}-plugin-name
+
+    DynamoDbPluginTableArn:
+      Value: 
+        Fn::GetAtt: 
+          - PluginTable
+          - Arn
+      Export:
+        Name: ${self:service}-${self:provider.stage}-plugin-arn
+
+    DynamoDbStatusTableName:
+      Value: 
+        Ref: StatusTable
+      Export:
+        Name: ${self:service}-${self:provider.stage}-status-name
+
+    DynamoDbStatusTableArn:
+      Value: 
+        Fn::GetAtt: 
+          - StatusTable
+          - Arn
+      Export:
+        Name: ${self:service}-${self:provider.stage}-status-arn
+
+    DynamoDbStatusTableStreamArn:
+      Value:
+        Fn::GetAtt:
+          - StatusTable
+          - StreamArn
+      Export:
+        Name: ${self:service}-${self:provider.stage}-status-stream-arn
+
+    InitailizeActivities:
+      Value:
+        Fn::GetAtt:
+          - InitializeActivitiesLambdaFunction
+          - Arn
+      Export:
+        Name: ${self:service}-${self:provider.stage}-init-activites

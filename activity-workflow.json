@@ -1,0 +1,148 @@
+{
+    "${name}Start": {
+        "Type": "Pass",
+        "Next": "${name}ActivitySetStatusDB"
+    },
+    "${name}ActivitySetStatusDB": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::dynamodb:updateItem",
+        "Parameters": {
+            "TableName": "${StateTableName}",
+            "Key": {
+                "uid": {
+                    "S.$": "$.uid"
+                },
+                "workflow": {
+                    "S.$": "$.workflow"
+                }
+            },
+            "UpdateExpression": "set #activities.#activity.#status.#state = :state",
+            "ExpressionAttributeNames": {
+                "#activities": "activities",
+                "#activity": "${name}",
+                "#status": "status",
+                "#state": "state"
+            },
+            "ExpressionAttributeValues": {
+                ":state": {
+                    "S": "In Progress"
+                }
+            }
+        },
+        "ResultPath": "$.ignore",
+        "Next": "${name}PreProcessing"
+    },
+    "${name}PreProcessing": {
+        "Type": "Task",
+        "Resource": "${preprocessingArn}",
+        "ResultPath": "$.ignore",
+        "Next": "${name}AsyncFanOut"
+    },
+    "${name}AsyncFanOut": {
+        "Type": "Task",
+        "Resource": "${parallelArn}",
+        "ResultPath": "$.activities.${name}.async.status.state",
+        "Next": "${name}AsyncResultCheck"
+    },
+    "${name}AsyncResultCheck": {
+        "Type": "Choice",
+        "Choices": [
+            {
+                "Variable": "$.activities.${name}.async.status.state",
+                "StringEquals": "In Progress",
+                "Next": "${name}AsyncWait"
+            },
+            {
+                "Variable": "$.activities.${name}.async.status.state",
+                "StringEquals": "Error",
+                "Next": "${name}Error"
+            }
+        ],
+        "Default": "${name}AsyncResultSetDB"
+    },
+    "${name}AsyncResultSetDB": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::dynamodb:updateItem",
+        "Parameters": {
+            "TableName": "${StateTableName}",
+            "Key": {
+                "uid": {
+                    "S.$": "$.uid"
+                },
+                "workflow": {
+                    "S.$": "$.workflow"
+                }
+            },
+            "UpdateExpression": "set activities.${name}.async.#status.#state = :state",
+            "ExpressionAttributeNames": {
+                "#status": "status",
+                "#state": "state"
+            },
+            "ExpressionAttributeValues": {
+                ":state": {
+                    "S": "Complete"
+                }
+            }
+        },
+        "ResultPath": "$.ignore",
+        "Next": "${name}PostProcessing"
+    },
+    "${name}AsyncStatusCheck": {
+        "Type": "Choice",
+        "Choices": [
+            {
+                "Variable": "$.activities.${name}.async.status.state",
+                "StringEquals": "In Progress",
+                "Next": "${name}AsyncWait"
+            },
+            {
+                "Variable": "$.activities.${name}.async.status.state",
+                "StringEquals": "Error",
+                "Next": "${name}Error"
+            }
+        ],
+        "Default": "${name}PostProcessing"
+    },
+    "${name}AsyncWait": {
+        "Type": "Wait",
+        "Seconds": 10,
+        "Next": "${name}AsyncStatusGet"
+    },
+    "${name}AsyncStatusGet": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::dynamodb:getItem",
+        "Parameters": {
+            "TableName": "${StateTableName}",
+            "Key": {
+                "uid": {
+                    "S.$": "$.uid"
+                },
+                "workflow": {
+                    "S.$": "$.workflow"
+                }
+            }
+        },
+        "ResultPath": "$.${name}.dynamodb",
+        "Next": "${name}MapToModel"
+    },
+    "${name}MapToModel": {
+        "Type": "Pass",
+        "Parameters": {
+            "state.$": "$.${name}.dynamodb.Item.activities.M.${name}.M.async.M.status.M.state.S"
+        },
+        "ResultPath": "$.activities.${name}.async.status",
+        "Next": "${name}RemoveDBData"
+    },
+    "${name}RemoveDBData": {
+        "Type": "Pass",
+        "Result": {},
+        "ResultPath": "$.${name}.dynamodb",
+        "Next": "${name}AsyncStatusCheck"
+    },
+    "${name}PostProcessing": {
+        "Type": "Task",
+        "Resource": "${postprocessingArn}",
+        "ResultPath": "$.ignore",
+        "Next": "${name}Complete"
+    }
+}

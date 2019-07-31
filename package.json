@@ -1,0 +1,53 @@
+{
+    "name": "@moe-tech/orchestrator",
+    "author": "Mutual of Enumclaw",
+    "publisher": "Mutual of Enumclaw",
+    "license": "LGPLv3",
+    "version": "1.0.44",
+    "description": "The core data and related processing for orchestrators",
+    "main": "dist/index.js",
+    "scripts": {
+        "prebuild": "npm run lt",
+        "build": "npx tsc",
+        "test": "npx jest",
+        "test:coverage": "npm run test -- --coverage",
+        "test:watch": "node_modules/.bin/jest --watch",
+        "lint": "npx tslint -c tslint.json -p tsconfig.json",
+        "lint:fix": "npx tslint -c tslint.json -p tsconfig.json --fix",
+        "lt": "npm run lint && npm run test:coverage",
+        "refreshVSToken": "vsts-npm-auth -config .npmrc",
+        "package": "npx sls package",
+        "deploy": "npx sls deploy"
+    },
+    "dependencies": {
+        "@moe-tech/dynamo-delta": "^1.0.12",
+        "epsagon": "^1.31.6"
+    },
+    "devDependencies": {
+        "@types/aws-lambda": "8.10.11",
+        "@types/jest": "^23.3.9",
+        "@types/node": "^10.14.13",
+        "aws-lambda": "^0.1.2",
+        "aws-sdk": "^2.502.0",
+        "aws-sdk-mock": "^4.5.0",
+        "hard-source-webpack-plugin": "^0.13.1",
+        "jest": "^24.8.0",
+        "jest-junit": "^7.0.0",
+        "serverless": "1.35.1",
+        "serverless-iam-roles-per-function": "^1.0.4",
+        "serverless-plugin-include-dependencies": "^3.2.1",
+        "serverless-plugin-tracing": "^2.0.0",
+        "serverless-webpack": "^5.3.1",
+        "source-map-support": "^0.5.12",
+        "ts-jest": "^24.0.2",
+        "ts-loader": "^6.0.4",
+        "tslint": "^5.18.0",
+        "typescript": "^3.5.3",
+        "webpack": "^4.38.0",
+        "webpack-node-externals": "^1.7.2"
+    },
+    "files": [
+        "/dist",
+        "/activity-workflow.json"
+    ]
+}

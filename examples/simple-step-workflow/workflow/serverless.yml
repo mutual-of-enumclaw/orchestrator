@@ -1,0 +1,123 @@
+service: simple-step-workflows
+
+plugins:
+  - serverless-iam-roles-per-function
+  - serverless-plugin-decouple
+  - serverless-plugin-orchestrator
+  - serverless-plugin-catdir
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: us-west-2
+  stage: ${opt:stage, 'dev'}
+  environment:
+    statusTable: ${self:custom.config.db.table.status.name}
+
+custom:
+  decouple: ${opt:decouple, 'false'}
+
+  core:
+    stack: ${opt:core-stack, 'orchestrator'}
+    tables:
+      status:
+        name:
+          Fn::ImportValue: ${self:custom.core.stack}-${self:provider.stage}-status-name
+        arn:
+          Fn::ImportValue: ${self:custom.core.stack}-${self:provider.stage}-status-arn
+        stream:
+          Fn::ImportValue: ${self:custom.core.stack}-${self:provider.stage}-status-stream-arn
+      plugin:
+        name:
+          Fn::ImportValue: ${self:custom.core.stack}-${self:provider.stage}-plugin-name
+        arn:
+          Fn::ImportValue: ${self:custom.core.stack}-${self:provider.stage}-plugin-arn
+    functions:
+      initializeActivities:
+        arn:
+          Fn::ImportValue: ${self:custom.core.stack}-${self:provider.stage}-init-activites
+
+  stacks:
+    step1:
+      stack: orchestrator-Step1-${self:provider.stage}
+      preprocessingArn:
+        Fn::ImportValue: ${self:custom.stacks.step1.stack}-pre-sync
+      parallelArn:
+        Fn::ImportValue: ${self:custom.stacks.step1.stack}-async
+      postprocessingArn:
+        Fn::ImportValue: ${self:custom.stacks.step1.stack}-post-sync
+    step2:
+      stack: orchestrator-Step2-${self:provider.stage}
+      preprocessingArn:
+        Fn::ImportValue: ${self:custom.stacks.step2.stack}-pre-sync
+      parallelArn:
+        Fn::ImportValue: ${self:custom.stacks.step2.stack}-async
+      postprocessingArn:
+        Fn::ImportValue: ${self:custom.stacks.step2.stack}-post-sync
+
+  activities:
+    StateTableName: ${self:custom.core.tables.status.name}
+    failureAlertArn:
+      Ref: snsTopic
+    initializeArn: ${self:custom.core.functions.initializeActivities.arn}
+    Step1:
+      Fn::Sub:
+        - "#catdir(./node_modules/@moe-tech/orchestrator/activity-workflow.json,true)"
+        - name: Step1
+          preprocessingArn: ${self:custom.stacks.step1.preprocessingArn}
+          parallelArn: ${self:custom.stacks.step1.parallelArn}
+          postprocessingArn: ${self:custom.stacks.step1.postprocessingArn}
+          StateTableName: ${self:custom.core.tables.status.name}
+    Step2:
+      Fn::Sub:
+        - "#catdir(./node_modules/@moe-tech/orchestrator/activity-workflow.json,true)"
+        - name: Step2
+          preprocessingArn: ${self:custom.stacks.step2.preprocessingArn}
+          parallelArn: ${self:custom.stacks.step2.parallelArn}
+          postprocessingArn: ${self:custom.stacks.step2.postprocessingArn}
+          StateTableName: ${self:custom.core.tables.status.name}
+    
+resources:
+  Resources:
+    snsTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: ${self:service} ${self:provider.stage} failure
+        TopicName: ${self:service}-${self:provider.stage}-failure
+
+    StepFunctionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument: 
+          Version: "2012-10-17"
+          Statement: 
+            - 
+              Effect: "Allow"
+              Principal: 
+                Service: 
+                  - "states.amazonaws.com"
+              Action: 
+                - "sts:AssumeRole" 
+        Policies:
+          - 
+           PolicyName: "root"
+           PolicyDocument:
+             Version: "2012-10-17"
+             Statement:
+                - 
+                  Effect: "Allow"
+                  Action: "*"
+                  Resource: "*"
+
+    Workflow:
+      Type: AWS::StepFunctions::StateMachine
+      Properties:
+        StateMachineName: ${self:service}-${self:provider.stage}-workflow
+        RoleArn:
+          Fn::GetAtt:
+            - StepFunctionRole
+            - Arn
+        DefinitionString:
+          Fn::Sub: 
+            - "#workflow(./workflow.json)"
+            - ${self:custom.activities}

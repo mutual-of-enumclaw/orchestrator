@@ -1,0 +1,6 @@
+[submodule "activity"]
+	path = activity
+	url = https://github.com/mutual-of-enumclaw/orchestrator-activity.git
+[submodule "metrics"]
+	path = metrics
+	url = https://github.com/mutual-of-enumclaw/orchestrator-metrics.git
