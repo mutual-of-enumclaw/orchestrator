@@ -1,10 +1,13 @@
-# Nucleus Orchestrator Core
+# Orchestrator
 
 [![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
 
 package | version
 --- | ---
-@moe-tech/orchestrator | 1.0.32
+@moe-tech/orchestrator | 1.0.45
+
+## Walkthrough
+Check out this [walkthrough](https://github.com/mutual-of-enumclaw/orchestrator/tree/master/examples/simple-step-workflow) on setting up a simple orchestrator workflow with plugins.
 
 ## Installation
 
