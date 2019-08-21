@@ -7,7 +7,8 @@ class MockOrchstratorStatusDal {
         this.updatePluginStatusInput = [];
     }
 
-    async updatePluginStatus(uid: string, workflow: string, activity: string, stage: OrchestratorStage,
+    async updatePluginStatus(
+        uid: string, workflow: string, activity: string, stage: OrchestratorStage,
         mandatory: boolean, pluginName: string, state: OrchestratorComponentState,
         message: string) {
         this.updatePluginStatusInput.push({
@@ -20,6 +21,9 @@ class MockOrchstratorStatusDal {
             state,
             message
         });
+    }
+    async getStatusObject(uid: string, workflow: string) {
+        
     }
 }
 

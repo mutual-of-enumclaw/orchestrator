@@ -13,9 +13,16 @@ class MockDynamoDb {
             promise: () => {
                 return new Promise((resolve) => { resolve(); });
             }
-        }
+        };
     }
-};
+    get() {
+        return {
+            promise: () => {
+                return new Promise((resolve) => { resolve(); });
+            }
+        };
+    }
+}
 
 const dynamodb = new MockDynamoDb();
 
@@ -49,7 +56,7 @@ describe('initialize', () => {
         expect(error).toBe('Event is either invalid or malformed');
         expect(dynamodb.putInput).toBeNull();
     });
-    
+
     test('Empty workflow', async () => {
         dynamodb.reset();
         let error = null;
@@ -91,7 +98,7 @@ describe('initialize', () => {
     test('Valid multiple steps', async () => {
         dynamodb.reset();
         const event = createEvent();
-        event.stages = {Test1:null, Test2: null};
+        event.stages = { Test1: null, Test2: null };
         const result = await initialize(event);
         const expected = createExpected(result.currentDate, {
             Test1: createStep(),
@@ -115,7 +122,7 @@ describe('setDynamoDal', () => {
     });
 });
 
-function createStep() : any {
+function createStep(): any {
     return {
         pre: {
             mandatory: {},
@@ -161,18 +168,18 @@ function createExpected(currentDate: number, activities: any) {
     return expected;
 }
 
-function createEvent() : any {
+function createEvent(): any {
     return {
         uid: '123',
         stages: {
-            Stage1:''
+            Stage1: ''
         },
         metadata: {
-            company:"0",
-            effectiveDate:"1/2/2018",
-            lineOfBusiness:'Personal',
-            policies:[{policyId: "00283316-d954-74f6-de8b-1f72b9b58e66"}],
-            riskState:'ID',
+            company: "0",
+            effectiveDate: "1/2/2018",
+            lineOfBusiness: 'Personal',
+            policies: [{ policyId: "00283316-d954-74f6-de8b-1f72b9b58e66" }],
+            riskState: 'ID',
             workflow: 'test'
         }
     };

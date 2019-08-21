@@ -88,7 +88,21 @@ async function ProcessMessage(message: OrchestratorPluginMessage, pluginInfo: Pl
     if (override && override.mandatory !== undefined) {
         mandatory = override.mandatory;
     }
-
+    if(!pluginInfo.alwaysRun) {
+        const currentStatus = await oasd.getStatusObject(message.uid, message.workflow);
+        const required = mandatory ? 'mandatory' : 'optional';
+        if(currentStatus 
+            && currentStatus.activities 
+            && currentStatus.activities[message.activity]
+            && currentStatus.activities[message.activity][message.stage]
+            && currentStatus.activities[message.activity][message.stage][required]
+            && currentStatus.activities[message.activity][message.stage][required]
+            && currentStatus.activities[message.activity][message.stage][required][pluginInfo.pluginName]
+            && currentStatus.activities[message.activity][message.stage][required][pluginInfo.pluginName].state
+             === OrchestratorComponentState.Complete) {
+                return;
+            }
+    }
     // log status as InProgress into the nucleus-orchestrator-core-{stage}-status table
     const inProgressStatusUpdate = oasd.updatePluginStatus(
         message.uid, message.workflow, message.activity,

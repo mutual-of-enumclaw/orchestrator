@@ -52,6 +52,7 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:PutItem
+          - dynamodb:GetItem
         Resource:
           Fn::GetAtt:
             - StatusTable
