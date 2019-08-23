@@ -1,5 +1,8 @@
 import { orchestratorWrapperSqs, orchestratorWrapperSns, setOASDOverride } from './orchestratorUtils';
-import { OrchestratorError, PluginInfo, OrchestratorComponentState } from '../types';
+import {
+    OrchestratorError, PluginInfo, OrchestratorComponentState,
+    OrchestratorWorkflowStatus, OrchestratorStage
+} from '../types';
 import { mockOrchstratorStatusDal } from '../../__mock__/mockOrchestratorStatusDal';
 
 process.env.environment = 'unit-test';
@@ -134,6 +137,54 @@ describe('orchestratorWrapperSns', () => {
         expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(0);
     });
 
+    test('already marked as complete', async () => {
+        process.env.debugInput = 'false';
+        mockOrchstratorStatusDal.reset();
+        const plugin = getPluginInfo();
+        const statusObj = {
+            workflow: 'workflow',
+            activities: {
+            }
+        } as OrchestratorWorkflowStatus;
+        statusObj.activities['test'] = {
+            pre: {
+                optional: {},
+                mandatory: {
+                    Test: {
+                        state: OrchestratorComponentState.Complete
+                    }
+                },
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            },
+            async: {
+                optional: {},
+                mandatory: {},
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            },
+            post: {
+                optional: {},
+                mandatory: {},
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            },
+            status: {
+                state: OrchestratorComponentState.Complete
+            }
+        };
+        mockOrchstratorStatusDal.getStatusObject.mockResolvedValueOnce(statusObj);
+        const fn = jest.fn();
+        const wrapper = orchestratorWrapperSns(plugin, fn);
+        await wrapper(getPluginMessageSns());
+
+        expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(0);
+        expect(mockOrchstratorStatusDal.updatePluginStatus).toHaveBeenCalledTimes(0);
+    });
+
     test('debug on', async () => {
         process.env.debugInput = 'true';
         mockOrchstratorStatusDal.reset();
@@ -155,7 +206,7 @@ describe('orchestratorWrapperSns', () => {
             test: {
                 mandatory: false
             }
-        }
+        };
         const wrapper = orchestratorWrapperSns(pluginInfo, fn);
         await wrapper(getPluginMessageSns());
 
@@ -203,65 +254,76 @@ describe('orchestratorWrapperSns', () => {
     });
 });
 
-function getPluginInfo() : PluginInfo {
+function getPluginInfo(): PluginInfo {
     return {
         pluginName: 'Test',
         default: {
             mandatory: true
         }
-    }
+    };
 }
 function getPluginMessageSqs() {
-    return { Records: [{ body: 
-        JSON.stringify(
-            { 
-                id:"test", 
-                activity:"test", 
-                uid:"uid-id", 
-                workflow:"workflow", 
-                test: {
-                    "mandatory":{}
-                }, 
-                policies:["test"] 
-            })
-        } 
-    ]};
+    return {
+        Records: [{
+            body:
+                JSON.stringify(
+                    {
+                        id: "test",
+                        activity: "test",
+                        uid: "uid-id",
+                        workflow: "workflow",
+                        test: {
+                            "mandatory": {}
+                        },
+                        policies: ["test"]
+                    })
+        }
+        ]
+    };
 }
 
 function getPluginMessageSns() {
-    return { Records: [{ Sns: 
+    return {
+        Records: [{
+            Sns:
             {
                 Message: JSON.stringify(
-                { 
-                    id:"test", 
-                    activity:"test", 
-                    uid:"uid-id", 
-                    workflow:"workflow", 
-                    test: {
-                        "mandatory":{}
-                    }, 
-                    policies:["test"] 
-                })
+                    {
+                        id: "test",
+                        activity: "test",
+                        uid: "uid-id",
+                        workflow: "workflow",
+                        stage: OrchestratorStage.PreProcessing,
+                        test: {
+                            "mandatory": {}
+                        },
+                        policies: ["test"]
+                    })
             }
         }
-    ]};
+        ]
+    };
 }
 function getPluginMessageSnsRegistration() {
-    return { Records: [{ Sns: 
+    return {
+        Records: [{
+            Sns:
             {
                 Message: JSON.stringify(
-                { 
-                    id:"test", 
-                    activity:"test", 
-                    uid:"uid-id", 
-                    workflow:"workflow", 
-                    initialize: true,
-                    test: {
-                        "mandatory":{}
-                    }, 
-                    policies:["test"] 
-                })
+                    {
+                        id: "test",
+                        activity: "test",
+                        uid: "uid-id",
+                        workflow: "workflow",
+                        stage: OrchestratorStage.PreProcessing,
+                        initialize: true,
+                        test: {
+                            "mandatory": {}
+                        },
+                        policies: ["test"]
+                    })
             }
         }
-    ]};
+        ]
+    };
 }

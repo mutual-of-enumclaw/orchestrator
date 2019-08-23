@@ -37,10 +37,10 @@ async function ProcessSNSEvent(snsEvent) {
         console.log(JSON.stringify(snsEvent));
     }
 
-    snsEvent.Records.forEach(event => {
+    for(const event of snsEvent.Records) {
         const message = JSON.parse(event.Sns.Message);
         promises.push(ProcessMessage(message, pluginInformation));
-    });
+    }
 
     await Promise.all(promises);
     
@@ -54,7 +54,7 @@ async function ProcessSqsEvent(sqsEvent) {
         console.log(JSON.stringify(sqsEvent));
     }
     const promises = [];
-    sqsEvent.Records.forEach(event => {
+    for(const event of sqsEvent.Records) {
         let message: any = null;
         if (event.Sqs && event.Sqs.Message) {
             message = JSON.parse(event.Sqs.Message);
@@ -67,7 +67,7 @@ async function ProcessSqsEvent(sqsEvent) {
 
         promises.push(ProcessMessage(message, pluginInformation));
 
-    });
+    }
 
     await Promise.all(promises);
 }

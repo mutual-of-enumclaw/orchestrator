@@ -1,5 +1,8 @@
 import { DynamoDB, AWSError } from 'aws-sdk';
-import { OrchestratorComponentState, lambdaWrapperAsync, OrchestratorWorkflowStatus } from '..';
+import {
+    OrchestratorComponentState, lambdaWrapperAsync, OrchestratorWorkflowStatus,
+    OrchestratorActivityStatus, OrchestratorAsyncStatus, OrchestratorSyncStatus
+} from '..';
 import { PromiseResult } from 'aws-sdk/lib/request';
 import { PutItemOutput, GetItemOutput } from 'aws-sdk/clients/dynamodb';
 
@@ -27,15 +30,15 @@ export const initialize = lambdaWrapperAsync(async (event: OrchestratorWorkflowS
         dynamodb = new DynamoDB.DocumentClient();
     }
     const savedData = await getActivity(event);
-    if(savedData && savedData) {
-
+    event.activities = {};
+    if (savedData && savedData.activities) {
+        event.activities = savedData.activities;
     }
     if (!event.status) {
         event.status = {
             state: OrchestratorComponentState.NotStarted,
         };
     }
-    event.activities = {};
     if (event.stages) {
         for (const i in event.stages) {
             getActivityForStage(i, event);
@@ -49,8 +52,9 @@ export const initialize = lambdaWrapperAsync(async (event: OrchestratorWorkflowS
     return event;
 });
 
-export function getActivityForStage(stage: string, event: OrchestratorWorkflowStatus) {
+function getActivityForStage(stage: string, event: OrchestratorWorkflowStatus) {
     if (event.activities[stage]) {
+        resetErrorStatusInActivity(event.activities[stage]);
         return;
     }
     event.activities[stage] = {
@@ -93,7 +97,46 @@ export function getActivityForStage(stage: string, event: OrchestratorWorkflowSt
         }
     };
 }
-export async function getActivity(event: OrchestratorWorkflowStatus): Promise<OrchestratorWorkflowStatus> {
+function resetErrorStatusInActivity(activityStatus: OrchestratorActivityStatus): void {
+    activityStatus.status.state = OrchestratorComponentState.NotStarted;
+    resetErrorStatusInSection(activityStatus.pre);
+    resetErrorStatusInSection(activityStatus.async);
+    resetErrorStatusInSection(activityStatus.post);
+}
+export function resetErrorStatusInSection(status: OrchestratorAsyncStatus| OrchestratorSyncStatus): void {
+    if (!status) {
+        return;
+    }
+    status.status.state = OrchestratorComponentState.NotStarted;
+    if (!status.mandatory) {
+        status.mandatory = {};
+    }
+    for (const plugin of Object.keys(status.mandatory)) {
+        const state = status.mandatory[plugin];
+        if (state &&
+            (state.state === OrchestratorComponentState.Error
+                || state.state === OrchestratorComponentState.OptionalError
+            )) {
+                state.state = OrchestratorComponentState.NotStarted;
+        }
+    }
+    
+    if (!status.optional) {
+        status.optional = {};
+    }
+    for (const plugin of Object.keys(status.optional)) {
+        const state = status.optional[plugin];
+        if (state &&
+            (state.state === OrchestratorComponentState.Error
+                || state.state === OrchestratorComponentState.OptionalError
+            )) {
+                state.state = OrchestratorComponentState.NotStarted;
+        }
+    }
+
+
+}
+async function getActivity(event: OrchestratorWorkflowStatus): Promise<OrchestratorWorkflowStatus> {
     const ret = await dynamodb.get({
         TableName: process.env.statusTable,
         Key: {
@@ -101,14 +144,14 @@ export async function getActivity(event: OrchestratorWorkflowStatus): Promise<Or
             workflow: event.workflow
         }
     }).promise();
-    if(!ret || !ret.Item) {
+    if (!ret || !ret.Item) {
         return;
     }
     const output = ret.Item as OrchestratorWorkflowStatus;
     return output;
 }
 
-export async function save(event: OrchestratorWorkflowStatus): Promise<PromiseResult<PutItemOutput, AWSError>> {
+async function save(event: OrchestratorWorkflowStatus): Promise<PromiseResult<PutItemOutput, AWSError>> {
     return dynamodb.put({
         TableName: process.env.statusTable,
         Item: event

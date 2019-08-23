@@ -21,10 +21,12 @@
     },
     "dependencies": {
         "@moe-tech/dynamo-delta": "^1.0.12",
+        "@types/rewire": "^2.5.28",
         "epsagon": "^1.31.7"
     },
     "devDependencies": {
         "@types/aws-lambda": "8.10.11",
+        "@types/aws-sdk": "^2.7.0",
         "@types/jest": "^23.3.9",
         "@types/node": "^10.14.14",
         "aws-lambda": "^0.1.2",

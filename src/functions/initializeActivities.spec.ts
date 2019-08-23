@@ -1,6 +1,6 @@
-import { initialize, setDynamoDal } from './initializeActivities'
+import { initialize, setDynamoDal, resetErrorStatusInSection } from './initializeActivities'
 import { OrchestratorWorkflowStatus, OrchestratorComponentState } from '..';
-
+import { OrchestratorSyncStatus } from '../types';
 class MockDynamoDb {
     putInput: any = null;
 
@@ -9,23 +9,15 @@ class MockDynamoDb {
     }
     put(params) {
         this.putInput = params;
-        return {
-            promise: () => {
-                return new Promise((resolve) => { resolve(); });
-            }
-        };
+        return this;
     }
     get() {
-        return {
-            promise: () => {
-                return new Promise((resolve) => { resolve(); });
-            }
-        };
+        return this;
     }
+    promise = jest.fn();
 }
 
 const dynamodb = new MockDynamoDb();
-
 describe('initialize', () => {
     process.env.environment = 'unit-test';
     setDynamoDal(dynamodb as any);
@@ -106,6 +98,94 @@ describe('initialize', () => {
         });
         expect(result).toMatchObject(expected);
         expect(dynamodb.putInput).toBeDefined();
+    });
+
+    test('Valid multiple fail test.', async () => {
+        dynamodb.reset();
+        const savedVal = {
+            Item: {
+                activities: {
+                    Test1: createStep()
+                },
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            }
+
+        };
+        const value = savedVal.Item.activities.Test1;
+        value.pre.mandatory['completed'] = { state: OrchestratorComponentState.Complete };
+        value.pre.mandatory['failed'] = { state: OrchestratorComponentState.Error };
+        value.pre.optional['optionalError'] = { state: OrchestratorComponentState.OptionalError };
+        dynamodb.promise.mockResolvedValueOnce(savedVal);
+        const event = createEvent();
+        event.stages = { Test1: null, Test2: null };
+        const result = await initialize(event);
+
+
+        value.pre.mandatory['failed'].state = OrchestratorComponentState.NotStarted;
+        value.pre.optional['optionalError'].state = OrchestratorComponentState.NotStarted;
+        expect(result.activities.Test1.pre).toEqual(value.pre);
+        expect(dynamodb.putInput).toBeDefined();
+    });
+    describe('resetErrorStatusInSection', () => {
+        test('optional: set errors to not started, but leave other statuss in tact', () => {
+            // arrange
+            const value = {
+                status: {
+                    state: "Complete"
+                },
+                optional: {},
+            } as OrchestratorSyncStatus;
+            value.optional['plugin1'] = {
+                state: OrchestratorComponentState.Complete
+            };
+            value.optional['plugin2'] = {
+                state: OrchestratorComponentState.Error
+            };
+            value.optional['plugin3'] = {
+                state: OrchestratorComponentState.OptionalError
+            };
+
+            // act
+            resetErrorStatusInSection(value);
+            // assert
+            expect(value.optional.plugin1.state === OrchestratorComponentState.Complete);
+            expect(value.optional.plugin2.state === OrchestratorComponentState.NotStarted);
+            expect(value.optional.plugin3.state === OrchestratorComponentState.NotStarted);
+        });
+        test('mandatory: set errors to not started, but leave other statuss in tact', () => {
+            // arrange
+            const value = {
+                status: {
+                    state: "Complete"
+                },
+                mandatory: {},
+            } as OrchestratorSyncStatus;
+            value.mandatory['plugin1'] = {
+                state: OrchestratorComponentState.Complete
+            };
+            value.mandatory['plugin2'] = {
+                state: OrchestratorComponentState.Error
+            };
+            value.mandatory['plugin3'] = {
+                state: OrchestratorComponentState.OptionalError
+            };
+
+            // act
+            resetErrorStatusInSection(value);
+            // assert
+            expect(value.mandatory.plugin1.state === OrchestratorComponentState.Complete);
+            expect(value.mandatory.plugin2.state === OrchestratorComponentState.NotStarted);
+            expect(value.mandatory.plugin3.state === OrchestratorComponentState.NotStarted);
+        });
+        test('not error when no data is passed', () => {
+            const value = undefined;
+            // act
+            resetErrorStatusInSection(value);
+            // assert
+            expect(value).toEqual(undefined);
+        });
     });
 });
 

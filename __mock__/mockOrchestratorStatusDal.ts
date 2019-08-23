@@ -5,12 +5,14 @@ class MockOrchstratorStatusDal {
 
     reset() {
         this.updatePluginStatusInput = [];
+        this.updatePluginStatus.mockClear();
+        this.getStatusObject.mockClear();
     }
 
-    async updatePluginStatus(
+    updatePluginStatus = jest.fn().mockImplementation((
         uid: string, workflow: string, activity: string, stage: OrchestratorStage,
         mandatory: boolean, pluginName: string, state: OrchestratorComponentState,
-        message: string) {
+        message: string) => {
         this.updatePluginStatusInput.push({
             uid,
             workflow,
@@ -21,10 +23,8 @@ class MockOrchstratorStatusDal {
             state,
             message
         });
-    }
-    async getStatusObject(uid: string, workflow: string) {
-        
-    }
+    });
+    getStatusObject = jest.fn();
 }
 
 export const mockOrchstratorStatusDal = new MockOrchstratorStatusDal();
