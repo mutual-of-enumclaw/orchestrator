@@ -137,6 +137,17 @@ describe('orchestratorWrapperSns', () => {
         expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(0);
     });
 
+    test('debug on', async () => {
+        process.env.debugInput = 'true';
+        mockOrchstratorStatusDal.reset();
+        const fn = jest.fn();
+        const wrapper = orchestratorWrapperSns(getPluginInfo(), fn);
+        await wrapper(getPluginMessageSns());
+
+        expect(mockOrchstratorStatusDal.updatePluginStatus).toHaveBeenCalledTimes(2);
+        expect(mockOrchstratorStatusDal.updatePluginStatusInput[0].state).toBe(OrchestratorComponentState.InProgress);
+        expect(mockOrchstratorStatusDal.updatePluginStatusInput[1].state).toBe(OrchestratorComponentState.Complete);
+    });
     test('already marked as complete', async () => {
         process.env.debugInput = 'false';
         mockOrchstratorStatusDal.reset();
@@ -184,19 +195,54 @@ describe('orchestratorWrapperSns', () => {
         expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(0);
         expect(mockOrchstratorStatusDal.updatePluginStatus).toHaveBeenCalledTimes(0);
     });
-
-    test('debug on', async () => {
-        process.env.debugInput = 'true';
+    test('already marked as complete but always run set true', async () => {
+        process.env.debugInput = 'false';
         mockOrchstratorStatusDal.reset();
+        const plugin = getPluginInfo();
+        plugin.alwaysRun = true;
+        const statusObj = {
+            workflow: 'workflow',
+            activities: {
+            }
+        } as OrchestratorWorkflowStatus;
+        statusObj.activities['test'] = {
+            pre: {
+                optional: {},
+                mandatory: {
+                    Test: {
+                        state: OrchestratorComponentState.Complete
+                    }
+                },
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            },
+            async: {
+                optional: {},
+                mandatory: {},
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            },
+            post: {
+                optional: {},
+                mandatory: {},
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            },
+            status: {
+                state: OrchestratorComponentState.Complete
+            }
+        };
+        mockOrchstratorStatusDal.getStatusObject.mockResolvedValueOnce(statusObj);
         const fn = jest.fn();
-        const wrapper = orchestratorWrapperSns(getPluginInfo(), fn);
+        const wrapper = orchestratorWrapperSns(plugin, fn);
         await wrapper(getPluginMessageSns());
 
         expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
-        expect(mockOrchstratorStatusDal.updatePluginStatusInput[0].state).toBe(OrchestratorComponentState.InProgress);
-        expect(mockOrchstratorStatusDal.updatePluginStatusInput[1].state).toBe(OrchestratorComponentState.Complete);
+        expect(mockOrchstratorStatusDal.updatePluginStatus).toHaveBeenCalledTimes(2);
     });
-
     test('override mandatory for activity', async () => {
         process.env.debugInput = 'true';
         mockOrchstratorStatusDal.reset();
