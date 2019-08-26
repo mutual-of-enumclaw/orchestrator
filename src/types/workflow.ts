@@ -15,7 +15,8 @@ export interface OrchestratorWorkflowStatus {
     },
     stages?: {
         [key: string]: any
-    }
+    },
+    metadataOverride?: boolean;
 }
 
 export class OrchestratorError extends Error {

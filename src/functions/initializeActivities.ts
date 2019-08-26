@@ -34,7 +34,9 @@ export const initialize = lambdaWrapperAsync(async (event: OrchestratorWorkflowS
     event.activities = {};
     if (savedData && savedData.activities) {
         event.activities = savedData.activities;
-        event.metadata = savedData.metadata;
+        if(!event.metadataOverride && JSON.stringify(event.metadata) !== JSON.stringify(savedData.metadata)) {
+            throw new Error(`metadata does not match metadata with same UID from database`);   
+        }
     }
     if (!event.status) {
         event.status = {
