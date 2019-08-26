@@ -102,6 +102,33 @@ describe('initialize', () => {
         });
         expect(result).toMatchObject(expected);
         expect(dynamodb.putInitialWorkflowStatus).toBeCalledTimes(1);
+    });test('failed mismatching metadata.', async () => {
+        dynamodb.reset();
+        const savedVal = {
+            activities: {
+                Test1: createStep()
+            },
+            status: {
+                state: OrchestratorComponentState.Complete
+            },
+            metadata: {
+
+            }
+
+        };
+        
+        dynamodb.getStatusObject.mockResolvedValueOnce(savedVal);
+        const event = createEvent();
+        event.stages = { Test1: undefined, Test2: undefined };
+        let ex = undefined;
+        try {
+
+            const result = await initialize(event);
+        } catch(error) {
+            ex = error;
+        }
+        expect(ex).toBeDefined();
+
     });
     test('Valid multiple fail test.', async () => {
         dynamodb.reset();
@@ -113,7 +140,12 @@ describe('initialize', () => {
                 state: OrchestratorComponentState.Complete
             },
             metadata: {
-
+                company: "0",
+                effectiveDate: "1/2/2018",
+                lineOfBusiness: 'Personal',
+                policies: [{ policyId: "00283316-d954-74f6-de8b-1f72b9b58e66" }],
+                riskState: 'ID',
+                workflow: 'test'
             }
 
         };
