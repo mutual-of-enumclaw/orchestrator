@@ -86,6 +86,7 @@ describe('initialize', () => {
         });
         expect(result).toMatchObject(expected);
         expect(dynamodb.putInput).toBeDefined();
+        expect(dynamodb.putInput.ConditionExpression).toBe('attribute_not_exists(uid)');
     });
     test('Valid multiple steps', async () => {
         dynamodb.reset();
@@ -215,6 +216,8 @@ describe('initialize', () => {
             expect(value.mandatory.plugin1.state === OrchestratorComponentState.Complete);
             expect(value.mandatory.plugin2.state === OrchestratorComponentState.NotStarted);
             expect(value.mandatory.plugin3.state === OrchestratorComponentState.NotStarted);
+
+            expect(dynamodb.putInput.ConditionExpression).toBeUndefined();
         });
         test('not error when no data is passed', () => {
             const value = undefined;

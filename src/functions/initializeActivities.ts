@@ -31,8 +31,8 @@ export const initialize = lambdaWrapperAsync(async (event: OrchestratorWorkflowS
     }
     const savedData = await getActivity(event);
     event.activities = {};
-    if (savedData && savedData.activities) {
-        event.activities = savedData.activities;
+    if (savedData) {
+        event.activities = (savedData.activities)? savedData.activities : event.activities;
         if(!event.metadataOverride && JSON.stringify(event.metadata) !== JSON.stringify(savedData.metadata)) {
             throw new Error(`metadata does not match metadata with same UID from database`);   
         }
@@ -50,7 +50,13 @@ export const initialize = lambdaWrapperAsync(async (event: OrchestratorWorkflowS
     }
     event.workflow = event.metadata.workflow;
     event.currentDate = new Date().getTime();
-    await save(event);
+
+    // Save status to status table
+    await dynamodb.put({
+        TableName: process.env.statusTable,
+        Item: event,
+        ConditionExpression: (savedData)? undefined : 'attribute_not_exists(uid)'
+    }).promise();
 
     return event;
 });
@@ -152,11 +158,4 @@ export async function getActivity(event: OrchestratorWorkflowStatus): Promise<Or
     }
     const output = ret.Item as OrchestratorWorkflowStatus;
     return output;
-}
-
-async function save(event: OrchestratorWorkflowStatus): Promise<PromiseResult<PutItemOutput, AWSError>> {
-    return dynamodb.put({
-        TableName: process.env.statusTable,
-        Item: event
-    }).promise();
 }
