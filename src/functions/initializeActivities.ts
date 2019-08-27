@@ -139,15 +139,15 @@ export function resetErrorStatusInSection(status: OrchestratorAsyncStatus| Orche
 
 
 }
-async function getActivity(event: OrchestratorWorkflowStatus): Promise<OrchestratorWorkflowStatus> {
+export async function getActivity(event: OrchestratorWorkflowStatus): Promise<OrchestratorWorkflowStatus> {
     const ret = await dynamodb.get({
         TableName: process.env.statusTable,
         Key: {
-            uid: event.uid,
-            workflow: event.workflow
+            uid: event.metadata.uid,
+            workflow: event.metadata.workflow
         }
     }).promise();
-    if (!ret || !ret.Item) {
+    if (!(ret && ret.Item)) {
         return;
     }
     const output = ret.Item as OrchestratorWorkflowStatus;

@@ -1,4 +1,4 @@
-import { initialize, setDynamoDal, resetErrorStatusInSection } from './initializeActivities'
+import { initialize, setDynamoDal, resetErrorStatusInSection, getActivity } from './initializeActivities'
 import { OrchestratorWorkflowStatus, OrchestratorComponentState } from '..';
 import { OrchestratorSyncStatus } from '../types';
 class MockDynamoDb {
@@ -100,40 +100,31 @@ describe('initialize', () => {
         expect(dynamodb.putInput).toBeDefined();
     });
 
-        };
-        dynamodb.getStatusObject.mockResolvedValueOnce(savedVal);
-        const event = createEvent();
-        event.stages = { Test1: undefined, Test2: undefined };
-        const result = await initialize(event);
-        const expected = createExpected(result.currentDate, {
-            Test1: createStep(),
-            Test2: createStep()
-        });
-        expect(result).toMatchObject(expected);
-        expect(dynamodb.putInitialWorkflowStatus).toBeCalledTimes(1);
-    });test('failed mismatching metadata.', async () => {
+    test('failed mismatching metadata.', async () => {
         dynamodb.reset();
         const savedVal = {
-            activities: {
-                Test1: createStep()
-            },
-            status: {
-                state: OrchestratorComponentState.Complete
-            },
-            metadata: {
+            Item: {
+                activities: {
+                    Test1: createStep()
+                },
+                status: {
+                    state: OrchestratorComponentState.Complete
+                },
+                metadata: {
 
+                }
             }
 
         };
-        
-        dynamodb.getStatusObject.mockResolvedValueOnce(savedVal);
+
+        dynamodb.promise.mockResolvedValueOnce(savedVal);
         const event = createEvent();
         event.stages = { Test1: undefined, Test2: undefined };
         let ex = undefined;
         try {
 
             const result = await initialize(event);
-        } catch(error) {
+        } catch (error) {
             ex = error;
         }
         expect(ex).toBeDefined();
@@ -142,21 +133,22 @@ describe('initialize', () => {
     test('Valid multiple fail test.', async () => {
         dynamodb.reset();
         const savedVal = {
-            activities: {
-                Test1: createStep()
-            },
-            status: {
-                state: OrchestratorComponentState.Complete
-            },
-            metadata: {
-                company: "0",
-                effectiveDate: "1/2/2018",
-                lineOfBusiness: 'Personal',
-                policies: [{ policyId: "00283316-d954-74f6-de8b-1f72b9b58e66" }],
-                riskState: 'ID',
-                workflow: 'test'
+            Item: {
+                activities: {
+                    Test1: createStep()
+                },
+                status: {
+                    state: OrchestratorComponentState.Complete
+                },
+                metadata: {
+                    company: "0",
+                    effectiveDate: "1/2/2018",
+                    lineOfBusiness: 'Personal',
+                    policies: [{ policyId: "00283316-d954-74f6-de8b-1f72b9b58e66" }],
+                    riskState: 'ID',
+                    workflow: 'test'
+                }
             }
-
         };
         const value = savedVal.Item.activities.Test1;
         value.pre.mandatory['completed'] = { state: OrchestratorComponentState.Complete };
@@ -230,6 +222,36 @@ describe('initialize', () => {
             resetErrorStatusInSection(value);
             // assert
             expect(value).toEqual(undefined);
+        });
+    });
+    describe('getActivity', () => {
+        test('return undefined if call returns undefined', async () => {
+            dynamodb.reset();
+            const savedVal = undefined;
+            const event = {
+                metadata: {
+                    uid: 'uid',
+                    workflow: 'workflow'
+                }
+            } as any;
+            dynamodb.promise.mockResolvedValueOnce(savedVal);
+            const value = await getActivity(event);
+            expect(value).toBeUndefined();
+        });
+        test('return undefined if call returns item as undefined', async () => {
+            dynamodb.reset();
+            const savedVal = {
+                
+            };
+            const event = {
+                metadata: {
+                    uid: 'uid',
+                    workflow: 'workflow'
+                }
+            } as any;
+            dynamodb.promise.mockResolvedValueOnce(savedVal);
+            const value = await getActivity(event);
+            expect(value).toBeUndefined();
         });
     });
 });
