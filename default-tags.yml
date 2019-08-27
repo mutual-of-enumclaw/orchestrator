@@ -1,0 +1,9 @@
+###
+# Replace this tag file by using --tagConfig tagFilePath.yml in the serverless command line
+###
+
+# This is an example of how you could tie this activity to an application for billing and usage tracking
+AppID: orchestrator 
+
+# Environment this activity is being deployed to
+Environment: ${self:provider.stage}

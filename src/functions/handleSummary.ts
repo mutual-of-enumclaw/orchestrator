@@ -9,7 +9,7 @@ import { OrchestratorActivityStatus, OrchestratorStatus, OrchestratorComponentSt
     from '..';
 import * as AWS from 'aws-sdk';
 
-class StatusSummary {
+export class StatusSummary {
     public error: boolean;
     public complete: boolean;
     public mandatoryComplete: boolean;
@@ -144,8 +144,9 @@ async function processRecord(record: DynamoDBRecord) {
         await dynamoDal.update(params).promise();
     }
 }
-function validateActivity(
-    activity, statusObj, workflowStatus: StatusSummary,
+
+export function validateActivity(
+    activity: string, statusObj: { [key: string]: OrchestratorActivityStatus }, workflowStatus: StatusSummary,
     updates: string[], attributes: any, fieldNames: any): OrchestratorActivityStatus {
 
     log(`Checking status for ${activity}`);
@@ -154,7 +155,7 @@ function validateActivity(
         log('Status definition is not compatible with updating');
         return;
     }
-    validateAsync(activity, activityStatus, updates, attributes, fieldNames);
+    validateActivityStages(activity, activityStatus, updates, attributes, fieldNames);
     const activityStatusSummary = new StatusSummary();
     for (const ii in activityStatus) {
         if (ii === 'status') {
@@ -183,16 +184,27 @@ function validateActivity(
     return activityStatus;
 
 }
-export function validateAsync(
-    activity, activityStatus: OrchestratorActivityStatus,
+
+function validateActivityStages(
+    activity: string, activityStatus: OrchestratorActivityStatus,
     updates: string[], attributes: any, fieldNames: any) {
-    let state: OrchestratorComponentState = activityStatus.async.status.state;
+
+    validateStage(activity, activityStatus, updates, attributes, fieldNames, 'async');
+    validateStage(activity, activityStatus, updates, attributes, fieldNames, 'pre');
+    validateStage(activity, activityStatus, updates, attributes, fieldNames, 'post');
+}
+
+export function validateStage(
+    activity: string, activityStatus: OrchestratorActivityStatus,
+    updates: string[], attributes: any, fieldNames: any, stage: string) {
+
+    let state: OrchestratorComponentState = activityStatus[stage].status.state;
     let asyncComplete = true;
     let asyncError = false;
     let hasSubItems = false;
-    for (const ii in activityStatus.async.mandatory) {
+    for (const ii in activityStatus[stage].mandatory) {
         hasSubItems = true;
-        const component = activityStatus.async.mandatory[ii] as OrchestratorStatus;
+        const component = activityStatus[stage].mandatory[ii] as OrchestratorStatus;
 
         if (component.state === OrchestratorComponentState.InProgress && asyncComplete) {
             log('Components are not all complete');
@@ -217,8 +229,8 @@ export function validateAsync(
         state = OrchestratorComponentState.MandatoryCompleted;
     }
     if (!asyncError) {
-        for (const ii in activityStatus.async.optional) {
-            const component = activityStatus.async.optional[ii] as OrchestratorStatus;
+        for (const ii in activityStatus[stage].optional) {
+            const component = activityStatus[stage].optional[ii] as OrchestratorStatus;
 
             if (component.state === OrchestratorComponentState.InProgress) {
                 log('Optional components are not all complete');
@@ -237,17 +249,17 @@ export function validateAsync(
 
     }
 
-    if (activityStatus.async.status.state !== state) {
-        log(`Setting ${activity}.async.status.state to ${state}`);
-        const attributeName = `:${activity}asyncstate`;
-        updates.push(`#activities.#${activity}.#async.#status.#state = ${attributeName}`);
+    if (activityStatus[stage].status.state !== state) {
+        log(`Setting ${activity}.${stage}.status.state to ${state}`);
+        const attributeName = `:${activity}${stage}state`;
+        updates.push(`#activities.#${activity}.#${stage}.#status.#state = ${attributeName}`);
         attributes[attributeName] = state;
         setFieldName('activities', fieldNames);
         setFieldName(activity, fieldNames);
         setFieldName('async', fieldNames);
         setFieldName('status', fieldNames);
         setFieldName('state', fieldNames);
-        activityStatus.async.status.state = state;
+        activityStatus[stage].status.state = state;
     }
 }
 function log(...params) {
