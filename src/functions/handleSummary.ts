@@ -4,11 +4,16 @@
  */
 import { DynamoDBStreamEvent, DynamoDBRecord } from 'aws-lambda';
 import { lambdaWrapperAsync } from '../utils/epsagonUtils';
-import { OrchestratorActivityStatus, OrchestratorStatus, OrchestratorComponentState, 
-    OrchestratorWorkflowStatus }
+import {
+    OrchestratorActivityStatus, OrchestratorStatus, OrchestratorComponentState,
+    OrchestratorWorkflowStatus
+}
     from '..';
 import * as AWS from 'aws-sdk';
-
+let logOutput = true;
+export function setLog(value: boolean) {
+    logOutput = false;
+}
 class StatusSummary {
     public error: boolean;
     public complete: boolean;
@@ -251,6 +256,6 @@ export function validateAsync(
     }
 }
 function log(...params) {
-    // return;
-    console.log(...params);
+    if (logOutput)
+        console.log(...params);
 }
