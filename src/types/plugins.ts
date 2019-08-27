@@ -11,7 +11,8 @@ export interface OrchestratorSyncPlugin {
     pluginName: string,
     order: number,
     functionName: string,
-    mandatory: boolean
+    mandatory: boolean,
+    alwaysRun?: boolean
 }
 
 export interface PluginInfo {
@@ -24,5 +25,6 @@ export interface PluginInfo {
             mandatory: boolean
         }
     };
-    order?: number
+    order?: number,
+    alwaysRun?: boolean
 }

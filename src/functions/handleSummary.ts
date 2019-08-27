@@ -4,8 +4,10 @@
  */
 import { DynamoDBStreamEvent, DynamoDBRecord } from 'aws-lambda';
 import { lambdaWrapperAsync } from '../utils/epsagonUtils';
-import { OrchestratorActivityStatus, OrchestratorStatus, OrchestratorComponentState, 
-    OrchestratorWorkflowStatus }
+import {
+    OrchestratorActivityStatus, OrchestratorStatus, OrchestratorComponentState,
+    OrchestratorWorkflowStatus
+}
     from '..';
 import * as AWS from 'aws-sdk';
 
@@ -48,16 +50,16 @@ export class StatusSummary {
             this.optionalError = true;
         }
         if (state !== OrchestratorComponentState.Complete) {
-            // log('State not complete ' + state);
+            // console.log('State not complete ' + state);
             this.complete = false;
         }
         if (!(state === OrchestratorComponentState.Complete ||
             state === OrchestratorComponentState.MandatoryCompleted)) {
-            // log('State not mandatory complete ' + state);
+            // console.log('State not mandatory complete ' + state);
             this.mandatoryComplete = false;
         }
         if (state === OrchestratorComponentState.Error) {
-            // log('State is error');
+            // console.log('State is error');
             this.error = true;
         }
     }
@@ -72,7 +74,7 @@ export function setDynamoDal(dal: AWS.DynamoDB.DocumentClient) {
 }
 
 export const updateActivityStatus = lambdaWrapperAsync(async (event: DynamoDBStreamEvent) => {
-    log(JSON.stringify(event));
+    console.log(JSON.stringify(event));
     if (!event || !event.Records) {
         return;
     }
@@ -92,7 +94,7 @@ function setFieldName(name: string, fieldNames: any) {
 
 async function processRecord(record: DynamoDBRecord) {
     if (!record.dynamodb.NewImage) {
-        log('Status object was removed, no processing needed');
+        console.log('Status object was removed, no processing needed');
         return;
     }
     const statusObj = AWS.DynamoDB.Converter.unmarshall(record.dynamodb.NewImage) as OrchestratorWorkflowStatus;
@@ -114,7 +116,7 @@ async function processRecord(record: DynamoDBRecord) {
     }
     const workflowState = workflowStatus.getState();
     if (statusObj.status.state !== workflowState) {
-        log(`Setting status.state to ${workflowState}`);
+        console.log(`Setting status.state to ${workflowState}`);
         const attributeName = `:workflowstate`;
         updates.push(`#status.#state = ${attributeName}`);
         attributes[attributeName] = workflowState;
@@ -140,7 +142,7 @@ async function processRecord(record: DynamoDBRecord) {
             ExpressionAttributeNames: fieldNames,
             ExpressionAttributeValues: attributes
         };
-        log(`Updating status in dynamo ${JSON.stringify(params)}`);
+        console.log(`Updating status in dynamo ${JSON.stringify(params)}`);
         await dynamoDal.update(params).promise();
     }
 }
@@ -149,10 +151,10 @@ export function validateActivity(
     activity: string, statusObj: { [key: string]: OrchestratorActivityStatus }, workflowStatus: StatusSummary,
     updates: string[], attributes: any, fieldNames: any): OrchestratorActivityStatus {
 
-    log(`Checking status for ${activity}`);
+    console.log(`Checking status for ${activity}`);
     const activityStatus = statusObj[activity] as OrchestratorActivityStatus;
     if (!activityStatus.async || !activityStatus.pre || !activityStatus.post || !activityStatus.status) {
-        log('Status definition is not compatible with updating');
+        console.log('Status definition is not compatible with updating');
         return;
     }
     validateActivityStages(activity, activityStatus, updates, attributes, fieldNames);
@@ -161,17 +163,17 @@ export function validateActivity(
         if (ii === 'status') {
             continue;
         }
-        log(`activityStatus[ii] ${JSON.stringify(activityStatus[ii])}`);
+        console.log(`activityStatus[ii] ${JSON.stringify(activityStatus[ii])}`);
         const statObj = activityStatus[ii].status as OrchestratorStatus;
         activityStatusSummary.updateState(statObj.state);
     }
 
-    log(`activityStatusSummary after activityStatus[ii] ${JSON.stringify(activityStatusSummary)}`);
+    console.log(`activityStatusSummary after activityStatus[ii] ${JSON.stringify(activityStatusSummary)}`);
     const state = activityStatusSummary.getState();
     workflowStatus.updateState(state);
 
     if (activityStatus.status.state !== state) {
-        log(`Setting ${activity}.status.state to ${state}`);
+        console.log(`Setting ${activity}.status.state to ${state}`);
         const attributeName = `:${activity}state`;
         updates.push(`#activities.#${activity}.#status.#state = ${attributeName}`);
         attributes[attributeName] = state;
@@ -207,12 +209,12 @@ export function validateStage(
         const component = activityStatus[stage].mandatory[ii] as OrchestratorStatus;
 
         if (component.state === OrchestratorComponentState.InProgress && asyncComplete) {
-            log('Components are not all complete');
+            console.log('Components are not all complete');
             asyncComplete = false;
             state = OrchestratorComponentState.InProgress;
         }
         if (component.state === OrchestratorComponentState.Error) {
-            log('Setting mandatory to error state');
+            console.log('Setting mandatory to error state');
             state = OrchestratorComponentState.Error;
             asyncError = true;
             break;
@@ -225,7 +227,7 @@ export function validateStage(
     }
 
     if (asyncComplete && !asyncError) {
-        log('All mandatory components have completed');
+        console.log('All mandatory components have completed');
         state = OrchestratorComponentState.MandatoryCompleted;
     }
     if (!asyncError) {
@@ -233,11 +235,11 @@ export function validateStage(
             const component = activityStatus[stage].optional[ii] as OrchestratorStatus;
 
             if (component.state === OrchestratorComponentState.InProgress) {
-                log('Optional components are not all complete');
+                console.log('Optional components are not all complete');
                 asyncComplete = false;
             }
             if (component.state === OrchestratorComponentState.Error) {
-                log('Setting mandatory to optional error state');
+                console.log('Setting mandatory to optional error state');
                 state = OrchestratorComponentState.OptionalError;
                 asyncError = true;
                 break;
@@ -250,7 +252,7 @@ export function validateStage(
     }
 
     if (activityStatus[stage].status.state !== state) {
-        log(`Setting ${activity}.${stage}.status.state to ${state}`);
+        console.log(`Setting ${activity}.${stage}.status.state to ${state}`);
         const attributeName = `:${activity}${stage}state`;
         updates.push(`#activities.#${activity}.#${stage}.#status.#state = ${attributeName}`);
         attributes[attributeName] = state;
@@ -261,8 +263,4 @@ export function validateStage(
         setFieldName('state', fieldNames);
         activityStatus[stage].status.state = state;
     }
-}
-function log(...params) {
-    // return;
-    console.log(...params);
 }

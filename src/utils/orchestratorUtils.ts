@@ -37,10 +37,10 @@ async function ProcessSNSEvent(snsEvent) {
         console.log(JSON.stringify(snsEvent));
     }
 
-    snsEvent.Records.forEach(event => {
+    for(const event of snsEvent.Records) {
         const message = JSON.parse(event.Sns.Message);
         promises.push(ProcessMessage(message, pluginInformation));
-    });
+    }
 
     await Promise.all(promises);
     
@@ -54,7 +54,7 @@ async function ProcessSqsEvent(sqsEvent) {
         console.log(JSON.stringify(sqsEvent));
     }
     const promises = [];
-    sqsEvent.Records.forEach(event => {
+    for(const event of sqsEvent.Records) {
         let message: any = null;
         if (event.Sqs && event.Sqs.Message) {
             message = JSON.parse(event.Sqs.Message);
@@ -67,7 +67,7 @@ async function ProcessSqsEvent(sqsEvent) {
 
         promises.push(ProcessMessage(message, pluginInformation));
 
-    });
+    }
 
     await Promise.all(promises);
 }
@@ -88,7 +88,21 @@ async function ProcessMessage(message: OrchestratorPluginMessage, pluginInfo: Pl
     if (override && override.mandatory !== undefined) {
         mandatory = override.mandatory;
     }
-
+    if(!pluginInfo.alwaysRun) {
+        const currentStatus = await oasd.getStatusObject(message.uid, message.workflow);
+        const required = mandatory ? 'mandatory' : 'optional';
+        if(currentStatus 
+            && currentStatus.activities 
+            && currentStatus.activities[message.activity]
+            && currentStatus.activities[message.activity][message.stage]
+            && currentStatus.activities[message.activity][message.stage][required]
+            && currentStatus.activities[message.activity][message.stage][required]
+            && currentStatus.activities[message.activity][message.stage][required][pluginInfo.pluginName]
+            && currentStatus.activities[message.activity][message.stage][required][pluginInfo.pluginName].state
+             === OrchestratorComponentState.Complete) {
+                return;
+            }
+    }
     // log status as InProgress into the nucleus-orchestrator-core-{stage}-status table
     const inProgressStatusUpdate = oasd.updatePluginStatus(
         message.uid, message.workflow, message.activity,

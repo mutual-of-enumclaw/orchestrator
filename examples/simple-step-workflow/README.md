@@ -56,3 +56,18 @@ serverless deploy --stage dev
 ```
 
 ## 6. Run the workflow
+1. Log into your aws account and navigate to "Step Functions".  
+2. Once there find the "simple-step-workflows-dev-workflow" and click on it.
+3. Click the "Start execution" button
+4. Past the following into the Input
+``` JSON
+{
+    "uid": "123-456"
+}
+```
+5. Click "Start execution"
+6. Through the AWS Console, navigate to "DynamoDB"
+7. Under the tables, find "orchestrator-dev-status"
+8. Click the "Items" tab and select the row shown.
+
+This object which you will have on the screen will show the activities the workflow executed, along with the states of each of the activities. 

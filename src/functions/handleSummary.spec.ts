@@ -41,6 +41,16 @@ describe("updateActivityStatus", () => {
     });
 
     describe('async', () => {
+        test('Basic - async not started', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            const status = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.status;
+            status.M.state.S = OrchestratorComponentState.NotStarted;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M = {}; 
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeNull();
+        });
+        
         test('Basic - single item null', async () => {
             dynamoDal.reset();
             const event = createBasicEvent();
@@ -644,21 +654,6 @@ describe("updateActivityStatus", () => {
         });
     });
 
-    // test('Already Complete', async () => {
-    //     dynamoDal.reset();
-    //     const event = createOptionalEvent();
-    //     const rate = event.Records[0].dynamodb.NewImage.Rate;
-    //     const mandatory = rate.M.async.M.mandatory;
-    //     const optional = rate.M.async.M.optional;
-    //     optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
-    //     optional.M.test.M.state.S = OrchestratorComponentState.InProgress;
-    //     rate.M.status.M.state.S = OrchestratorComponentState.Complete;
-    //     event.Records[0].dynamodb.NewImage.status.M.state.S = OrchestratorComponentState.Complete;
-
-    //     await updateActivityStatus(event);
-    //     expect(dynamoDal.updateInput).toBeNull();
-    // });
-
     test('No Pre', async () => {
         dynamoDal.reset();
         const event = createBasicEvent();
@@ -699,7 +694,7 @@ describe("updateActivityStatus", () => {
 
     test('Rate not bubbling up bug', async () => {
         dynamoDal.reset();
-        const event = createBasicEvent();;
+        const event = createBasicEvent();
         event.Records[0].dynamodb.NewImage = DynamoDB.Converter.marshall(require('../data/rating-bug.json'));
         event.Records[0].dynamodb.OldImage = DynamoDB.Converter.marshall(require('../data/rating-bug.json'));
         await updateActivityStatus(event);
