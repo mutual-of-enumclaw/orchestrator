@@ -2,7 +2,7 @@ export class MockDynamoDb {
     public returnObject: any;
     public queryReturn: Array<any>;
     public error: string;
-    public scanReturn: any = undefined;
+    public scanReturn: any = null;
     public updateReturn: any;
     public updateInput: any;
     public deleteInput: any;
@@ -10,80 +10,101 @@ export class MockDynamoDb {
 
     public reset() {
         this.error = '';
-        this.updateReturn = undefined;
-        this.updateInput = undefined;
-        this.scanReturn = undefined;
-        this.queryReturn = undefined;
-        this.returnObject = undefined;
-        this.deleteInput = undefined;
-        this.putInput = undefined;
+        this.updateReturn = null;
+        this.updateInput = null;
+        this.scanReturn = null;
+        this.queryReturn = null;
+        this.returnObject = null;
+        this.deleteInput = null;
+        this.putInput = null;
     }
 
-    get = jest.fn().mockImplementation(params => {
-        const ret = new DynamoReturn();
-        ret['$response'] = {
-            error: this.error,
+    public get(params) : any {
+        return {
+            promise: () => {
+                return new Promise((resolve, reject) => {
+                    resolve({
+                        '$response': {
+                            error: this.error,
+                        },
+                        Item: this.returnObject
+                    });
+                });
+            }
         };
-        ret['Item'] = this.returnObject;
-        return ret;
-    });
+    }
 
-    put = jest.fn().mockImplementation(params => {
+    public put(params) : any {
         this.putInput = params;
-        const ret = new DynamoReturn();
-        ret['$response'] = {
-            error: this.error,
-            data: this.returnObject
+        return {
+            promise: () => {
+                return new Promise((resolve, reject) => {
+                    resolve({
+                        '$response': {
+                            error: this.error,
+                            data: this.returnObject
+                        }
+                    });
+                });
+            }
         };
-        return ret;
-    });
+    }
 
-    query = jest.fn().mockImplementation(params => {
-        const ret = new DynamoReturn();
-        ret['$response'] = {
-            error: this.error,
+    public query(params) : any {
+        return {
+            promise: () => {
+                return new Promise((resolve, reject) => {
+                    resolve({
+                        '$response': {
+                            error: this.error,
+                        },
+                        Items: this.queryReturn
+                    });
+                });
+            }
         };
-        ret['Items'] = this.queryReturn;
-        return ret;
-    });
+    }
 
-
-    public scan = jest.fn().mockImplementation(scanParams => {
-        const ret = new DynamoReturn();
-        ret['$response'] = {
-            error: this.error,
+    
+    public scan(scanParams: any): any {
+        return {
+            promise: () => {
+                return new Promise((resolve, reject) => {
+                    resolve({
+                        '$response': {
+                            error: this.error,
+                        },
+                        ...this.scanReturn
+                    });
+                });
+            }
         };
-        Object.assign(ret, this.scanReturn);
-        return ret;
-    });
+    }
 
-    public update = jest.fn().mockImplementation(updateParams => {
+    public update(updateParams: any): any {
         this.updateInput = updateParams;
-        const ret = new DynamoReturn();
-        ret['$response'] = {
-            error: this.error,
+        return {
+            promise: () => {
+                return new Promise((resolve, reject) => {
+                    resolve({
+                        '$response': {
+                            error: this.error,
+                        },
+                        ...this.updateReturn
+                    });
+                });
+            }
         };
-        Object.assign(ret, this.updateReturn)
-        return ret;
-        
-    });
+    }
 
-    public delete = jest.fn().mockImplementation(deleteParams => {
+    public delete(deleteParams: any): any {
         this.deleteInput = deleteParams;
-        return new DynamoReturn();
-    });
-}
-
-class DynamoReturn {
-    promise() {
-        const keys = Object.keys(this);
-        if (keys.length === 0) {
-            return;
-        }
-        const retObj = {};
-        for (const prop of Object.keys(this)) {
-            retObj[prop] = this[prop];
-        }
-        return retObj;
+        return {
+            promise: () => {
+                return new Promise((resolve) => {
+                    resolve();
+                });
+            }
+        };
     }
 }

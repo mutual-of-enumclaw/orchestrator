@@ -34,16 +34,8 @@ describe('getStatusObject', () => {
         expect(error).toBe('No activity specified');
     });
 
-    test('returns undefined when no valueFound', async () => {
-        mockDb.reset();
-        const ret = await dal.getStatusObject('Test', 'test');
-        expect(ret).toBeUndefined();
-    });
-    test('returns undefined when value is found but no items', async () => {
-        mockDb.reset();
-        mockDb.returnObject = undefined;
-        const ret = await dal.getStatusObject('Test', 'test');
-        expect(ret).toBeUndefined();
+    test('Valid id', async () => {
+        await dal.getStatusObject('Test', 'test');
     });
 });
 

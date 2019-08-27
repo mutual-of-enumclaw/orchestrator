@@ -5,11 +5,10 @@ import {
 } from '..';
 import { PromiseResult } from 'aws-sdk/lib/request';
 import { PutItemOutput, GetItemOutput } from 'aws-sdk/clients/dynamodb';
-import { OrchestratorStatusDal } from '../dataAccessLayers/orchestratorStatusDal';
 
-let dynamodb: OrchestratorStatusDal = undefined;
+let dynamodb: DynamoDB.DocumentClient = null;
 
-export function setDynamoDal(dal: OrchestratorStatusDal) {
+export function setDynamoDal(dal: DynamoDB.DocumentClient) {
     if (process.env.environment !== 'unit-test') {
         throw new Error('Unit testing feature being used outside of unit testing');
     }
@@ -28,9 +27,9 @@ export const initialize = lambdaWrapperAsync(async (event: OrchestratorWorkflowS
         throw new Error('Stages has not been defined');
     }
     if (!dynamodb) {
-        dynamodb = new OrchestratorStatusDal(process.env.statusTable, '');
+        dynamodb = new DynamoDB.DocumentClient();
     }
-    const savedData = await dynamodb.getStatusObject(event.uid, event.workflow);
+    const savedData = await getActivity(event);
     event.activities = {};
     if (savedData && savedData.activities) {
         event.activities = savedData.activities;
@@ -51,7 +50,7 @@ export const initialize = lambdaWrapperAsync(async (event: OrchestratorWorkflowS
     }
     event.workflow = event.metadata.workflow;
     event.currentDate = new Date().getTime();
-    await dynamodb.putInitialWorkflowStatus(event);
+    await save(event);
 
     return event;
 });
@@ -69,7 +68,8 @@ function getActivityForStage(stage: string, event: OrchestratorWorkflowStatus) {
 
             },
             status: {
-                state: OrchestratorComponentState.NotStarted
+                state: OrchestratorComponentState.NotStarted,
+                message: null
             }
         },
         async: {
@@ -79,7 +79,8 @@ function getActivityForStage(stage: string, event: OrchestratorWorkflowStatus) {
 
             },
             status: {
-                state: OrchestratorComponentState.NotStarted
+                state: OrchestratorComponentState.NotStarted,
+                message: null
             }
         },
         post: {
@@ -89,11 +90,13 @@ function getActivityForStage(stage: string, event: OrchestratorWorkflowStatus) {
 
             },
             status: {
-                state: OrchestratorComponentState.NotStarted
+                state: OrchestratorComponentState.NotStarted,
+                message: null
             }
         },
         status: {
-            state: OrchestratorComponentState.NotStarted
+            state: OrchestratorComponentState.NotStarted,
+            message: null
         }
     };
 }
@@ -107,22 +110,53 @@ export function resetErrorStatusInSection(status: OrchestratorAsyncStatus| Orche
     if (!status) {
         return;
     }
-    clearErrorForType('mandatory', status);
-    clearErrorForType('optional', status);
+    status.status.state = OrchestratorComponentState.NotStarted;
+    if (!status.mandatory) {
+        status.mandatory = {};
+    }
+    for (const plugin of Object.keys(status.mandatory)) {
+        const state = status.mandatory[plugin];
+        if (state &&
+            (state.state === OrchestratorComponentState.Error
+                || state.state === OrchestratorComponentState.OptionalError
+            )) {
+                state.state = OrchestratorComponentState.NotStarted;
+        }
+    }
+    
+    if (!status.optional) {
+        status.optional = {};
+    }
+    for (const plugin of Object.keys(status.optional)) {
+        const state = status.optional[plugin];
+        if (state &&
+            (state.state === OrchestratorComponentState.Error
+                || state.state === OrchestratorComponentState.OptionalError
+            )) {
+                state.state = OrchestratorComponentState.NotStarted;
+        }
+    }
+
+
 }
-function clearErrorForType(
-    type: 'optional' | 'mandatory', 
-    status: OrchestratorAsyncStatus| OrchestratorSyncStatus): void {
-        if (!status[type]) {
-            status[type] = {};
+async function getActivity(event: OrchestratorWorkflowStatus): Promise<OrchestratorWorkflowStatus> {
+    const ret = await dynamodb.get({
+        TableName: process.env.statusTable,
+        Key: {
+            uid: event.uid,
+            workflow: event.workflow
         }
-        for (const plugin of Object.keys(status[type])) {
-            const state = status[type][plugin];
-            if (state &&
-                (state.state === OrchestratorComponentState.Error
-                    || state.state === OrchestratorComponentState.OptionalError
-                )) {
-                    state.state = OrchestratorComponentState.NotStarted;
-            }
-        }
+    }).promise();
+    if (!ret || !ret.Item) {
+        return;
+    }
+    const output = ret.Item as OrchestratorWorkflowStatus;
+    return output;
+}
+
+async function save(event: OrchestratorWorkflowStatus): Promise<PromiseResult<PutItemOutput, AWSError>> {
+    return dynamodb.put({
+        TableName: process.env.statusTable,
+        Item: event
+    }).promise();
 }

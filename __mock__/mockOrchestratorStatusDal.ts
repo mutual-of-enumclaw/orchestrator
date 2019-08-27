@@ -1,12 +1,12 @@
 import { OrchestratorComponentState, OrchestratorStage } from "../src";
 
-export class MockOrchstratorStatusDal {
+class MockOrchstratorStatusDal {
     public updatePluginStatusInput = [];
+
     reset() {
         this.updatePluginStatusInput = [];
         this.updatePluginStatus.mockClear();
         this.getStatusObject.mockClear();
-        this.putInitialWorkflowStatus.mockClear();
     }
 
     updatePluginStatus = jest.fn().mockImplementation((
@@ -25,7 +25,6 @@ export class MockOrchstratorStatusDal {
         });
     });
     getStatusObject = jest.fn();
-    putInitialWorkflowStatus = jest.fn();
 }
 
 export const mockOrchstratorStatusDal = new MockOrchstratorStatusDal();

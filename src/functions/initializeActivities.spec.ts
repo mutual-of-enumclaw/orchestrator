@@ -1,27 +1,42 @@
 import { initialize, setDynamoDal, resetErrorStatusInSection } from './initializeActivities'
 import { OrchestratorWorkflowStatus, OrchestratorComponentState } from '..';
 import { OrchestratorSyncStatus } from '../types';
-import { MockOrchstratorStatusDal } from '../../__mock__/mockOrchestratorStatusDal';
-const dynamodb = new MockOrchstratorStatusDal();
+class MockDynamoDb {
+    putInput: any = null;
+
+    reset() {
+        this.putInput = null;
+    }
+    put(params) {
+        this.putInput = params;
+        return this;
+    }
+    get() {
+        return this;
+    }
+    promise = jest.fn();
+}
+
+const dynamodb = new MockDynamoDb();
 describe('initialize', () => {
     process.env.environment = 'unit-test';
     setDynamoDal(dynamodb as any);
-    test('undefined event', async () => {
+    test('Null event', async () => {
         dynamodb.reset();
-        let error = undefined;
+        let error = null;
         try {
-            await initialize(undefined);
+            await initialize(null);
         } catch (err) {
             error = err.message;
         }
 
         expect(error).toBe('Event is either invalid or malformed');
-        expect(dynamodb.putInitialWorkflowStatus).toHaveBeenCalledTimes(0);
+        expect(dynamodb.putInput).toBeNull();
     });
 
     test('Empty uid', async () => {
         dynamodb.reset();
-        let error = undefined;
+        let error = null;
         try {
             const event = createEvent();
             event.uid = '';
@@ -31,12 +46,12 @@ describe('initialize', () => {
         }
 
         expect(error).toBe('Event is either invalid or malformed');
-        expect(dynamodb.putInitialWorkflowStatus).toHaveBeenCalledTimes(0);
+        expect(dynamodb.putInput).toBeNull();
     });
 
     test('Empty workflow', async () => {
         dynamodb.reset();
-        let error = undefined;
+        let error = null;
         try {
             const event = createEvent();
             event.metadata.workflow = '';
@@ -46,11 +61,11 @@ describe('initialize', () => {
         }
 
         expect(error).toBe('Event metadata is either invalid or malformed');
-        expect(dynamodb.putInitialWorkflowStatus).toHaveBeenCalledTimes(0);
+        expect(dynamodb.putInput).toBeNull();
     });
     test('Undefined stages', async () => {
         dynamodb.reset();
-        let error = undefined;
+        let error = null;
         try {
             const event = createEvent();
             delete event.stages;
@@ -60,7 +75,7 @@ describe('initialize', () => {
         }
 
         expect(error).toBe('Stages has not been defined');
-        expect(dynamodb.putInitialWorkflowStatus).toHaveBeenCalledTimes(0);
+        expect(dynamodb.putInput).toBeNull();
     });
     test('Valid', async () => {
         dynamodb.reset();
@@ -70,26 +85,20 @@ describe('initialize', () => {
             Stage1: createStep()
         });
         expect(result).toMatchObject(expected);
-        expect(dynamodb.putInitialWorkflowStatus).toBeCalledTimes(1);
+        expect(dynamodb.putInput).toBeDefined();
     });
     test('Valid multiple steps', async () => {
         dynamodb.reset();
         const event = createEvent();
-        event.stages = { Test1: undefined, Test2: undefined };
+        event.stages = { Test1: null, Test2: null };
         const result = await initialize(event);
         const expected = createExpected(result.currentDate, {
             Test1: createStep(),
             Test2: createStep()
         });
         expect(result).toMatchObject(expected);
-        expect(dynamodb.putInitialWorkflowStatus).toBeCalledTimes(1);
+        expect(dynamodb.putInput).toBeDefined();
     });
-    test('prior dynamo call did not have activities will continue as normal', async () => {
-        dynamodb.reset();
-        const savedVal = {
-            status: {
-                state: OrchestratorComponentState.Complete
-            }
 
         };
         dynamodb.getStatusObject.mockResolvedValueOnce(savedVal);
@@ -149,22 +158,20 @@ describe('initialize', () => {
             }
 
         };
-        const value = savedVal.activities.Test1;
+        const value = savedVal.Item.activities.Test1;
         value.pre.mandatory['completed'] = { state: OrchestratorComponentState.Complete };
         value.pre.mandatory['failed'] = { state: OrchestratorComponentState.Error };
         value.pre.optional['optionalError'] = { state: OrchestratorComponentState.OptionalError };
-        dynamodb.getStatusObject.mockResolvedValueOnce(savedVal);
+        dynamodb.promise.mockResolvedValueOnce(savedVal);
         const event = createEvent();
-        event.stages = { Test1: undefined, Test2: undefined };
+        event.stages = { Test1: null, Test2: null };
         const result = await initialize(event);
 
 
         value.pre.mandatory['failed'].state = OrchestratorComponentState.NotStarted;
         value.pre.optional['optionalError'].state = OrchestratorComponentState.NotStarted;
-        expect(result.activities.Test1.pre.mandatory['completed']).toEqual({ state: 'Complete' });
-        expect(result.activities.Test1.pre.mandatory['failed']).toEqual({ state: 'Not Started' });
-        expect(result.activities.Test1.pre.optional['optionalError']).toEqual({ state: 'Not Started' });
-        expect(dynamodb.putInitialWorkflowStatus).toHaveBeenCalledTimes(1);
+        expect(result.activities.Test1.pre).toEqual(value.pre);
+        expect(dynamodb.putInput).toBeDefined();
     });
     describe('resetErrorStatusInSection', () => {
         test('optional: set errors to not started, but leave other statuss in tact', () => {
@@ -230,7 +237,7 @@ describe('initialize', () => {
 describe('setDynamoDal', () => {
     test('setDynamoDal', () => {
         process.env.environment = 'not unit test';
-        let error = undefined;
+        let error = null;
         try {
             setDynamoDal({} as any);
         } catch (err) {
@@ -246,25 +253,29 @@ function createStep(): any {
             mandatory: {},
             optional: {},
             status: {
-                state: OrchestratorComponentState.NotStarted
+                state: OrchestratorComponentState.NotStarted,
+                message: null
             }
         },
         async: {
             mandatory: {},
             optional: {},
             status: {
-                state: OrchestratorComponentState.NotStarted
+                state: OrchestratorComponentState.NotStarted,
+                message: null
             }
         },
         post: {
             mandatory: {},
             optional: {},
             status: {
-                state: OrchestratorComponentState.NotStarted
+                state: OrchestratorComponentState.NotStarted,
+                message: null
             }
         },
         status: {
-            state: OrchestratorComponentState.NotStarted
+            state: OrchestratorComponentState.NotStarted,
+            message: null
         }
     };
 }

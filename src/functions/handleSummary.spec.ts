@@ -12,8 +12,8 @@ describe("updateActivityStatus", () => {
     const dynamoDal = new MockDynamoDb();
     setDynamoDal(dynamoDal as any);
 
-    test('undefined Event', async () => {
-        await updateActivityStatus(undefined);
+    test('Null Event', async () => {
+        await updateActivityStatus(null);
     });
 
     test('Undefinfed Records', async () => {
@@ -25,7 +25,7 @@ describe("updateActivityStatus", () => {
     });
 
     test('Empty Record', async () => {
-        let error = undefined;
+        let error = null;
         try {
             await updateActivityStatus({ Records: [{}] });
         } catch (err) {
@@ -37,15 +37,15 @@ describe("updateActivityStatus", () => {
     test('Basic - no change to status', async () => {
         dynamoDal.reset();
         await updateActivityStatus(createBasicEvent());
-        expect(dynamoDal.updateInput).toBeUndefined();
+        expect(dynamoDal.updateInput).toBeNull();
     });
 
-    test('Basic - single item undefined', async () => {
+    test('Basic - single item null', async () => {
         dynamoDal.reset();
         const event = createBasicEvent();
-        event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M.test.undefined = true;
+        event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M.test.NULL = true;
         await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeUndefined();
+        expect(dynamoDal.updateInput).toBeNull();
     });
 
     test('Basic - single item complete status change', async () => {
@@ -67,7 +67,7 @@ describe("updateActivityStatus", () => {
         mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
         mandatory.M.test.M.state.N = OrchestratorComponentState.Complete;
         await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeUndefined();
+        expect(dynamoDal.updateInput).toBeNull();
     });
 
     test('Basic - multiple items complete state', async () => {
@@ -109,7 +109,7 @@ describe("updateActivityStatus", () => {
         status.M.state.S = OrchestratorComponentState.NotStarted;
         event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M = {}; 
         await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeUndefined();
+        expect(dynamoDal.updateInput).toBeNull();
     });
 
     test('Optional in progress', async () => {
@@ -204,7 +204,7 @@ describe("updateActivityStatus", () => {
         delete rate.M.pre;
 
         await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeUndefined();
+        expect(dynamoDal.updateInput).toBeNull();
     });
 
     test('No post', async () => {
@@ -214,7 +214,7 @@ describe("updateActivityStatus", () => {
         delete rate.M.post;
 
         await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeUndefined();
+        expect(dynamoDal.updateInput).toBeNull();
     });
 
     test('No async', async () => {
@@ -224,7 +224,7 @@ describe("updateActivityStatus", () => {
         delete rate.M.async;
 
         await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeUndefined();
+        expect(dynamoDal.updateInput).toBeNull();
     });
 
     test('No status', async () => {
@@ -232,7 +232,7 @@ describe("updateActivityStatus", () => {
         const event = createBasicEvent();
         delete event.Records[0].dynamodb.NewImage.activities.M.Rate.M.status;
         await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeUndefined();
+        expect(dynamoDal.updateInput).toBeNull();
     });
 
     test('Rate not bubbling up bug', async () => {
@@ -279,7 +279,7 @@ describe('validate Async', () => {
 describe('setDynamoDal', () => {
     test('Non-unit test env', () => {
         process.env.environment = 'not unit test';
-        let error = undefined;
+        let error = null;
         try {
             setDynamoDal({} as any);
         } catch (err) {
@@ -332,7 +332,7 @@ function createBasicRecord(): any {
                                         status: {
                                             M: {
                                                 state: { S: OrchestratorComponentState.InProgress },
-                                                message: { undefined: true },
+                                                message: { NULL: true },
                                             }
                                         }
                                     }
@@ -342,7 +342,7 @@ function createBasicRecord(): any {
                                         status: {
                                             M: {
                                                 state: { S: OrchestratorComponentState.InProgress },
-                                                message: { undefined: true },
+                                                message: { NULL: true },
                                             }
                                         }
                                     }
@@ -362,7 +362,7 @@ function createBasicRecord(): any {
                                         status: {
                                             M: {
                                                 state: { S: OrchestratorComponentState.InProgress },
-                                                message: { undefined: true },
+                                                message: { NULL: true },
                                             }
                                         }
                                     }
@@ -370,7 +370,7 @@ function createBasicRecord(): any {
                                 status: {
                                     M: {
                                         state: { S: OrchestratorComponentState.InProgress },
-                                        message: { undefined: true },
+                                        message: { NULL: true },
                                     }
                                 }
                             }
@@ -396,7 +396,7 @@ function createBasicRecord(): any {
                                         status: {
                                             M: {
                                                 state: { S: OrchestratorComponentState.InProgress },
-                                                message: { undefined: true },
+                                                message: { NULL: true },
                                             }
                                         }
                                     }
@@ -406,7 +406,7 @@ function createBasicRecord(): any {
                                         status: {
                                             M: {
                                                 state: { S: OrchestratorComponentState.InProgress },
-                                                message: { undefined: true },
+                                                message: { NULL: true },
                                             }
                                         }
                                     }
@@ -426,7 +426,7 @@ function createBasicRecord(): any {
                                         status: {
                                             M: {
                                                 state: { S: OrchestratorComponentState.InProgress },
-                                                message: { undefined: true },
+                                                message: { NULL: true },
                                             }
                                         }
                                     }
@@ -434,7 +434,7 @@ function createBasicRecord(): any {
                                 status: {
                                     M: {
                                         state: { S: OrchestratorComponentState.InProgress },
-                                        message: { undefined: true },
+                                        message: { NULL: true },
                                     }
                                 }
                             }
