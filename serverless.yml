@@ -20,6 +20,8 @@ provider:
     epsagonMetadata: ${opt:epsagon-meta, ''}
     statusTable: ${self:custom.tables.status}
 
+  stackTags: ${file(./${opt:tagConfig, 'default-tags.yml'})}
+  
 custom:
   webpack:
     includeModules: true

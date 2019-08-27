@@ -2,11 +2,11 @@
  * Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
  * License: Public
  */
-import { updateActivityStatus, setDynamoDal, validateAsync, setLog } from './handleSummary';
+import { updateActivityStatus, setDynamoDal, validateActivity, StatusSummary } from './handleSummary';
 import { MockDynamoDb } from '../../__mock__/mockDynamoDb';
 import { OrchestratorComponentState, OrchestratorActivityStatus } from '..';
 import { DynamoDB } from 'aws-sdk';
-setLog(false);
+
 describe("updateActivityStatus", () => {
     process.env.environment = 'unit-test';
     const dynamoDal = new MockDynamoDb();
@@ -40,161 +40,618 @@ describe("updateActivityStatus", () => {
         expect(dynamoDal.updateInput).toBeNull();
     });
 
-    test('Basic - single item null', async () => {
-        dynamoDal.reset();
-        const event = createBasicEvent();
-        event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M.test.NULL = true;
-        await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeNull();
+    describe('async', () => {
+        test('Basic - async not started', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            const status = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.status;
+            status.M.state.S = OrchestratorComponentState.NotStarted;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M = {}; 
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeNull();
+        });
+        
+        test('Basic - single item null', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M.test.NULL = true;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeNull();
+        });
+    
+        test('Basic - single item complete status change', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#async.#status.#state = :Rateasyncstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
+                .toBe(OrchestratorComponentState.Complete);
+        });
+    
+        test('Basic - multiple items mixed state', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
+            mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
+            mandatory.M.test.M.state.N = OrchestratorComponentState.Complete;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeNull();
+        });
+    
+        test('Basic - multiple items complete state', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#async.#status.#state = :Rateasyncstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
+                .toBe(OrchestratorComponentState.Complete);
+        });
+    
+        test('Basic - multiple items one error state', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
+            mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Error;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#async.#status.#state = :Rateasyncstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
+                .toBe(OrchestratorComponentState.Error);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#status.#state = :workflowstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+                .toBe(OrchestratorComponentState.Error);
+        });
+    
+        test('Basic - async not started', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            const status = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.status;
+            status.M.state.S = OrchestratorComponentState.NotStarted;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M = {}; // .M.state.S = OrchestratorComponentState.NotStarted;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeNull();
+        });
+    
+        test('Optional in progress', async () => {
+            dynamoDal.reset();
+            const event = createOptionalEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
+            const mandatory = rate.M.async.M.mandatory;
+            const optional = rate.M.async.M.optional;
+            optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
+            optional.M.test.M.state.S = OrchestratorComponentState.InProgress;
+            rate.M.status.M.state = OrchestratorComponentState.InProgress;
+    
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#async.#status.#state = :Rateasyncstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
+                .toBe(OrchestratorComponentState.MandatoryCompleted);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#status.#state = :Ratestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+                .toBe(OrchestratorComponentState.MandatoryCompleted);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#status.#state = :workflowstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+                .toBe(OrchestratorComponentState.MandatoryCompleted);
+        });
+    
+        test('Optional error', async () => {
+            dynamoDal.reset();
+            const event = createOptionalEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
+            const mandatory = rate.M.async.M.mandatory;
+            const optional = rate.M.async.M.optional;
+            optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
+            optional.M.test.M.state.S = OrchestratorComponentState.Error;
+            rate.M.status.M.state = OrchestratorComponentState.InProgress;
+    
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#async.#status.#state = :Rateasyncstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
+                .toBe(OrchestratorComponentState.OptionalError);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#status.#state = :Ratestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+                .toBe(OrchestratorComponentState.OptionalError);
+    
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#status.#state = :workflowstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+                .toBe(OrchestratorComponentState.OptionalError);
+        });
+    
+        test('Optional complete', async () => {
+            dynamoDal.reset();
+            const event = createOptionalEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
+            const mandatory = rate.M.async.M.mandatory;
+            const optional = rate.M.async.M.optional;
+            optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
+            optional.M.test.M.state.S = OrchestratorComponentState.Complete;
+            rate.M.status.M.state = OrchestratorComponentState.InProgress;
+    
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#async.#status.#state = :Rateasyncstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
+                .toBe(OrchestratorComponentState.Complete);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#status.#state = :Ratestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+                .toBe(OrchestratorComponentState.Complete);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#status.#state = :workflowstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+                .toBe(OrchestratorComponentState.Complete);
+        });
     });
 
-    test('Basic - single item complete status change', async () => {
-        dynamoDal.reset();
-        const event = createBasicEvent();
-        const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
-        mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
-        await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeDefined();
-        expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#async.#status.#state = :Rateasyncstate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
-            .toBe(OrchestratorComponentState.Complete);
+    describe('pre', () => {
+        test('Basic - single item null - pre', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory.M.test.NULL = true;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeNull();
+        });
+    
+        test('Basic - single item complete status change - pre', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory;
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#pre.#status.#state = :Rateprestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
+                .toBe(OrchestratorComponentState.Complete);
+        });
+    
+        test('Basic - multiple items mixed state - pre', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory;
+            mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
+            mandatory.M.test.M.state.N = OrchestratorComponentState.Complete;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeNull();
+        });
+    
+        test('Basic - multiple items complete state - pre', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
+            const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory;
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#pre.#status.#state = :Rateprestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
+                .toBe(OrchestratorComponentState.Complete);
+        });
+    
+        test('Basic - multiple items one error state - pre', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory;
+            mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Error;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#pre.#status.#state = :Rateprestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
+                .toBe(OrchestratorComponentState.Error);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#status.#state = :workflowstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+                .toBe(OrchestratorComponentState.Error);
+        });
+    
+        test('Basic - pre not started - pre', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            const status = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.status;
+            status.M.state.S = OrchestratorComponentState.NotStarted;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory.M = {}; // .M.state.S = OrchestratorComponentState.NotStarted;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeNull();
+        });
+    
+        test('Optional in progress - pre', async () => {
+            dynamoDal.reset();
+            const event = createOptionalEvent();
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
+
+            const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
+            const mandatory = rate.M.pre.M.mandatory;
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+
+            const optional = rate.M.pre.M.optional = { M: {} as any };
+            optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
+            optional.M.test.M.state.S = OrchestratorComponentState.InProgress;
+            rate.M.status.M.state = OrchestratorComponentState.InProgress;
+    
+            await updateActivityStatus(event);
+
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#pre.#status.#state = :Rateprestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
+                .toBe(OrchestratorComponentState.MandatoryCompleted);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#status.#state = :Ratestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+                .toBe(OrchestratorComponentState.MandatoryCompleted);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#status.#state = :workflowstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+                .toBe(OrchestratorComponentState.MandatoryCompleted);
+        });
+    
+        test('Optional error - pre', async () => {
+            dynamoDal.reset();
+            const event = createOptionalEvent();
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+
+            const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
+            const mandatory = rate.M.pre.M.mandatory;
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+
+            const optional = rate.M.pre.M.optional = { M: {} as any };
+            optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
+            optional.M.test.M.state.S = OrchestratorComponentState.Error;
+            rate.M.status.M.state = OrchestratorComponentState.InProgress;
+    
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#pre.#status.#state = :Rateprestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
+                .toBe(OrchestratorComponentState.OptionalError);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#status.#state = :Ratestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+                .toBe(OrchestratorComponentState.OptionalError);
+    
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#status.#state = :workflowstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+                .toBe(OrchestratorComponentState.OptionalError);
+        });
+    
+        test('Optional complete - pre', async () => {
+            dynamoDal.reset();
+            const event = createOptionalEvent();
+            
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                async.M.status.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                async.M.status.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+
+            const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
+            const mandatory = rate.M.pre.M.mandatory;
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+
+            const optional = rate.M.pre.M.optional = { M: {} as any };
+            optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
+            optional.M.test.M.state.S = OrchestratorComponentState.Complete;
+            rate.M.status.M.state = OrchestratorComponentState.InProgress;
+            rate.M.pre.M.status.M.state = OrchestratorComponentState.InProgress;
+    
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#pre.#status.#state = :Rateprestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
+                .toBe(OrchestratorComponentState.Complete);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#status.#state = :Ratestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+                .toBe(OrchestratorComponentState.Complete);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#status.#state = :workflowstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+                .toBe(OrchestratorComponentState.Complete);
+        });
     });
+    
 
-    test('Basic - multiple items mixed state', async () => {
-        dynamoDal.reset();
-        const event = createBasicEvent();
-        const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
-        mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
-        mandatory.M.test.M.state.N = OrchestratorComponentState.Complete;
-        await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeNull();
-    });
+    describe('post', () => {
+        test('Basic - single item null - post', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory.M.test.NULL = true;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeNull();
+        });
+    
+        test('Basic - single item complete status change - post', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory;
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#post.#status.#state = :Ratepoststate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
+                .toBe(OrchestratorComponentState.Complete);
+        });
+    
+        test('Basic - multiple items mixed state - post', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory;
+            mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
+            mandatory.M.test.M.state.N = OrchestratorComponentState.Complete;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeNull();
+        });
+    
+        test('Basic - multiple items complete state - post', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
+            const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory;
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#post.#status.#state = :Ratepoststate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
+                .toBe(OrchestratorComponentState.Complete);
+        });
+    
+        test('Basic - multiple items one error state - post', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory;
+            mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Error;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#post.#status.#state = :Ratepoststate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
+                .toBe(OrchestratorComponentState.Error);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#status.#state = :workflowstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+                .toBe(OrchestratorComponentState.Error);
+        });
+    
+        test('Basic - post not started - post', async () => {
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            const status = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.status;
+            status.M.state.S = OrchestratorComponentState.NotStarted;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory.M = {}; // .M.state.S = OrchestratorComponentState.NotStarted;
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeNull();
+        });
+    
+        test('Optional in progress - post', async () => {
+            dynamoDal.reset();
+            const event = createOptionalEvent();
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
 
-    test('Basic - multiple items complete state', async () => {
-        dynamoDal.reset();
-        const event = createBasicEvent();
-        const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
-        mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
-        mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
-        await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeDefined();
-        expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#async.#status.#state = :Rateasyncstate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
-            .toBe(OrchestratorComponentState.Complete);
-    });
+            const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
+            const mandatory = rate.M.post.M.mandatory;
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
 
-    test('Basic - multiple items one error state', async () => {
-        dynamoDal.reset();
-        const event = createBasicEvent();
-        const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
-        mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
-        mandatory.M.test.M.state.S = OrchestratorComponentState.Error;
-        await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeDefined();
-        expect(dynamoDal.updateInput.UpdateExpression).toContain(
-            '#Rate.#async.#status.#state = :Rateasyncstate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
-            .toBe(OrchestratorComponentState.Error);
+            const optional = rate.M.post.M.optional = { M: {} as any };
+            optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
+            optional.M.test.M.state.S = OrchestratorComponentState.InProgress;
+            rate.M.status.M.state = OrchestratorComponentState.InProgress;
+    
+            await updateActivityStatus(event);
 
-        expect(dynamoDal.updateInput.UpdateExpression).toContain(
-            '#status.#state = :workflowstate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
-            .toBe(OrchestratorComponentState.Error);
-    });
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#post.#status.#state = :Ratepoststate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
+                .toBe(OrchestratorComponentState.MandatoryCompleted);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#status.#state = :Ratestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+                .toBe(OrchestratorComponentState.MandatoryCompleted);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#status.#state = :workflowstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+                .toBe(OrchestratorComponentState.MandatoryCompleted);
+        });
+    
+        test('Optional error - post', async () => {
+            dynamoDal.reset();
+            const event = createOptionalEvent();
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
 
-    test('Basic - async not started', async () => {
-        dynamoDal.reset();
-        const event = createBasicEvent();
-        const status = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.status;
-        status.M.state.S = OrchestratorComponentState.NotStarted;
-        event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M = {}; 
-        await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeNull();
-    });
+            const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
+            const mandatory = rate.M.post.M.mandatory;
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
 
-    test('Optional in progress', async () => {
-        dynamoDal.reset();
-        const event = createOptionalEvent();
-        const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
-        const mandatory = rate.M.async.M.mandatory;
-        const optional = rate.M.async.M.optional;
-        optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
-        optional.M.test.M.state.S = OrchestratorComponentState.InProgress;
-        rate.M.status.M.state = OrchestratorComponentState.InProgress;
+            const optional = rate.M.post.M.optional = { M: {} as any };
+            optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
+            optional.M.test.M.state.S = OrchestratorComponentState.Error;
+            rate.M.status.M.state = OrchestratorComponentState.InProgress;
+    
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#post.#status.#state = :Ratepoststate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
+                .toBe(OrchestratorComponentState.OptionalError);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#status.#state = :Ratestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+                .toBe(OrchestratorComponentState.OptionalError);
+    
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#status.#state = :workflowstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+                .toBe(OrchestratorComponentState.OptionalError);
+        });
+    
+        test('Optional complete - post', async () => {
+            dynamoDal.reset();
+            const event = createOptionalEvent();
+            
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                async.M.status.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
+                pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                async.M.status.M.state.S = OrchestratorComponentState.Complete;
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
+                pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
 
-        await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeDefined();
-        expect(dynamoDal.updateInput.UpdateExpression).toContain(
-            '#Rate.#async.#status.#state = :Rateasyncstate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
-            .toBe(OrchestratorComponentState.MandatoryCompleted);
+            const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
+            const mandatory = rate.M.post.M.mandatory;
+            mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
 
-        expect(dynamoDal.updateInput.UpdateExpression).toContain(
-            '#Rate.#status.#state = :Ratestate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
-            .toBe(OrchestratorComponentState.MandatoryCompleted);
-
-        expect(dynamoDal.updateInput.UpdateExpression).toContain(
-            '#status.#state = :workflowstate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
-            .toBe(OrchestratorComponentState.MandatoryCompleted);
-    });
-
-    test('Optional error', async () => {
-        dynamoDal.reset();
-        const event = createOptionalEvent();
-        const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
-        const mandatory = rate.M.async.M.mandatory;
-        const optional = rate.M.async.M.optional;
-        optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
-        optional.M.test.M.state.S = OrchestratorComponentState.Error;
-        rate.M.status.M.state = OrchestratorComponentState.InProgress;
-
-        await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeDefined();
-        expect(dynamoDal.updateInput.UpdateExpression).toContain(
-            '#Rate.#async.#status.#state = :Rateasyncstate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
-            .toBe(OrchestratorComponentState.OptionalError);
-
-        expect(dynamoDal.updateInput.UpdateExpression).toContain(
-            '#Rate.#status.#state = :Ratestate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
-            .toBe(OrchestratorComponentState.OptionalError);
-
-
-        expect(dynamoDal.updateInput.UpdateExpression).toContain(
-            '#status.#state = :workflowstate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
-            .toBe(OrchestratorComponentState.OptionalError);
-    });
-
-    test('Optional complete', async () => {
-        dynamoDal.reset();
-        const event = createOptionalEvent();
-        const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
-        const mandatory = rate.M.async.M.mandatory;
-        const optional = rate.M.async.M.optional;
-        optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
-        optional.M.test.M.state.S = OrchestratorComponentState.Complete;
-        rate.M.status.M.state = OrchestratorComponentState.InProgress;
-
-        await updateActivityStatus(event);
-        expect(dynamoDal.updateInput).toBeDefined();
-        expect(dynamoDal.updateInput.UpdateExpression).toContain(
-            '#Rate.#async.#status.#state = :Rateasyncstate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
-            .toBe(OrchestratorComponentState.Complete);
-
-        expect(dynamoDal.updateInput.UpdateExpression).toContain(
-            '#Rate.#status.#state = :Ratestate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
-            .toBe(OrchestratorComponentState.Complete);
-
-        expect(dynamoDal.updateInput.UpdateExpression).toContain(
-            '#status.#state = :workflowstate');
-        expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
-            .toBe(OrchestratorComponentState.Complete);
+            const optional = rate.M.post.M.optional = { M: {} as any };
+            optional.M.test = JSON.parse(JSON.stringify(mandatory.M.test));
+            optional.M.test.M.state.S = OrchestratorComponentState.Complete;
+            rate.M.status.M.state = OrchestratorComponentState.InProgress;
+            rate.M.post.M.status.M.state = OrchestratorComponentState.InProgress;
+    
+            await updateActivityStatus(event);
+            expect(dynamoDal.updateInput).toBeDefined();
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#post.#status.#state = :Ratepoststate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
+                .toBe(OrchestratorComponentState.Complete);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#Rate.#status.#state = :Ratestate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+                .toBe(OrchestratorComponentState.Complete);
+    
+            expect(dynamoDal.updateInput.UpdateExpression).toContain(
+                '#status.#state = :workflowstate');
+            expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+                .toBe(OrchestratorComponentState.Complete);
+        });
     });
 
     test('No Pre', async () => {
@@ -244,34 +701,38 @@ describe("updateActivityStatus", () => {
         expect(dynamoDal.updateInput).toBeTruthy();
     });
 });
+
 describe('validate Async', () => {
     test('Async Complete, mandatory in progress', () => {
         // arrange
         const activity = "Rate",
             activityStatus =
                 {
-                    "async": {
-                        "optional": {},
-                        "mandatory": { "DRC Rating": { "state": "In Progress" } },
-                        "status": { "state": "Complete", "message": " " }
-                    },
-                    "pre": {
-                        optional: {},
-                        mandatory: {},
-                        "status": { "state": "Complete", "message": " " } 
-                    },
-                    "post": {
-                        optional: {},
-                        mandatory: {},
-                        "status": { "state": "Complete", "message": " " } 
-                    },
-                    "status": { "state": "Complete" }
-                } as OrchestratorActivityStatus,
+                    "Rate": {
+                        "async": {
+                            "optional": {},
+                            "mandatory": { "DRC Rating": { "state": "In Progress" } },
+                            "status": { "state": "Complete", "message": " " }
+                        },
+                        "pre": {
+                            optional: {},
+                            mandatory: {},
+                            "status": { "state": "Complete", "message": " " } 
+                        },
+                        "post": {
+                            optional: {},
+                            mandatory: {},
+                            "status": { "state": "Complete", "message": " " } 
+                        },
+                        "status": { "state": "Complete" }
+                    }
+                } as {[key: string] : OrchestratorActivityStatus },
             updates = [], attributes = {}, fieldNames = {};
         // act
-        validateAsync(activity, activityStatus, updates, attributes, fieldNames);
+        const workflowStatus = new StatusSummary();
+        validateActivity(activity, activityStatus, workflowStatus, updates, attributes, fieldNames);
         // assert
-        expect(updates.length).toBe(1);
+        expect(updates.length).toBe(2);
     });
 });
 
@@ -329,6 +790,16 @@ function createBasicRecord(): any {
                             M: {
                                 pre: {
                                     M: {
+                                        mandatory: {
+                                            M: {
+                                                test: {
+                                                    M: {
+                                                        state: { S: OrchestratorComponentState.InProgress },
+                                                        message: { S: '' }
+                                                    }
+                                                }
+                                            }
+                                        },
                                         status: {
                                             M: {
                                                 state: { S: OrchestratorComponentState.InProgress },
@@ -339,6 +810,16 @@ function createBasicRecord(): any {
                                 },
                                 post: {
                                     M: {
+                                        mandatory: {
+                                            M: {
+                                                test: {
+                                                    M: {
+                                                        state: { S: OrchestratorComponentState.InProgress },
+                                                        message: { S: '' }
+                                                    }
+                                                }
+                                            }
+                                        },
                                         status: {
                                             M: {
                                                 state: { S: OrchestratorComponentState.InProgress },
@@ -393,6 +874,16 @@ function createBasicRecord(): any {
                             M: {
                                 pre: {
                                     M: {
+                                        mandatory: {
+                                            M: {
+                                                test: {
+                                                    M: {
+                                                        state: { S: OrchestratorComponentState.InProgress },
+                                                        message: { S: '' }
+                                                    }
+                                                }
+                                            }
+                                        },
                                         status: {
                                             M: {
                                                 state: { S: OrchestratorComponentState.InProgress },
@@ -403,6 +894,16 @@ function createBasicRecord(): any {
                                 },
                                 post: {
                                     M: {
+                                        mandatory: {
+                                            M: {
+                                                test: {
+                                                    M: {
+                                                        state: { S: OrchestratorComponentState.InProgress },
+                                                        message: { S: '' }
+                                                    }
+                                                }
+                                            }
+                                        },
                                         status: {
                                             M: {
                                                 state: { S: OrchestratorComponentState.InProgress },
@@ -417,7 +918,7 @@ function createBasicRecord(): any {
                                             M: {
                                                 test: {
                                                     M: {
-                                                        status: { S: OrchestratorComponentState.InProgress },
+                                                        state: { S: OrchestratorComponentState.InProgress },
                                                         message: { S: '' }
                                                     }
                                                 }
