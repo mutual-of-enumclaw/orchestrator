@@ -3,15 +3,18 @@ import { OrchestratorWorkflowStatus, OrchestratorComponentState } from '..';
 import { OrchestratorSyncStatus } from '../types';
 class MockDynamoDb {
     putInput: any = null;
+    getInput: any = null;
 
     reset() {
         this.putInput = null;
+        this.getInput = null;
     }
     put(params) {
         this.putInput = params;
         return this;
     }
-    get() {
+    get(params) {
+        this.getInput = params;
         return this;
     }
     promise = jest.fn();
@@ -230,21 +233,32 @@ describe('initialize', () => {
     describe('getActivity', () => {
         test('return undefined if call returns undefined', async () => {
             dynamodb.reset();
+            process.env.statusTable = 'statusTable';
             const savedVal = undefined;
             const event = createEvent();
+            
+            // This happens early on in the initialize process.  This step is to simulate that.
+            event.workflow = event.metadata.workflow;
+
             dynamodb.promise.mockResolvedValueOnce(savedVal);
             const value = await getActivity(event);
             expect(value).toBeUndefined();
+            expect(dynamodb.getInput).toMatchObject({ TableName: 'statusTable', Key: {uid: '123', workflow: 'test'} });
         });
         test('return undefined if call returns item as undefined', async () => {
             dynamodb.reset();
+            process.env.statusTable = 'statusTable-test';
             const savedVal = {
                 
             };
             const event = createEvent();
+            // This happens early on in the initialize process.  This step is to simulate that.
+            event.workflow = event.metadata.workflow;
+            
             dynamodb.promise.mockResolvedValueOnce(savedVal);
             const value = await getActivity(event);
             expect(value).toBeUndefined();
+            expect(dynamodb.getInput).toMatchObject({ TableName: 'statusTable-test', Key: { uid: '123', workflow: 'test'} });
         });
     });
 });
@@ -313,68 +327,6 @@ function createEvent(): any {
         uid: '123',
         stages: {
             Stage1: ''
-        },
-        metadata: {
-            company: "0",
-            effectiveDate: "1/2/2018",
-            lineOfBusiness: 'Personal',
-            policies: [{ policyId: "00283316-d954-74f6-de8b-1f72b9b58e66" }],
-            riskState: 'ID',
-            workflow: 'test'
-        }
-    };
-}
-
-function createWorkflowStatus(): OrchestratorWorkflowStatus {
-    return {
-        uid: '123',
-        workflow: 'workflow',
-        stages: {
-            Stage1: ''
-        },
-        currentDate: 1,
-        activities: {
-            Stage1: {
-                pre: {
-                    mandatory: {
-
-                    },
-                    optional: {
-
-                    },
-                    status: {
-                        state: OrchestratorComponentState.NotStarted
-                    }
-                },
-                async: {
-                    mandatory: {
-
-                    },
-                    optional: {
-
-                    },
-                    status: {
-                        state: OrchestratorComponentState.NotStarted
-                    }
-                },
-                post: {
-                    mandatory: {
-
-                    },
-                    optional: {
-
-                    },
-                    status: {
-                        state: OrchestratorComponentState.NotStarted
-                    }
-                },
-                status: {
-                    state: OrchestratorComponentState.NotStarted
-                }
-            }
-        },
-        status: {
-            state: OrchestratorComponentState.NotStarted
         },
         metadata: {
             company: "0",
