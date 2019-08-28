@@ -1,6 +1,6 @@
 import * as AWS from 'aws-sdk';
 import { OrchestratorStatusDal, OrchestratorComponentState, 
-         OrchestratorPluginMessage, PluginInfo } from '..';
+         OrchestratorPluginMessage, PluginInfo, OrchestratorWorkflowStatus } from '..';
 import { lambdaWrapperAsync, registerObservableError, setLabel } from './epsagonUtils';
 
 let messageHandler = null;
@@ -72,6 +72,27 @@ async function ProcessSqsEvent(sqsEvent) {
     await Promise.all(promises);
 }
 
+function isComplete(
+    currentStatus: OrchestratorWorkflowStatus, 
+    message: OrchestratorPluginMessage, 
+    required: string, 
+    pluginInfo: PluginInfo) {
+    if(!currentStatus.activities ||
+        !currentStatus.activities[message.activity]) {
+        return false;
+    }
+    const activity = currentStatus.activities[message.activity];
+
+    if(activity[message.stage] &&
+        activity[message.stage][required] &&
+        activity[message.stage][required][pluginInfo.pluginName] &&
+        activity[message.stage][required][pluginInfo.pluginName].state === OrchestratorComponentState.Complete) {
+            return true;
+    }
+
+    return false;
+}
+
 async function ProcessMessage(message: OrchestratorPluginMessage, pluginInfo: PluginInfo) {
     if(message.initialize) {
         return pluginInfo;
@@ -89,19 +110,16 @@ async function ProcessMessage(message: OrchestratorPluginMessage, pluginInfo: Pl
         mandatory = override.mandatory;
     }
     if(!pluginInfo.alwaysRun) {
-        const currentStatus = await oasd.getStatusObject(message.uid, message.workflow);
         const required = mandatory ? 'mandatory' : 'optional';
-        if(currentStatus 
-            && currentStatus.activities 
-            && currentStatus.activities[message.activity]
-            && currentStatus.activities[message.activity][message.stage]
-            && currentStatus.activities[message.activity][message.stage][required]
-            && currentStatus.activities[message.activity][message.stage][required]
-            && currentStatus.activities[message.activity][message.stage][required][pluginInfo.pluginName]
-            && currentStatus.activities[message.activity][message.stage][required][pluginInfo.pluginName].state
-             === OrchestratorComponentState.Complete) {
+        if(isComplete(message, message, required, pluginInfo)) {
+            return;
+        }
+        if(pluginInfo.idempotent) {
+            const currentStatus = await oasd.getStatusObject(message.uid, message.workflow);
+            if(isComplete(currentStatus, message, required, pluginInfo)) {
                 return;
             }
+        }
     }
     // log status as InProgress into the nucleus-orchestrator-core-{stage}-status table
     const inProgressStatusUpdate = oasd.updatePluginStatus(
@@ -115,8 +133,7 @@ async function ProcessMessage(message: OrchestratorPluginMessage, pluginInfo: Pl
 
     try {
         await messageHandler(message);
-    }
-    catch (err) {
+    } catch (err) {
         // log error into the nucleus-orchestrator-core-{stage}-status table
         if (err.setStatus) {
             await inProgressStatusUpdate;

@@ -1,7 +1,7 @@
 import { orchestratorWrapperSqs, orchestratorWrapperSns, setOASDOverride } from './orchestratorUtils';
 import {
     OrchestratorError, PluginInfo, OrchestratorComponentState,
-    OrchestratorWorkflowStatus, OrchestratorStage
+    OrchestratorWorkflowStatus, OrchestratorStage, OrchestratorPluginMessage
 } from '../types';
 import { mockOrchstratorStatusDal } from '../../__mock__/mockOrchestratorStatusDal';
 
@@ -141,11 +141,12 @@ describe('orchestratorWrapperSns', () => {
         process.env.debugInput = 'false';
         mockOrchstratorStatusDal.reset();
         const plugin = getPluginInfo();
+        plugin.idempotent = true;
         const statusObj = {
             workflow: 'workflow',
             activities: {
             }
-        } as OrchestratorWorkflowStatus;
+        } as OrchestratorPluginMessage;
         statusObj.activities['test'] = {
             pre: {
                 optional: {},
@@ -181,8 +182,162 @@ describe('orchestratorWrapperSns', () => {
         const wrapper = orchestratorWrapperSns(plugin, fn);
         await wrapper(getPluginMessageSns());
 
+        expect(mockOrchstratorStatusDal.getStatusObject).toHaveBeenCalledTimes(1);
         expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(0);
         expect(mockOrchstratorStatusDal.updatePluginStatus).toHaveBeenCalledTimes(0);
+    });
+
+    test('already marked as complete - idempotent - no db', async () => {
+        process.env.debugInput = 'false';
+        mockOrchstratorStatusDal.reset();
+        const plugin = getPluginInfo();
+        plugin.idempotent = true;
+        const statusObj = {
+            workflow: 'workflow',
+            activities: {
+            }
+        } as OrchestratorPluginMessage;
+        statusObj.activities['test'] = {
+            pre: {
+                optional: {},
+                mandatory: {
+                    Test: {
+                        state: OrchestratorComponentState.Complete
+                    }
+                },
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            },
+            async: {
+                optional: {},
+                mandatory: {},
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            },
+            post: {
+                optional: {},
+                mandatory: {},
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            },
+            status: {
+                state: OrchestratorComponentState.Complete
+            }
+        };
+        mockOrchstratorStatusDal.getStatusObject.mockResolvedValueOnce(statusObj);
+        const fn = jest.fn();
+        const wrapper = orchestratorWrapperSns(plugin, fn);
+
+        await wrapper(getPluginMessageSns(statusObj.activities));
+
+        expect(mockOrchstratorStatusDal.getStatusObject).toHaveBeenCalledTimes(0);
+        expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(0);
+        expect(mockOrchstratorStatusDal.updatePluginStatus).toHaveBeenCalledTimes(0);
+    });
+
+    test('already marked as complete - not idempotent - no db', async () => {
+        process.env.debugInput = 'false';
+        mockOrchstratorStatusDal.reset();
+        const plugin = getPluginInfo();
+        plugin.idempotent = false;
+        const statusObj = {
+            workflow: 'workflow',
+            activities: {
+            }
+        } as OrchestratorPluginMessage;
+        statusObj.activities['test'] = {
+            pre: {
+                optional: {},
+                mandatory: {
+                    Test: {
+                        state: OrchestratorComponentState.Complete
+                    }
+                },
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            },
+            async: {
+                optional: {},
+                mandatory: {},
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            },
+            post: {
+                optional: {},
+                mandatory: {},
+                status: {
+                    state: OrchestratorComponentState.Complete
+                }
+            },
+            status: {
+                state: OrchestratorComponentState.Complete
+            }
+        };
+        mockOrchstratorStatusDal.getStatusObject.mockResolvedValueOnce(statusObj);
+        const fn = jest.fn();
+        const wrapper = orchestratorWrapperSns(plugin, fn);
+
+        await wrapper(getPluginMessageSns(statusObj.activities));
+
+        expect(mockOrchstratorStatusDal.getStatusObject).toHaveBeenCalledTimes(0);
+        expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(0);
+        expect(mockOrchstratorStatusDal.updatePluginStatus).toHaveBeenCalledTimes(0);
+    });
+
+    test('already marked as complete - not idempotent - not complete', async () => {
+        process.env.debugInput = 'false';
+        mockOrchstratorStatusDal.reset();
+        const plugin = getPluginInfo();
+        plugin.idempotent = false;
+        const statusObj = {
+            workflow: 'workflow',
+            activities: {
+            }
+        } as OrchestratorPluginMessage;
+        statusObj.activities['test'] = {
+            pre: {
+                optional: {},
+                mandatory: {
+                    Test: {
+                        state: OrchestratorComponentState.NotStarted
+                    }
+                },
+                status: {
+                    state: OrchestratorComponentState.NotStarted
+                }
+            },
+            async: {
+                optional: {},
+                mandatory: {},
+                status: {
+                    state: OrchestratorComponentState.NotStarted
+                }
+            },
+            post: {
+                optional: {},
+                mandatory: {},
+                status: {
+                    state: OrchestratorComponentState.NotStarted
+                }
+            },
+            status: {
+                state: OrchestratorComponentState.NotStarted
+            }
+        };
+        mockOrchstratorStatusDal.getStatusObject.mockResolvedValueOnce(statusObj);
+        const fn = jest.fn();
+        const wrapper = orchestratorWrapperSns(plugin, fn);
+
+        await wrapper(getPluginMessageSns(statusObj.activities));
+
+        expect(mockOrchstratorStatusDal.getStatusObject).toHaveBeenCalledTimes(0);
+        expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
+        expect(mockOrchstratorStatusDal.updatePluginStatus).toHaveBeenCalledTimes(2);
     });
 
     test('debug on', async () => {
@@ -282,7 +437,7 @@ function getPluginMessageSqs() {
     };
 }
 
-function getPluginMessageSns() {
+function getPluginMessageSns(activities = undefined) {
     return {
         Records: [{
             Sns:
@@ -297,6 +452,7 @@ function getPluginMessageSns() {
                         test: {
                             "mandatory": {}
                         },
+                        activities: activities,
                         policies: ["test"]
                     })
             }
