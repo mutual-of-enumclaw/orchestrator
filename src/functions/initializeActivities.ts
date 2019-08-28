@@ -27,9 +27,15 @@ export async function initializeWorkflow(event: OrchestratorWorkflowStatus) {
     if (!dynamodb) {
         dynamodb = new DynamoDB.DocumentClient();
     }
+    
+    // Move workflow over to parent early to avoid confusion in
+    // usage of the data model
+    event.workflow = event.metadata.workflow;
+
     const savedData = await getActivity(event);
     event.activities = {};
     if (savedData) {
+        console.log('Using saved activity status and checking metadata');
         event.activities = (savedData.activities)? savedData.activities : event.activities;
         const previousMetadata = JSON.stringify(savedData.metadata, Object.keys(savedData.metadata).sort());
         const incomingMetadata = JSON.stringify(event.metadata, Object.keys(event.metadata).sort());
@@ -39,18 +45,20 @@ export async function initializeWorkflow(event: OrchestratorWorkflowStatus) {
             throw new Error(`metadata does not match metadata with same UID from database`);   
         }
     }
+
     if (!event.status) {
         event.status = {
             state: OrchestratorComponentState.NotStarted,
         };
     }
     if (event.stages) {
+        console.log('Building out activities from stages for workflow');
         for (const i in event.stages) {
             getActivityForStage(i, event);
         }
         delete event.stages;
     }
-    event.workflow = event.metadata.workflow;
+    
     event.currentDate = new Date().getTime();
 
     // Save status to status table
@@ -149,16 +157,21 @@ export function resetErrorStatusInSection(status: OrchestratorAsyncStatus| Orche
 }
 
 export async function getActivity(event: OrchestratorWorkflowStatus): Promise<OrchestratorWorkflowStatus> {
+    console.log(`Attemting to retrieve previous workflow ('${event.uid}', '${event.workflow}')`);
     const ret = await dynamodb.get({
         TableName: process.env.statusTable,
         Key: {
-            uid: event.metadata.uid,
-            workflow: event.metadata.workflow
+            uid: event.uid,
+            workflow: event.workflow
         }
     }).promise();
-    if (!(ret && ret.Item)) {
+
+    if (!ret || !ret.Item) {
+        console.log('Previous workflow not found');
         return;
     }
+    
+    console.log('workflow successfully retrieved');
     const output = ret.Item as OrchestratorWorkflowStatus;
     return output;
 }
