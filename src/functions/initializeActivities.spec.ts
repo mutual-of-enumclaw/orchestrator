@@ -3,15 +3,18 @@ import { OrchestratorWorkflowStatus, OrchestratorComponentState } from '..';
 import { OrchestratorSyncStatus } from '../types';
 class MockDynamoDb {
     putInput: any = null;
+    getInput: any = null;
 
     reset() {
         this.putInput = null;
+        this.getInput = null;
     }
     put(params) {
         this.putInput = params;
         return this;
     }
-    get() {
+    get(params) {
+        this.getInput = params;
         return this;
     }
     promise = jest.fn();
@@ -230,31 +233,32 @@ describe('initialize', () => {
     describe('getActivity', () => {
         test('return undefined if call returns undefined', async () => {
             dynamodb.reset();
+            process.env.statusTable = 'statusTable';
             const savedVal = undefined;
-            const event = {
-                metadata: {
-                    uid: 'uid',
-                    workflow: 'workflow'
-                }
-            } as any;
+            const event = createEvent();
+            
+            // This happens early on in the initialize process.  This step is to simulate that.
+            event.workflow = event.metadata.workflow;
+
             dynamodb.promise.mockResolvedValueOnce(savedVal);
             const value = await getActivity(event);
             expect(value).toBeUndefined();
+            expect(dynamodb.getInput).toMatchObject({ TableName: 'statusTable', Key: {uid: '123', workflow: 'test'} });
         });
         test('return undefined if call returns item as undefined', async () => {
             dynamodb.reset();
+            process.env.statusTable = 'statusTable-test';
             const savedVal = {
                 
             };
-            const event = {
-                metadata: {
-                    uid: 'uid',
-                    workflow: 'workflow'
-                }
-            } as any;
+            const event = createEvent();
+            // This happens early on in the initialize process.  This step is to simulate that.
+            event.workflow = event.metadata.workflow;
+            
             dynamodb.promise.mockResolvedValueOnce(savedVal);
             const value = await getActivity(event);
             expect(value).toBeUndefined();
+            expect(dynamodb.getInput).toMatchObject({ TableName: 'statusTable-test', Key: { uid: '123', workflow: 'test'} });
         });
     });
 });
