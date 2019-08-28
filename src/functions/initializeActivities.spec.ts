@@ -231,12 +231,7 @@ describe('initialize', () => {
         test('return undefined if call returns undefined', async () => {
             dynamodb.reset();
             const savedVal = undefined;
-            const event = {
-                metadata: {
-                    uid: 'uid',
-                    workflow: 'workflow'
-                }
-            } as any;
+            const event = createEvent();
             dynamodb.promise.mockResolvedValueOnce(savedVal);
             const value = await getActivity(event);
             expect(value).toBeUndefined();
@@ -246,12 +241,7 @@ describe('initialize', () => {
             const savedVal = {
                 
             };
-            const event = {
-                metadata: {
-                    uid: 'uid',
-                    workflow: 'workflow'
-                }
-            } as any;
+            const event = createEvent();
             dynamodb.promise.mockResolvedValueOnce(savedVal);
             const value = await getActivity(event);
             expect(value).toBeUndefined();
@@ -323,6 +313,68 @@ function createEvent(): any {
         uid: '123',
         stages: {
             Stage1: ''
+        },
+        metadata: {
+            company: "0",
+            effectiveDate: "1/2/2018",
+            lineOfBusiness: 'Personal',
+            policies: [{ policyId: "00283316-d954-74f6-de8b-1f72b9b58e66" }],
+            riskState: 'ID',
+            workflow: 'test'
+        }
+    };
+}
+
+function createWorkflowStatus(): OrchestratorWorkflowStatus {
+    return {
+        uid: '123',
+        workflow: 'workflow',
+        stages: {
+            Stage1: ''
+        },
+        currentDate: 1,
+        activities: {
+            Stage1: {
+                pre: {
+                    mandatory: {
+
+                    },
+                    optional: {
+
+                    },
+                    status: {
+                        state: OrchestratorComponentState.NotStarted
+                    }
+                },
+                async: {
+                    mandatory: {
+
+                    },
+                    optional: {
+
+                    },
+                    status: {
+                        state: OrchestratorComponentState.NotStarted
+                    }
+                },
+                post: {
+                    mandatory: {
+
+                    },
+                    optional: {
+
+                    },
+                    status: {
+                        state: OrchestratorComponentState.NotStarted
+                    }
+                },
+                status: {
+                    state: OrchestratorComponentState.NotStarted
+                }
+            }
+        },
+        status: {
+            state: OrchestratorComponentState.NotStarted
         },
         metadata: {
             company: "0",
