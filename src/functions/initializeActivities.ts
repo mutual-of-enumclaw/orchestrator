@@ -1,10 +1,8 @@
-import { DynamoDB, AWSError } from 'aws-sdk';
+import { DynamoDB } from 'aws-sdk';
 import {
     OrchestratorComponentState, lambdaWrapperAsync, OrchestratorWorkflowStatus,
     OrchestratorActivityStatus, OrchestratorAsyncStatus, OrchestratorSyncStatus
 } from '..';
-import { PromiseResult } from 'aws-sdk/lib/request';
-import { PutItemOutput, GetItemOutput } from 'aws-sdk/clients/dynamodb';
 
 let dynamodb: DynamoDB.DocumentClient = null;
 
@@ -15,7 +13,7 @@ export function setDynamoDal(dal: DynamoDB.DocumentClient) {
     dynamodb = dal;
 }
 
-export const initialize = lambdaWrapperAsync(async (event: OrchestratorWorkflowStatus) => {
+export async function initializeWorkflow(event: OrchestratorWorkflowStatus) {
     if (!event || !event.uid) {
         throw new Error('Event is either invalid or malformed');
     }
@@ -59,7 +57,7 @@ export const initialize = lambdaWrapperAsync(async (event: OrchestratorWorkflowS
     }).promise();
 
     return event;
-});
+}
 
 function getActivityForStage(stage: string, event: OrchestratorWorkflowStatus) {
     if (event.activities[stage]) {
@@ -106,12 +104,14 @@ function getActivityForStage(stage: string, event: OrchestratorWorkflowStatus) {
         }
     };
 }
+
 function resetErrorStatusInActivity(activityStatus: OrchestratorActivityStatus): void {
     activityStatus.status.state = OrchestratorComponentState.NotStarted;
     resetErrorStatusInSection(activityStatus.pre);
     resetErrorStatusInSection(activityStatus.async);
     resetErrorStatusInSection(activityStatus.post);
 }
+
 export function resetErrorStatusInSection(status: OrchestratorAsyncStatus| OrchestratorSyncStatus): void {
     if (!status) {
         return;
@@ -142,9 +142,8 @@ export function resetErrorStatusInSection(status: OrchestratorAsyncStatus| Orche
                 state.state = OrchestratorComponentState.NotStarted;
         }
     }
-
-
 }
+
 export async function getActivity(event: OrchestratorWorkflowStatus): Promise<OrchestratorWorkflowStatus> {
     const ret = await dynamodb.get({
         TableName: process.env.statusTable,
@@ -159,3 +158,5 @@ export async function getActivity(event: OrchestratorWorkflowStatus): Promise<Or
     const output = ret.Item as OrchestratorWorkflowStatus;
     return output;
 }
+
+export const initialize = lambdaWrapperAsync(initializeWorkflow);
