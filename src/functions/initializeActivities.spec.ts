@@ -129,11 +129,33 @@ describe('initialize', () => {
 
             const result = await initialize(event);
         } catch (error) {
-            ex = error;
+            ex = error.message;
         }
-        expect(ex).toBeDefined();
+        expect(ex).toBe('metadata does not match metadata with same UID from database');
 
     });
+
+    test('Metadata out of order.', async () => {
+        dynamodb.reset();
+        const savedVal = {
+            Item: {
+                metadata: {
+                    company: "0",
+                    effectiveDate: "1/2/2018",
+                    policies: [{ policyId: "00283316-d954-74f6-de8b-1f72b9b58e66" }],
+                    lineOfBusiness: 'Personal',
+                    riskState: 'ID',
+                    workflow: 'test'
+                }
+            }
+        };
+
+        dynamodb.promise.mockResolvedValueOnce(savedVal);
+        const event = createEvent();
+        event.stages = { Test1: undefined, Test2: undefined };
+        const result = await initialize(event);
+    });
+
     test('Valid multiple fail test.', async () => {
         dynamodb.reset();
         const savedVal = {
@@ -252,9 +274,10 @@ describe('initialize', () => {
                 
             };
             const event = createEvent();
+            
             // This happens early on in the initialize process.  This step is to simulate that.
             event.workflow = event.metadata.workflow;
-            
+
             dynamodb.promise.mockResolvedValueOnce(savedVal);
             const value = await getActivity(event);
             expect(value).toBeUndefined();

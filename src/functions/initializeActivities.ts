@@ -37,7 +37,11 @@ export async function initializeWorkflow(event: OrchestratorWorkflowStatus) {
     if (savedData) {
         console.log('Using saved activity status and checking metadata');
         event.activities = (savedData.activities)? savedData.activities : event.activities;
-        if(!event.metadataOverride && JSON.stringify(event.metadata) !== JSON.stringify(savedData.metadata)) {
+        const previousMetadata = JSON.stringify(savedData.metadata, Object.keys(savedData.metadata).sort());
+        const incomingMetadata = JSON.stringify(event.metadata, Object.keys(event.metadata).sort());
+        if(!event.metadataOverride && previousMetadata !== incomingMetadata) {
+            console.log(`Previous: ${previousMetadata}`);
+            console.log(`Incoming: ${incomingMetadata}`);
             throw new Error(`metadata does not match metadata with same UID from database`);   
         }
     }

@@ -26,5 +26,6 @@ export interface PluginInfo {
         }
     };
     order?: number,
-    alwaysRun?: boolean
+    alwaysRun?: boolean;
+    idempotent?: boolean;
 }
