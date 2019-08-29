@@ -73,6 +73,8 @@ describe("updateActivityStatus", () => {
             expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#async.#status.#state = :Rateasyncstate');
             expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
                 .toBe(OrchestratorComponentState.Complete);
+            
+            expect(dynamoDal.updateInput.ExpressionAttributeNames['#async']).toBe('async');
         });
     
         test('Basic - multiple items mixed state', async () => {
@@ -248,6 +250,7 @@ describe("updateActivityStatus", () => {
             expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#pre.#status.#state = :Rateprestate');
             expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
                 .toBe(OrchestratorComponentState.Complete);
+            expect(dynamoDal.updateInput.ExpressionAttributeNames['#pre']).toBe('pre');
         });
     
         test('Basic - multiple items mixed state - pre', async () => {
@@ -461,6 +464,8 @@ describe("updateActivityStatus", () => {
             expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#post.#status.#state = :Ratepoststate');
             expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
                 .toBe(OrchestratorComponentState.Complete);
+            
+            expect(dynamoDal.updateInput.ExpressionAttributeNames['#post']).toBe('post');
         });
     
         test('Basic - multiple items mixed state - post', async () => {

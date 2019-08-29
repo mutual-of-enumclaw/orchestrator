@@ -258,7 +258,7 @@ export function validateStage(
         attributes[attributeName] = state;
         setFieldName('activities', fieldNames);
         setFieldName(activity, fieldNames);
-        setFieldName('async', fieldNames);
+        setFieldName(stage, fieldNames);
         setFieldName('status', fieldNames);
         setFieldName('state', fieldNames);
         activityStatus[stage].status.state = state;
