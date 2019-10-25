@@ -10,7 +10,7 @@ plugins:
 
 provider:
   name: aws
-  runtime: nodejs8.10
+  runtime: nodejs10.x
   region: ${opt:region, 'us-west-2'}
   stage: ${opt:stage, 'dev'}
   deploymentPrefix: ${self:service}/${self:provider.stage}
