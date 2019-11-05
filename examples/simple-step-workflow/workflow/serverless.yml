@@ -39,7 +39,7 @@ custom:
 
   stacks:
     step1:
-      stack: orchestrator-Step1-${self:provider.stage}
+      stack: ${opt:activityPrefix, 'orchestrator'}-Step1-${self:provider.stage}
       preprocessingArn:
         Fn::ImportValue: ${self:custom.stacks.step1.stack}-pre-sync
       parallelArn:
@@ -47,7 +47,7 @@ custom:
       postprocessingArn:
         Fn::ImportValue: ${self:custom.stacks.step1.stack}-post-sync
     step2:
-      stack: orchestrator-Step2-${self:provider.stage}
+      stack: ${opt:activityPrefix, 'orchestrator'}-Step2-${self:provider.stage}
       preprocessingArn:
         Fn::ImportValue: ${self:custom.stacks.step2.stack}-pre-sync
       parallelArn:
