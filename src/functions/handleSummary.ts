@@ -330,7 +330,7 @@ export async function validateStage(
                 `Activity "${activity}".async plugin state set to "${state}" without step function token`;
                 console.log(errorText);
                 if(process.env.epsagonToken) {
-                    setError(errorText);
+                    setError(new Error(errorText));
                 }
             }
         }
