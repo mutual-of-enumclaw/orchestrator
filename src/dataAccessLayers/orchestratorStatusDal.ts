@@ -73,25 +73,34 @@ export class OrchestratorStatusDal {
 
     public async updateStageStatus(
         uid: string, workflow: string, activity: string, stage: OrchestratorStage,
-        state: OrchestratorComponentState, message: string) {
+        state: OrchestratorComponentState, message: string, updateTime: Date = new Date(), token: string = '') {
         const params = {
             TableName: this.statusTable,
             Key: { uid, workflow },
             UpdateExpression: 'set #activities.#activity.#stage.#status.#state = :state' +
-                ', #activities.#activity.#stage.#status.#message = :message',
+                ', #activities.#activity.#stage.#status.#message = :message' +
+                ', #activities.#activity.#stage.#status.#startTime = :startTime',
             ExpressionAttributeNames: {
                 '#activities': 'activities',
                 '#activity': activity,
                 '#stage': stage,
                 '#status': 'status',
                 '#state': 'state',
-                '#message': 'message'
+                '#message': 'message',
+                '#startTime': 'startTime'
             },
             ExpressionAttributeValues: {
                 ':state': state,
-                ':message': message
+                ':message': message,
+                ':startTime': updateTime.toString()
             },
         };
+
+        if(token) {
+            params.UpdateExpression += ', #activities.#activity.#stage.#status.#token = :token';
+            params.ExpressionAttributeNames['#token'] = 'token';
+            params.ExpressionAttributeValues[':token'] = token;
+        }
 
         await this.dal.update(params).promise();
 
@@ -99,10 +108,10 @@ export class OrchestratorStatusDal {
         // Perform consistent read after write to make sure we dont
         // collide with later update
         //
-        this.dal.get({
+        await this.dal.get({
             TableName: this.statusTable,
             Key: { uid, workflow },
             ConsistentRead: true
-        });
+        }).promise();
     }
 }

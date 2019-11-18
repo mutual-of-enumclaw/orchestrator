@@ -2,15 +2,21 @@
  * Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
  * License: Public
  */
-import { updateActivityStatus, setDynamoDal, validateActivity, StatusSummary } from './handleSummary';
+import { updateActivityStatus, setDynamoDal, validateActivity, StatusSummary, setStepFunctions } from './handleSummary';
 import { MockDynamoDb } from '../../__mock__/mockDynamoDb';
 import { OrchestratorComponentState, OrchestratorActivityStatus } from '..';
 import { DynamoDB } from 'aws-sdk';
 
+class MockStepFunctions {
+    sendTaskSuccess = jest.fn();
+}
+
 describe("updateActivityStatus", () => {
     process.env.environment = 'unit-test';
     const dynamoDal = new MockDynamoDb();
+    const stepFunctions = new MockStepFunctions();
     setDynamoDal(dynamoDal as any);
+    setStepFunctions(stepFunctions as any);
 
     test('Null Event', async () => {
         await updateActivityStatus(null);
@@ -733,11 +739,16 @@ describe('validate Async', () => {
                     }
                 } as {[key: string] : OrchestratorActivityStatus },
             updates = [], attributes = {}, fieldNames = {};
+
+        const overall = {
+            uid: '123456',
+            workflow: 'test workflow'
+        } as any;
         // act
         const workflowStatus = new StatusSummary();
-        validateActivity(activity, activityStatus, workflowStatus, updates, attributes, fieldNames);
+        validateActivity(activity, activityStatus, workflowStatus, updates, attributes, fieldNames, overall, new Date());
         // assert
-        expect(updates.length).toBe(2);
+        expect(updates.length).toBe(1);
     });
 });
 
