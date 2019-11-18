@@ -33,8 +33,10 @@ export interface OrchestratorPluginMessage extends OrchestratorWorkflowStatus {
 }
 
 export interface OrchestratorStatus {
-    state: OrchestratorComponentState,
-    message?: string
+    state: OrchestratorComponentState;
+    message?: string;
+    startTime?: string;
+    token?: string;
 }
 
 export enum OrchestratorComponentState {

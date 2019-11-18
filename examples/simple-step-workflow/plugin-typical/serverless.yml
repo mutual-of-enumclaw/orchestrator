@@ -32,7 +32,7 @@ custom:
 
   steps:
     Step1:
-      stack: orchestrator-Step1-${self:provider.stage}
+      stack: ${opt:activity-prefix, 'orchestrator'}-Step1-${self:provider.stage}
       parallel:
         arn:
           Fn::ImportValue: ${self:custom.steps.Step1.stack}-parallel-processing

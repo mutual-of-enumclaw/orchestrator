@@ -44,10 +44,15 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:UpdateItem
+          - dynamodb:GetItem
         Resource:
-          Fn::GetAtt:
-            - StatusTable
-            - Arn
+          - Fn::GetAtt:
+              - StatusTable
+              - Arn
+      - Effect: Allow
+        Action:
+          - states:SendTaskSuccess
+        Resource: '*'
   initializeActivities:
     handler: src/functions/initializeActivities.initialize
     iamRoleStatements:

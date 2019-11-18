@@ -10,6 +10,10 @@ import {
 }
     from '..';
 import * as AWS from 'aws-sdk';
+import { StepFunctions } from 'aws-sdk';
+import { OrchestratorStatusDal } from '../dataAccessLayers/orchestratorStatusDal';
+import { OrchestratorStage } from '../types';
+import { setError } from 'epsagon';
 
 export class StatusSummary {
     public error: boolean;
@@ -66,6 +70,9 @@ export class StatusSummary {
 }
 
 let dynamoDal: AWS.DynamoDB.DocumentClient = new AWS.DynamoDB.DocumentClient();
+let stepfunctions = new StepFunctions();
+
+
 export function setDynamoDal(dal: AWS.DynamoDB.DocumentClient) {
     if (process.env.environment !== 'unit-test') {
         throw new Error('Unit testing feature being used outside of unit testing');
@@ -97,20 +104,19 @@ async function processRecord(record: DynamoDBRecord) {
         console.log('Status object was removed, no processing needed');
         return;
     }
+    const streamDate = new Date(new Date('1/1/1970').getTime() + (record.dynamodb.ApproximateCreationDateTime * 1000));
+    console.log(`Stream time: ${streamDate.toString()}`);
     const statusObj = AWS.DynamoDB.Converter.unmarshall(record.dynamodb.NewImage) as OrchestratorWorkflowStatus;
     const updates = [];
     const attributes = {};
     const fieldNames = {};
     const workflowStatus = new StatusSummary();
-    // if (statusObj.status.state === OrchestratorComponentState.Complete) {
-    //     return;
-    // }
 
     for (const i in statusObj.activities) {
         if (statusObj.activities[i] === null) {
             continue;
         }
-        if (!validateActivity(i, statusObj.activities, workflowStatus, updates, attributes, fieldNames)) {
+        if (!await validateActivity(i, statusObj.activities, workflowStatus, updates, attributes, fieldNames, statusObj, streamDate)) {
             return;
         }
     }
@@ -147,9 +153,10 @@ async function processRecord(record: DynamoDBRecord) {
     }
 }
 
-export function validateActivity(
+export async function validateActivity(
     activity: string, statusObj: { [key: string]: OrchestratorActivityStatus }, workflowStatus: StatusSummary,
-    updates: string[], attributes: any, fieldNames: any): OrchestratorActivityStatus {
+    updates: string[], attributes: any, fieldNames: any, overall: OrchestratorWorkflowStatus,
+    streamDate: Date): Promise<OrchestratorActivityStatus> {
 
     console.log(`Checking status for ${activity}`);
     const activityStatus = statusObj[activity] as OrchestratorActivityStatus;
@@ -157,7 +164,7 @@ export function validateActivity(
         console.log('Status definition is not compatible with updating');
         return;
     }
-    validateActivityStages(activity, activityStatus, updates, attributes, fieldNames);
+    await validateActivityStages(activity, activityStatus, updates, attributes, fieldNames, overall, streamDate);
     const activityStatusSummary = new StatusSummary();
     for (const ii in activityStatus) {
         if (ii === 'status') {
@@ -187,18 +194,21 @@ export function validateActivity(
 
 }
 
-function validateActivityStages(
+async function validateActivityStages(
     activity: string, activityStatus: OrchestratorActivityStatus,
-    updates: string[], attributes: any, fieldNames: any) {
+    updates: string[], attributes: any, fieldNames: any, overall: OrchestratorWorkflowStatus,
+    streamDate: Date) {
 
-    validateStage(activity, activityStatus, updates, attributes, fieldNames, 'async');
-    validateStage(activity, activityStatus, updates, attributes, fieldNames, 'pre');
-    validateStage(activity, activityStatus, updates, attributes, fieldNames, 'post');
+    await Promise.all([
+        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'async', overall, streamDate),
+        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'pre', overall, streamDate),
+        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'post', overall, streamDate)]);
 }
 
-export function validateStage(
+export async function validateStage(
     activity: string, activityStatus: OrchestratorActivityStatus,
-    updates: string[], attributes: any, fieldNames: any, stage: string) {
+    updates: string[], attributes: any, fieldNames: any, stage: string, overall: OrchestratorWorkflowStatus,
+    streamDate: Date) {
 
     let state: OrchestratorComponentState = activityStatus[stage].status.state;
     let asyncComplete = true;
@@ -262,5 +272,60 @@ export function validateStage(
         setFieldName('status', fieldNames);
         setFieldName('state', fieldNames);
         activityStatus[stage].status.state = state;
+
+        if(state !== OrchestratorComponentState.InProgress && 
+           state !== OrchestratorComponentState.NotStarted) {
+
+            if(activityStatus[stage].status.token && activityStatus[stage].status.token !== ' ') {
+                let sendStatusEvent = true;
+                if(activityStatus[stage].status.startTime) {
+                    const startTime = new Date(activityStatus[stage].status.startTime);
+                    const MIN_REGISTRATION_TIME = 500;
+                    if(startTime.getTime() > streamDate.getTime() - MIN_REGISTRATION_TIME) {
+                        console.log('Status update too fast, ensuring no more registrations occur');
+                        let waitTime = MIN_REGISTRATION_TIME - (streamDate.getTime() - startTime.getTime())
+                        console.log(`Waiting for ${waitTime} milliseconds`);
+                        if(waitTime > MIN_REGISTRATION_TIME) {
+                            waitTime = MIN_REGISTRATION_TIME;
+                        }
+                        await new Promise((resolve) => {
+                            setTimeout(() => {
+                                resolve();
+                            }, );
+                        });
+
+                        let statusDal = new OrchestratorStatusDal(process.env.statusTable, activity);
+                        statusDal.getStatusObject(overall.uid, overall.workflow, true);
+                        
+                        if(activityStatus[stage].mandatory.length !== overall.activities[activity][stage].mandatory) {
+                            sendStatusEvent = false;
+                        }
+                    }
+                }
+
+
+                if(sendStatusEvent) {
+                    console.log('Sending task status');
+                    try {
+                        await stepfunctions.sendTaskSuccess({
+                            output: JSON.stringify(state),
+                            taskToken: activityStatus[stage].status.token
+                        }).promise();
+                    } catch (err) {
+                        console.log(JSON.stringify(err));
+                        if(err.code != 'TaskTimedOut') {
+                            throw err;
+                        }
+                    }
+                    delete activityStatus[stage].status.token;
+                }
+            } else if(stage === OrchestratorStage.BulkProcessing) {
+                const errorText = `Activity "${activity}".async plugin state set to "${state}" without step function token`;
+                console.log(errorText);
+                if(process.env.epsagonToken) {
+                    setError(errorText);
+                }
+            }
+        }
     }
 }
