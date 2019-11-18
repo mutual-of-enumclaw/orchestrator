@@ -42,10 +42,10 @@
         "Type": "Task",
         "Resource":"arn:aws:states:::lambda:invoke.waitForTaskToken",
         "Parameters":{
-            "FunctionName": "${preprocessingArn}",
+            "FunctionName": "${parallelName}",
             "Payload": {
                 "data.$": "$",
-                "asyncToken.$": "$$.Task.Token"
+                "asyncToken.$": "$$$$.Task.Token"
             }
         },
         "ResultPath": "$.activities.${name}.async.status.state",
