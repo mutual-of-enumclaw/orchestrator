@@ -21,6 +21,7 @@ provider:
     statusTable: ${self:custom.tables.status}
 
   stackTags: ${file(./${opt:tagConfig, 'default-tags.yml'})}
+  deploymentBucket: ${opt:deploymentBucket, ''}
   
 custom:
   webpack:
