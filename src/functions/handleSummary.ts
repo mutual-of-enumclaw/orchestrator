@@ -10,7 +10,6 @@ import {
 }
     from '..';
 import * as AWS from 'aws-sdk';
-import { StepFunctions } from 'aws-sdk';
 import { OrchestratorStatusDal } from '../dataAccessLayers/orchestratorStatusDal';
 import { OrchestratorStage } from '../types';
 import { setError } from 'epsagon';
@@ -70,8 +69,14 @@ export class StatusSummary {
 }
 
 let dynamoDal: AWS.DynamoDB.DocumentClient = new AWS.DynamoDB.DocumentClient();
-let stepfunctions = new StepFunctions();
+let stepfunctions = new AWS.StepFunctions();
 
+export function setStepFunctions(value: AWS.StepFunctions) {
+    if (process.env.environment !== 'unit-test') {
+        throw new Error('Unit testing feature being used outside of unit testing');
+    }
+    stepfunctions = value;
+}
 
 export function setDynamoDal(dal: AWS.DynamoDB.DocumentClient) {
     if (process.env.environment !== 'unit-test') {
@@ -116,7 +121,8 @@ async function processRecord(record: DynamoDBRecord) {
         if (statusObj.activities[i] === null) {
             continue;
         }
-        if (!await validateActivity(i, statusObj.activities, workflowStatus, updates, attributes, fieldNames, statusObj, streamDate)) {
+        if (!await validateActivity(i, statusObj.activities, workflowStatus, updates, 
+                                    attributes, fieldNames, statusObj, streamDate)) {
             return;
         }
     }
@@ -283,7 +289,7 @@ export async function validateStage(
                     const MIN_REGISTRATION_TIME = 500;
                     if(startTime.getTime() > streamDate.getTime() - MIN_REGISTRATION_TIME) {
                         console.log('Status update too fast, ensuring no more registrations occur');
-                        let waitTime = MIN_REGISTRATION_TIME - (streamDate.getTime() - startTime.getTime())
+                        let waitTime = MIN_REGISTRATION_TIME - (streamDate.getTime() - startTime.getTime());
                         console.log(`Waiting for ${waitTime} milliseconds`);
                         if(waitTime > MIN_REGISTRATION_TIME) {
                             waitTime = MIN_REGISTRATION_TIME;
@@ -294,7 +300,7 @@ export async function validateStage(
                             }, );
                         });
 
-                        let statusDal = new OrchestratorStatusDal(process.env.statusTable, activity);
+                        const statusDal = new OrchestratorStatusDal(process.env.statusTable, activity);
                         statusDal.getStatusObject(overall.uid, overall.workflow, true);
                         
                         if(activityStatus[stage].mandatory.length !== overall.activities[activity][stage].mandatory) {
@@ -313,14 +319,15 @@ export async function validateStage(
                         }).promise();
                     } catch (err) {
                         console.log(JSON.stringify(err));
-                        if(err.code != 'TaskTimedOut') {
+                        if(err.code !== 'TaskTimedOut') {
                             throw err;
                         }
                     }
                     delete activityStatus[stage].status.token;
                 }
             } else if(stage === OrchestratorStage.BulkProcessing) {
-                const errorText = `Activity "${activity}".async plugin state set to "${state}" without step function token`;
+                const errorText = 
+                `Activity "${activity}".async plugin state set to "${state}" without step function token`;
                 console.log(errorText);
                 if(process.env.epsagonToken) {
                     setError(errorText);
