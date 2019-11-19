@@ -268,7 +268,8 @@ export async function validateStage(
 
     }
 
-    if (activityStatus[stage].status.state !== state) {
+    if (activityStatus[stage].status.state !== state || (state === OrchestratorComponentState.Complete && 
+        activityStatus[stage].status.token && activityStatus[stage].status.token !== ' ')) {
         console.log(`Setting ${activity}.${stage}.status.state to ${state}`);
         const attributeName = `:${activity}${stage}state`;
         updates.push(`#activities.#${activity}.#${stage}.#status.#state = ${attributeName}`);
@@ -304,7 +305,7 @@ export async function validateStage(
                         const statusDal = new OrchestratorStatusDal(process.env.statusTable, activity);
                         const newStatus = await statusDal.getStatusObject(overall.uid, overall.workflow, true);
                         
-                        if(activityStatus[stage].mandatory.length !== Object.keys(newStatus.activities[activity][stage].mandatory).length) {
+                        if(Object.keys(activityStatus[stage].mandatory).length !== Object.keys(newStatus.activities[activity][stage].mandatory).length) {
                             console.log('Setting send event to false');
                             sendStatusEvent = false;
                         }
