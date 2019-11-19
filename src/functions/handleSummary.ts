@@ -6,7 +6,8 @@ import { DynamoDBStreamEvent, DynamoDBRecord } from 'aws-lambda';
 import { lambdaWrapperAsync } from '../utils/epsagonUtils';
 import {
     OrchestratorActivityStatus, OrchestratorStatus, OrchestratorComponentState,
-    OrchestratorWorkflowStatus
+    OrchestratorWorkflowStatus,
+    getPluginRegisterTimeout
 }
     from '..';
 import * as AWS from 'aws-sdk';
@@ -286,7 +287,7 @@ export async function validateStage(
                 let sendStatusEvent = true;
                 if(activityStatus[stage].status.startTime) {
                     const startTime = new Date(activityStatus[stage].status.startTime);
-                    const MIN_REGISTRATION_TIME = 500;
+                    const MIN_REGISTRATION_TIME = getPluginRegisterTimeout(overall, activity);
                     if(startTime.getTime() > streamDate.getTime() - MIN_REGISTRATION_TIME) {
                         console.log('Status update too fast, ensuring no more registrations occur');
                         let waitTime = MIN_REGISTRATION_TIME - (streamDate.getTime() - startTime.getTime());
