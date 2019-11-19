@@ -298,13 +298,14 @@ export async function validateStage(
                         await new Promise((resolve) => {
                             setTimeout(() => {
                                 resolve();
-                            }, );
+                            }, waitTime);
                         });
 
                         const statusDal = new OrchestratorStatusDal(process.env.statusTable, activity);
-                        statusDal.getStatusObject(overall.uid, overall.workflow, true);
+                        const newStatus = await statusDal.getStatusObject(overall.uid, overall.workflow, true);
                         
-                        if(activityStatus[stage].mandatory.length !== overall.activities[activity][stage].mandatory) {
+                        if(activityStatus[stage].mandatory.length !== Object.keys(newStatus.activities[activity][stage].mandatory).length) {
+                            console.log('Setting send event to false');
                             sendStatusEvent = false;
                         }
                     }

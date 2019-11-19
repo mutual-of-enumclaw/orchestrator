@@ -22,6 +22,7 @@ provider:
 
   stackTags: ${file(./${opt:tagConfig, 'default-tags.yml'})}
   deploymentBucket: ${opt:deploymentBucket, ''}
+  timeout: 60
   
 custom:
   webpack:
@@ -56,6 +57,7 @@ functions:
         Resource: '*'
   initializeActivities:
     handler: src/functions/initializeActivities.initialize
+    iamRoleStatementsName: ${self:service}-${self:provider.stage}-${self:provider.region}-ia
     iamRoleStatements:
       - Effect: Allow
         Action:
