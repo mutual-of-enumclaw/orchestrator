@@ -17,6 +17,7 @@ export interface OrchestratorWorkflowStatus {
         [key: string]: any
     },
     metadataOverride?: boolean;
+    pluginRegisterTimeout?: number;
 }
 
 export class OrchestratorError extends Error {

@@ -54,7 +54,7 @@ export async function initializeWorkflow(event: OrchestratorWorkflowStatus) {
     if (event.stages) {
         console.log('Building out activities from stages for workflow');
         for (const i in event.stages) {
-            getActivityForStage(i, event);
+            getActivityForStage(i, event, event.stages[i]);
         }
         delete event.stages;
     }
@@ -71,11 +71,14 @@ export async function initializeWorkflow(event: OrchestratorWorkflowStatus) {
     return event;
 }
 
-function getActivityForStage(stage: string, event: OrchestratorWorkflowStatus) {
+function getActivityForStage(stage: string, event: OrchestratorWorkflowStatus, setTimeout: any) {
     if (event.activities[stage]) {
         resetErrorStatusInActivity(event.activities[stage]);
         return;
     }
+
+    const timeout = (typeof setTimeout === 'number')? setTimeout : undefined;
+
     event.activities[stage] = {
         pre: {
             mandatory: {
@@ -86,7 +89,8 @@ function getActivityForStage(stage: string, event: OrchestratorWorkflowStatus) {
             status: {
                 state: OrchestratorComponentState.NotStarted,
                 message: null
-            }
+            },
+            
         },
         async: {
             mandatory: {

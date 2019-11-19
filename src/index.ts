@@ -4,5 +4,4 @@
  */
 export * from './dataAccessLayers/orchestratorStatusDal';
 export * from './types';
-export * from './utils/epsagonUtils';
-export * from './utils/orchestratorUtils';
+export * from './utils';
