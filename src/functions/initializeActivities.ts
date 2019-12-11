@@ -77,8 +77,6 @@ function getActivityForStage(stage: string, event: OrchestratorWorkflowStatus, s
         return;
     }
 
-    const timeout = (typeof setTimeout === 'number')? setTimeout : undefined;
-
     event.activities[stage] = {
         pre: {
             mandatory: {
