@@ -6,7 +6,7 @@ import {
 import { mockOrchstratorStatusDal } from '../../__mock__/mockOrchestratorStatusDal';
 
 process.env.environment = 'unit-test';
-
+console.log = () => {};
 setOASDOverride(mockOrchstratorStatusDal as any)
 
 describe('orchestratorWrapperSqs', () => {

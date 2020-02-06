@@ -11,7 +11,7 @@ import {
 
 export class OrchestratorStatusDal {
     private dal: AWS.DynamoDB.DocumentClient = new AWS.DynamoDB.DocumentClient();
-    constructor(private statusTable: string, private orchestratorId: string) {
+    constructor(private statusTable: string) {
     }
 
     public async getStatusObject(uid: string, 

@@ -20,6 +20,8 @@ class MockDynamoDb {
     promise = jest.fn();
 }
 
+console.log = () => {};
+
 const dynamodb = new MockDynamoDb();
 describe('initialize', () => {
     process.env.environment = 'unit-test';

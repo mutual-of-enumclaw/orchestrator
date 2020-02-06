@@ -10,6 +10,7 @@ import { DynamoDB } from 'aws-sdk';
 class MockStepFunctions {
     sendTaskSuccess = jest.fn();
 }
+console.log = () => {};
 
 describe("updateActivityStatus", () => {
     process.env.environment = 'unit-test';

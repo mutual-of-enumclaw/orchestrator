@@ -103,7 +103,7 @@ async function ProcessMessage(message: OrchestratorPluginMessage, pluginInfo: Pl
     }
 
     const oasd = (oasdOverride) ? 
-        oasdOverride : new OrchestratorStatusDal(process.env.orchestratorStatusTable, message.activity);
+        oasdOverride : new OrchestratorStatusDal(process.env.orchestratorStatusTable);
     let mandatory = pluginInfo.default.mandatory;
     const override = (pluginInfo.overrides)? pluginInfo.overrides[message.activity] : null;
     if (override && override.mandatory !== undefined) {
