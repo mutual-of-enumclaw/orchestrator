@@ -6,6 +6,7 @@ import 'ts-jest';
 import { lambdaWrapperAsync, lambdaWrapper, stepLambdaAsyncWrapper } from './epsagonUtils';
 
 const initialFunction = () => { throw 'Method called when unexpected'; };
+console.log = () => {};
 
 describe('lambdaWrapperAsync', () => {
     test('No epsagon environment variables specified', () => {

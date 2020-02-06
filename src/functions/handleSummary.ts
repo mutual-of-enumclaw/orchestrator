@@ -297,15 +297,18 @@ export async function validateStage(
                             waitTime = MIN_REGISTRATION_TIME;
                         }
                         await new Promise((resolve) => {
-                            setTimeout(() => {
-                                resolve();
-                            }, waitTime);
+                            setTimeout(
+                                () => {
+                                    resolve();
+                                }, 
+                                waitTime);
                         });
 
-                        const statusDal = new OrchestratorStatusDal(process.env.statusTable, activity);
+                        const statusDal = new OrchestratorStatusDal(process.env.statusTable);
                         const newStatus = await statusDal.getStatusObject(overall.uid, overall.workflow, true);
                         
-                        if(Object.keys(activityStatus[stage].mandatory).length !== Object.keys(newStatus.activities[activity][stage].mandatory).length) {
+                        if(Object.keys(activityStatus[stage].mandatory).length !== 
+                            Object.keys(newStatus.activities[activity][stage].mandatory).length) {
                             console.log('Setting send event to false');
                             sendStatusEvent = false;
                         }
@@ -328,7 +331,8 @@ export async function validateStage(
                     }
                     delete activityStatus[stage].status.token;
                 }
-            } else if(stage === OrchestratorStage.BulkProcessing) {
+            } else if(stage === OrchestratorStage.BulkProcessing && 
+                state !== OrchestratorComponentState.OptionalError) {
                 const errorText = 
                 `Activity "${activity}".async plugin state set to "${state}" without step function token`;
                 console.log(errorText);

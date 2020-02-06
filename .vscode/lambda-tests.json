@@ -1,0 +1,50 @@
+{
+    "activity/serverless.yml": {
+        "functions": {
+            "asyncStart": {
+                "Tests": {
+                    "test 1": {
+                        "key1": "value1",
+                        "key2": "value2",
+                        "key3": "value3"
+                    }
+                }
+            }
+        }
+    },
+    "serverless.yml": {
+        "functions": {
+            "updateStatus": {
+                "Tests": {
+                    "test 1": {
+                        "key1": "value1",
+                        "key2": "value2",
+                        "key3": "value3"
+                    }
+                }
+            },
+            "initializeActivities": {
+                "Tests": {
+                    "test 1": {
+                        "key1": "value1",
+                        "key2": "value2",
+                        "key3": "value3"
+                    }
+                }
+            }
+        }
+    },
+    "metrics/serverless.yml": {
+        "functions": {
+            "startValidStateMachine": {
+                "Tests": {
+                    "test 1": {
+                        "key1": "value1",
+                        "key2": "value2",
+                        "key3": "value3"
+                    }
+                }
+            }
+        }
+    }
+}

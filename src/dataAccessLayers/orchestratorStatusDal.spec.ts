@@ -10,7 +10,7 @@ import { MockDynamoDb } from '../../__mock__/mockDynamoDb';
 const mockDb = new MockDynamoDb();
 
 describe('getStatusObject', () => {
-    const dal = new OrchestratorStatusDal('Test', 'Orch');
+    const dal = new OrchestratorStatusDal('Test');
     (dal as any).dal = mockDb;
 
     test('Empty id', async () => {
@@ -41,7 +41,7 @@ describe('getStatusObject', () => {
 
 
 describe('updateStageStatus', () => {
-    const dal = new OrchestratorStatusDal('Test', 'Orch');
+    const dal = new OrchestratorStatusDal('Test');
     (dal as any).dal = mockDb;
     test('null values', async () => {
         mockDb.reset();
