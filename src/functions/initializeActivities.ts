@@ -176,20 +176,30 @@ export async function getActivity(event: OrchestratorWorkflowStatus): Promise<Or
     console.log('workflow successfully retrieved');
     const output = ret.Item as OrchestratorWorkflowStatus;
 
-    Object.keys(output.activities).forEach(k => {
-        Object.keys(output.activities[k]).forEach(stageKey => {
-            const stage = output.activities[k][stageKey];
-            Object.keys(stage.mandatory).forEach(pKey => {
-                delete stage.mandatory[pKey].message;
-            });
-            Object.keys(stage.optional).forEach(pKey => {
-                delete stage.optional[pKey].message;
+    if(output && output.activities) {
+        Object.keys(output.activities).forEach(k => {
+            const activities = output.activities[k];
+            Object.keys(output.activities[k]).forEach(stageKey => {
+                if('|pre|async|post|'.indexOf(stageKey) < 0) {
+                    return;
+                }
+                const stage: OrchestratorSyncStatus = activities[stageKey];
+                Object.keys(stage.mandatory).forEach(pKey => {
+                    delete stage.mandatory[pKey].message;
+                });
+                Object.keys(stage.optional).forEach(pKey => {
+                    delete stage.optional[pKey].message;
+                });
+
+                delete stage.status.message;
+                delete stage.status.token;
+                console.log(JSON.stringify(stage));
             });
 
-            delete stage.status.message;
-            delete stage.status.token;
+            delete activities.status.message;
+            delete activities.status.token;
         });
-    });
+    }
 
     return output;
 }
