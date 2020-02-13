@@ -2,6 +2,8 @@ import * as AWS from 'aws-sdk';
 import { OrchestratorStatusDal, OrchestratorComponentState, 
          OrchestratorPluginMessage, PluginInfo, OrchestratorWorkflowStatus } from '..';
 import { lambdaWrapperAsync, registerObservableError, setLabel } from './epsagonUtils';
+import { SQS } from 'aws-sdk';
+import { SNSEvent, SNSEventRecord } from 'aws-lambda';
 
 let messageHandler = null;
 let pluginInformation: PluginInfo;
@@ -159,4 +161,45 @@ async function ProcessMessage(message: OrchestratorPluginMessage, pluginInfo: Pl
         message.uid, message.workflow, message.activity,
         message.stage, mandatory, pluginInfo.pluginName,
         OrchestratorComponentState.Complete, "");
+}
+
+
+const sqs = new SQS();
+
+export function getOrchestratorSqsPassthrough(pluginInfo: PluginInfo, sqsUrl: string) {
+    return async (event: SNSEvent) => {
+        await Promise.all(event.Records.map(r => orchestratorSqsEnqueueRecord(r, pluginInfo, sqsUrl)));
+    };
+}
+
+async function orchestratorSqsEnqueueRecord(record: SNSEventRecord, pluginInfo: PluginInfo, sqsUrl) {
+    const message = JSON.parse(record.Sns.Message) as OrchestratorPluginMessage;
+    const oasd = (oasdOverride) ? 
+        oasdOverride : new OrchestratorStatusDal(process.env.orchestratorStatusTable);
+
+    const mandatory = pluginInfo.default.mandatory;
+
+    if(!pluginInfo.alwaysRun) {
+        const required = mandatory ? 'mandatory' : 'optional';
+        if(isComplete(message, message, required, pluginInfo)) {
+            return;
+        }
+        if(pluginInfo.idempotent) {
+            const currentStatus = await oasd.getStatusObject(message.uid, message.workflow);
+            if(isComplete(currentStatus, message, required, pluginInfo)) {
+                return;
+            }
+        }
+    }
+
+    await oasd.updatePluginStatus(
+        message.uid, message.workflow, message.activity,
+        message.stage, mandatory, 
+        pluginInfo.pluginName,
+        OrchestratorComponentState.InProgress, "");
+        
+    await sqs.sendMessage({
+        QueueUrl: sqsUrl,
+        MessageBody: JSON.stringify(message)
+    }).promise();
 }
