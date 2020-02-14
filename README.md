@@ -4,7 +4,7 @@
 
 package | version
 --- | ---
-@moe-tech/orchestrator | 1.0.53
+@moe-tech/orchestrator | 1.0.61
 
 ## Walkthrough
 Check out this [walkthrough](https://github.com/mutual-of-enumclaw/orchestrator/tree/master/examples/simple-step-workflow) on setting up a simple orchestrator workflow with plugins.

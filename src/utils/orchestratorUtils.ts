@@ -68,7 +68,6 @@ async function ProcessSqsEvent(sqsEvent) {
         }
 
         promises.push(ProcessMessage(message, pluginInformation));
-
     }
 
     await Promise.all(promises);
@@ -167,9 +166,9 @@ async function ProcessMessage(message: OrchestratorPluginMessage, pluginInfo: Pl
 const sqs = new SQS();
 
 export function getOrchestratorSqsPassthrough(pluginInfo: PluginInfo, sqsUrl: string) {
-    return async (event: SNSEvent) => {
+    return lambdaWrapperAsync(async (event: SNSEvent) => {
         await Promise.all(event.Records.map(r => orchestratorSqsEnqueueRecord(r, pluginInfo, sqsUrl)));
-    };
+    });
 }
 
 async function orchestratorSqsEnqueueRecord(record: SNSEventRecord, pluginInfo: PluginInfo, sqsUrl) {
