@@ -80,7 +80,7 @@ The first step of a plugin at this stage is to register itself with the [Orchest
 A plugin is a peice of functionality which is not deployed with the Orchestrator, but rather seperately.  It registers itself to sns topics via exported values from the orchestrator stacks.  This is the component which performs all business and communication logic.
 
 #### Plugin with Queue
-Sometimes it's important that a particular step has the ability to be resiliant to failures.  In these cases we can add a queue to our plugin processing.  When adding a queue for processing its important to know that the queue can cause lambda functions to take longer to execute.  For this the orchestrator has designed a queue bridging design pattern which allows for registration immediately while allowing your queue to take the time it needs for processing and throttling.
+Sometimes it's important that a particular step has the ability to be resilient to failures.  In these cases we can add a queue to our plugin processing.  When adding a queue for processing its important to know that the queue can cause lambda functions to take longer to execute.  For this the orchestrator has designed a queue bridging design pattern which allows for registration immediately while allowing your queue to take the time it needs for processing and throttling.
 
 ![Queue Bridge Design](./images/bridge-pattern.png)
 
