@@ -167,6 +167,13 @@ const sqs = new SQS();
 
 export function getOrchestratorSqsPassthrough(pluginInfo: PluginInfo, sqsUrl: string) {
     return lambdaWrapperAsync(async (event: SNSEvent) => {
+        if(event.Records.length === 1) {
+            const message = JSON.parse(event.Records[0].Sns.Message) as OrchestratorPluginMessage;
+            if(message.initialize) {
+                return pluginInfo;
+            }
+        }
+
         await Promise.all(event.Records.map(r => orchestratorSqsEnqueueRecord(r, pluginInfo, sqsUrl)));
     });
 }
