@@ -78,3 +78,49 @@ The first step of a plugin at this stage is to register itself with the [Orchest
 
 #### Plugin
 A plugin is a peice of functionality which is not deployed with the Orchestrator, but rather seperately.  It registers itself to sns topics via exported values from the orchestrator stacks.  This is the component which performs all business and communication logic.
+
+#### Plugin with Queue
+Sometimes it's important that a particular step has the ability to be resiliant to failures.  In these cases we can add a queue to our plugin processing.  When adding a queue for processing its important to know that the queue can cause lambda functions to take longer to execute.  For this the orchestrator has designed a queue bridging design pattern which allows for registration immediately while allowing your queue to take the time it needs for processing and throttling.
+
+![Queue Bridge Design](./images/bridge-pattern.png)
+
+To implement:
+
+Typescript plugin file:
+``` typescript
+import { getOrchestratorSqsPassthrough } from '@moe-tech/orchestrator';
+
+const plugin = {
+    ...
+};
+
+export const queueBridge = getOrchestratorSqsPassthrough(plugin, process.env.sqsQueue);
+
+```
+
+Serverless.yml file:
+``` yml
+...
+
+functions:
+    queueBridge:
+        handler: ./path/to/ts.queueBridge
+        environment:
+            sqsQueue:
+                Ref: sqsQueue
+        iamRoleStatements:
+            - Event: Allow
+            Action:
+                - sqs:SendMessage
+            Resource:
+                - Ref: sqsQueue
+        events:
+            - sns:
+                Fn::Import: orchestrator-my-activity-parallel-processing
+
+    yourPlugin:
+        handler: ./path/to/ts.queueBridge
+        events:
+            - sqs:
+                Ref: sqsQueue
+```
