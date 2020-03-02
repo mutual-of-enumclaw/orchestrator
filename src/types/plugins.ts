@@ -28,4 +28,7 @@ export interface PluginInfo {
     order?: number,
     alwaysRun?: boolean;
     idempotent?: boolean;
+    
+    /**Used as part of auto documentation */
+    description?: string;
 }
