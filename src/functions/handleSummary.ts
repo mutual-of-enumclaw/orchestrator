@@ -91,13 +91,25 @@ export const updateActivityStatus = lambdaWrapperAsync(async (event: DynamoDBStr
     if (!event || !event.Records) {
         return;
     }
+
+    const toProcess = deDupe(event.Records);
     const promises = [];
-    event.Records.forEach(record => {
+    toProcess.forEach(record => {
         promises.push(processRecord(record));
     });
 
     await Promise.all(promises);
 });
+
+function deDupe(records: DynamoDBRecord[]): DynamoDBRecord[] {
+    const toProcess = {};
+    records.forEach(record => {
+        if (record.dynamodb.NewImage && record.dynamodb.NewImage.uid.S) {
+            toProcess[record.dynamodb.NewImage.uid.S] = record;
+        }
+    });
+    return Object.values(toProcess);
+}
 
 function setFieldName(name: string, fieldNames: any) {
     if (!fieldNames['#' + name]) {
@@ -106,10 +118,6 @@ function setFieldName(name: string, fieldNames: any) {
 }
 
 async function processRecord(record: DynamoDBRecord) {
-    if (!record.dynamodb.NewImage) {
-        console.log('Status object was removed, no processing needed');
-        return;
-    }
     const streamDate = new Date(new Date('1/1/1970').getTime() + (record.dynamodb.ApproximateCreationDateTime * 1000));
     console.log(`Stream time: ${streamDate.toString()}`);
     const statusObj = AWS.DynamoDB.Converter.unmarshall(record.dynamodb.NewImage) as OrchestratorWorkflowStatus;
@@ -122,7 +130,7 @@ async function processRecord(record: DynamoDBRecord) {
         if (statusObj.activities[i] === null) {
             continue;
         }
-        if (!await validateActivity(i, statusObj.activities, workflowStatus, updates, 
+        if (!await validateActivity(i, statusObj.activities, workflowStatus, updates,
                                     attributes, fieldNames, statusObj, streamDate)) {
             return;
         }
@@ -268,7 +276,7 @@ export async function validateStage(
 
     }
 
-    if (activityStatus[stage].status.state !== state || (state === OrchestratorComponentState.Complete && 
+    if (activityStatus[stage].status.state !== state || (state === OrchestratorComponentState.Complete &&
         activityStatus[stage].status.token && activityStatus[stage].status.token !== ' ')) {
         console.log(`Setting ${activity}.${stage}.status.state to ${state}`);
         const attributeName = `:${activity}${stage}state`;
@@ -281,33 +289,33 @@ export async function validateStage(
         setFieldName('state', fieldNames);
         activityStatus[stage].status.state = state;
 
-        if(state !== OrchestratorComponentState.InProgress && 
-           state !== OrchestratorComponentState.NotStarted) {
+        if (state !== OrchestratorComponentState.InProgress &&
+            state !== OrchestratorComponentState.NotStarted) {
 
-            if(activityStatus[stage].status.token && activityStatus[stage].status.token !== ' ') {
+            if (activityStatus[stage].status.token && activityStatus[stage].status.token !== ' ') {
                 let sendStatusEvent = true;
-                if(activityStatus[stage].status.startTime) {
+                if (activityStatus[stage].status.startTime) {
                     const startTime = new Date(activityStatus[stage].status.startTime);
                     const MIN_REGISTRATION_TIME = getPluginRegisterTimeout(overall, activity);
-                    if(startTime.getTime() > streamDate.getTime() - MIN_REGISTRATION_TIME) {
+                    if (startTime.getTime() > streamDate.getTime() - MIN_REGISTRATION_TIME) {
                         console.log('Status update too fast, ensuring no more registrations occur');
                         let waitTime = MIN_REGISTRATION_TIME - (streamDate.getTime() - startTime.getTime());
                         console.log(`Waiting for ${waitTime} milliseconds`);
-                        if(waitTime > MIN_REGISTRATION_TIME) {
+                        if (waitTime > MIN_REGISTRATION_TIME) {
                             waitTime = MIN_REGISTRATION_TIME;
                         }
                         await new Promise((resolve) => {
                             setTimeout(
                                 () => {
                                     resolve();
-                                }, 
+                                },
                                 waitTime);
                         });
 
                         const statusDal = new OrchestratorStatusDal(process.env.statusTable);
                         const newStatus = await statusDal.getStatusObject(overall.uid, overall.workflow, true);
-                        
-                        if(Object.keys(activityStatus[stage].mandatory).length !== 
+
+                        if (Object.keys(activityStatus[stage].mandatory).length !==
                             Object.keys(newStatus.activities[activity][stage].mandatory).length) {
                             console.log('Setting send event to false');
                             sendStatusEvent = false;
@@ -316,7 +324,7 @@ export async function validateStage(
                 }
 
 
-                if(sendStatusEvent) {
+                if (sendStatusEvent) {
                     console.log('Sending task status');
                     try {
                         await stepfunctions.sendTaskSuccess({
@@ -325,18 +333,18 @@ export async function validateStage(
                         }).promise();
                     } catch (err) {
                         console.log(JSON.stringify(err));
-                        if(err.code !== 'TaskTimedOut') {
+                        if (err.code !== 'TaskTimedOut') {
                             throw err;
                         }
                     }
                     delete activityStatus[stage].status.token;
                 }
-            } else if(stage === OrchestratorStage.BulkProcessing && 
+            } else if (stage === OrchestratorStage.BulkProcessing &&
                 state !== OrchestratorComponentState.OptionalError) {
-                const errorText = 
-                `Activity "${activity}".async plugin state set to "${state}" without step function token`;
+                const errorText =
+                    `Activity "${activity}".async plugin state set to "${state}" without step function token`;
                 console.log(errorText);
-                if(process.env.epsagonToken) {
+                if (process.env.epsagonToken) {
                     setError(new Error(errorText));
                 }
             }
