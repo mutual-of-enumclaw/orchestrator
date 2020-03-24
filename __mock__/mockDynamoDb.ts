@@ -7,6 +7,7 @@ export class MockDynamoDb {
     public updateInput: any;
     public deleteInput: any;
     public putInput: any;
+    public updateInputs: Array<any>;
 
     public reset() {
         this.error = '';
@@ -17,9 +18,10 @@ export class MockDynamoDb {
         this.returnObject = null;
         this.deleteInput = null;
         this.putInput = null;
+        this.updateInputs = [];
     }
 
-    public get(params) : any {
+    public get(params): any {
         return {
             promise: () => {
                 return new Promise((resolve, reject) => {
@@ -34,7 +36,7 @@ export class MockDynamoDb {
         };
     }
 
-    public put(params) : any {
+    public put(params): any {
         this.putInput = params;
         return {
             promise: () => {
@@ -50,7 +52,7 @@ export class MockDynamoDb {
         };
     }
 
-    public query(params) : any {
+    public query(params): any {
         return {
             promise: () => {
                 return new Promise((resolve, reject) => {
@@ -65,7 +67,7 @@ export class MockDynamoDb {
         };
     }
 
-    
+
     public scan(scanParams: any): any {
         return {
             promise: () => {
@@ -82,6 +84,7 @@ export class MockDynamoDb {
     }
 
     public update(updateParams: any): any {
+        this.updateInputs.push(updateParams);
         this.updateInput = updateParams;
         return {
             promise: () => {

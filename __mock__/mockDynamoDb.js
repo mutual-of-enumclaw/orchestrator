@@ -1,10 +1,21 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-class MockDynamoDb {
-    constructor() {
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+exports.__esModule = true;
+var MockDynamoDb = /** @class */ (function () {
+    function MockDynamoDb() {
         this.scanReturn = null;
     }
-    reset() {
+    MockDynamoDb.prototype.reset = function () {
         this.error = '';
         this.updateReturn = null;
         this.updateInput = null;
@@ -13,83 +24,90 @@ class MockDynamoDb {
         this.returnObject = null;
         this.deleteInput = null;
         this.putInput = null;
-    }
-    get(params) {
+        this.updateInputs = [];
+    };
+    MockDynamoDb.prototype.get = function (params) {
+        var _this = this;
         return {
-            promise: () => {
-                return new Promise((resolve, reject) => {
+            promise: function () {
+                return new Promise(function (resolve, reject) {
                     resolve({
                         '$response': {
-                            error: this.error,
+                            error: _this.error
                         },
-                        Item: this.returnObject
+                        Item: _this.returnObject
                     });
                 });
             }
         };
-    }
-    put(params) {
+    };
+    MockDynamoDb.prototype.put = function (params) {
+        var _this = this;
         this.putInput = params;
         return {
-            promise: () => {
-                return new Promise((resolve, reject) => {
+            promise: function () {
+                return new Promise(function (resolve, reject) {
                     resolve({
                         '$response': {
-                            error: this.error,
-                            data: this.returnObject
+                            error: _this.error,
+                            data: _this.returnObject
                         }
                     });
                 });
             }
         };
-    }
-    query(params) {
+    };
+    MockDynamoDb.prototype.query = function (params) {
+        var _this = this;
         return {
-            promise: () => {
-                return new Promise((resolve, reject) => {
+            promise: function () {
+                return new Promise(function (resolve, reject) {
                     resolve({
                         '$response': {
-                            error: this.error,
+                            error: _this.error
                         },
-                        Items: this.queryReturn
+                        Items: _this.queryReturn
                     });
                 });
             }
         };
-    }
-    scan(scanParams) {
+    };
+    MockDynamoDb.prototype.scan = function (scanParams) {
+        var _this = this;
         return {
-            promise: () => {
-                return new Promise((resolve, reject) => {
-                    resolve(Object.assign({ '$response': {
-                            error: this.error,
-                        } }, this.scanReturn));
+            promise: function () {
+                return new Promise(function (resolve, reject) {
+                    resolve(__assign({ '$response': {
+                            error: _this.error
+                        } }, _this.scanReturn));
                 });
             }
         };
-    }
-    update(updateParams) {
+    };
+    MockDynamoDb.prototype.update = function (updateParams) {
+        var _this = this;
+        this.updateInputs.push(updateParams);
         this.updateInput = updateParams;
         return {
-            promise: () => {
-                return new Promise((resolve, reject) => {
-                    resolve(Object.assign({ '$response': {
-                            error: this.error,
-                        } }, this.updateReturn));
+            promise: function () {
+                return new Promise(function (resolve, reject) {
+                    resolve(__assign({ '$response': {
+                            error: _this.error
+                        } }, _this.updateReturn));
                 });
             }
         };
-    }
-    delete(deleteParams) {
+    };
+    MockDynamoDb.prototype["delete"] = function (deleteParams) {
         this.deleteInput = deleteParams;
         return {
-            promise: () => {
-                return new Promise((resolve) => {
+            promise: function () {
+                return new Promise(function (resolve) {
                     resolve();
                 });
             }
         };
-    }
-}
+    };
+    return MockDynamoDb;
+}());
 exports.MockDynamoDb = MockDynamoDb;
-//# sourceMappingURL=mockDynamoDb.js.map
