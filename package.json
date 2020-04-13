@@ -3,7 +3,7 @@
     "author": "Mutual of Enumclaw",
     "publisher": "Mutual of Enumclaw",
     "license": "LGPLv3",
-    "version": "1.0.61",
+    "version": "1.0.62",
     "description": "The core data and related processing for orchestrators",
     "main": "dist/index.js",
     "scripts": {
@@ -20,32 +20,32 @@
         "deploy": "npx sls deploy"
     },
     "dependencies": {
-        "@moe-tech/dynamo-delta": "^1.0.12",
+        "@moe-tech/dynamo-delta": "^1.0.23",
         "@types/aws-sdk": "^2.7.0",
         "@types/rewire": "^2.5.28",
-        "epsagon": "^1.51.0"
+        "epsagon": "^1.58.6"
     },
     "devDependencies": {
         "@types/aws-lambda": "8.10.11",
         "@types/jest": "^23.3.9",
-        "@types/node": "^10.17.14",
+        "@types/node": "^10.17.19",
         "aws-lambda": "^1.0.5",
-        "aws-sdk": "^2.612.0",
+        "aws-sdk": "^2.656.0",
         "aws-sdk-mock": "^4.5.0",
         "hard-source-webpack-plugin": "^0.13.1",
-        "jest": "^24.8.0",
+        "jest": "^25.3.0",
         "jest-junit": "^7.0.0",
-        "serverless": "^1.63.0",
+        "serverless": "^1.67.3",
         "serverless-iam-roles-per-function": "^1.0.4",
         "serverless-plugin-include-dependencies": "^3.2.1",
         "serverless-plugin-tracing": "^2.0.0",
         "serverless-webpack": "^5.3.1",
         "source-map-support": "^0.5.13",
         "ts-jest": "^24.3.0",
-        "ts-loader": "^6.0.4",
+        "ts-loader": "^6.2.2",
         "tslint": "^5.18.0",
-        "typescript": "^3.7.5",
-        "webpack": "^4.41.5",
+        "typescript": "^3.8.3",
+        "webpack": "^4.42.1",
         "webpack-node-externals": "^1.7.2"
     },
     "files": [
