@@ -1,4 +1,3 @@
-import * as AWS from 'aws-sdk';
 import { OrchestratorStatusDal, OrchestratorComponentState, 
          OrchestratorPluginMessage, PluginInfo, OrchestratorWorkflowStatus } from '..';
 import { lambdaWrapperAsync, registerObservableError, setLabel } from './epsagonUtils';
@@ -78,7 +77,7 @@ function isComplete(
     message: OrchestratorPluginMessage, 
     required: string, 
     pluginInfo: PluginInfo) {
-    if(!currentStatus.activities ||
+    if(!currentStatus || !currentStatus.activities ||
         !currentStatus.activities[message.activity]) {
         return false;
     }
@@ -115,7 +114,7 @@ async function ProcessMessage(message: OrchestratorPluginMessage, pluginInfo: Pl
         if(isComplete(message, message, required, pluginInfo)) {
             return;
         }
-        if(pluginInfo.idempotent) {
+        if(pluginInfo.idempotent || pluginInfo.idempotent === undefined) {
             const currentStatus = await oasd.getStatusObject(message.uid, message.workflow);
             if(isComplete(currentStatus, message, required, pluginInfo)) {
                 return;

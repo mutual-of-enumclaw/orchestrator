@@ -4,9 +4,10 @@ class MockOrchstratorStatusDal {
     public updatePluginStatusInput = [];
 
     reset() {
+        console.log('resetting')
         this.updatePluginStatusInput = [];
         this.updatePluginStatus.mockClear();
-        this.getStatusObject.mockClear();
+        this.getStatusObject.mockReset();
     }
 
     updatePluginStatus = jest.fn().mockImplementation((

@@ -1,7 +1,3 @@
-/*!
- * Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
- * License: Public
- */
 module.exports = {
     preset: 'ts-jest',
     testEnvironment: 'node',
