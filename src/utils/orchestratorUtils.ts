@@ -2,17 +2,18 @@ import { OrchestratorStatusDal, OrchestratorComponentState,
          OrchestratorPluginMessage, PluginInfo, OrchestratorWorkflowStatus } from '..';
 import { lambdaWrapperAsync, registerObservableError, setLabel } from './epsagonUtils';
 import { SNSEvent, SNSEventRecord } from 'aws-lambda';
+import { SQS } from 'aws-sdk';
 
 let messageHandler = null;
 let pluginInformation: PluginInfo;
 let oasdOverride: OrchestratorStatusDal = null;
-let sqs: AWS.SQS = null;
+let sqs: SQS = null;
 
 export function setOASDOverride(value: OrchestratorStatusDal) {
     oasdOverride = value;
 }
 
-export function setSqsOverride(value: AWS.SQS) {
+export function setSqsOverride(value: SQS) {
     sqs = value;
 }
 
@@ -182,7 +183,7 @@ async function orchestratorSqsEnqueueRecord(record: SNSEventRecord, pluginInfo: 
     const message = JSON.parse(record.Sns.Message) as OrchestratorPluginMessage;
     const oasd = (oasdOverride) ? 
         oasdOverride : new OrchestratorStatusDal(process.env.orchestratorStatusTable);
-    if (!sqs) { sqs = new AWS.SQS(); }
+    if (!sqs) { sqs = new SQS(); }
     
     const mandatory = pluginInfo.default.mandatory;
 
