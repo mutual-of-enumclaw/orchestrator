@@ -484,7 +484,7 @@ function getPluginMessageSqs() {
     };
 }
 
-export function getPluginMessageSns(activities = undefined) {
+function getPluginMessageSns(activities = undefined) {
     return {
         Records: [{
             Sns:
