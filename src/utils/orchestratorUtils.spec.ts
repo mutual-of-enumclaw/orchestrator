@@ -1,20 +1,21 @@
-import { orchestratorWrapperSqs, orchestratorWrapperSns, setOASDOverride } from './orchestratorUtils';
+import * as orchestratorUtils from './orchestratorUtils';
 import {
     OrchestratorError, PluginInfo, OrchestratorComponentState,
     OrchestratorWorkflowStatus, OrchestratorStage, OrchestratorPluginMessage
 } from '../types';
 import { mockOrchstratorStatusDal } from '../../__mock__/mockOrchestratorStatusDal';
+import { SNSEvent } from 'aws-lambda';
 
 process.env.environment = 'unit-test';
 // console.log = () => {};
-setOASDOverride(mockOrchstratorStatusDal as any)
+orchestratorUtils.setOASDOverride(mockOrchstratorStatusDal as any);
 
 describe('orchestratorWrapperSqs', () => {
     test('valid', async () => {
         process.env.debugInput = 'false';
         mockOrchstratorStatusDal.reset();
         const fn = jest.fn();
-        const wrapper = orchestratorWrapperSqs(getPluginInfo(), fn);
+        const wrapper = orchestratorUtils.orchestratorWrapperSqs(getPluginInfo(), fn);
         await wrapper(getPluginMessageSqs());
 
         expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
@@ -26,7 +27,7 @@ describe('orchestratorWrapperSqs', () => {
         process.env.debugInput = 'true';
         mockOrchstratorStatusDal.reset();
         const fn = jest.fn();
-        const wrapper = orchestratorWrapperSqs(getPluginInfo(), fn);
+        const wrapper = orchestratorUtils.orchestratorWrapperSqs(getPluginInfo(), fn);
         await wrapper(getPluginMessageSqs());
 
         expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
@@ -43,8 +44,8 @@ describe('orchestratorWrapperSqs', () => {
             test: {
                 mandatory: false
             }
-        }
-        const wrapper = orchestratorWrapperSqs(pluginInfo, fn);
+        };
+        const wrapper = orchestratorUtils.orchestratorWrapperSqs(pluginInfo, fn);
         await wrapper(getPluginMessageSqs());
 
         expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
@@ -58,7 +59,7 @@ describe('orchestratorWrapperSqs', () => {
         process.env.debugInput = 'true';
         mockOrchstratorStatusDal.reset();
 
-        const wrapper = orchestratorWrapperSqs(getPluginInfo(), () => {
+        const wrapper = orchestratorUtils.orchestratorWrapperSqs(getPluginInfo(), () => {
             throw new OrchestratorError('This is an error');
         });
 
@@ -73,7 +74,7 @@ describe('orchestratorWrapperSqs', () => {
         process.env.debugInput = 'true';
         mockOrchstratorStatusDal.reset();
 
-        const wrapper = orchestratorWrapperSqs(getPluginInfo(), () => {
+        const wrapper = orchestratorUtils.orchestratorWrapperSqs(getPluginInfo(), () => {
             throw new Error('This is an error');
         });
 
@@ -94,7 +95,7 @@ describe('orchestratorWrapperSqs', () => {
         process.env.debugInput = 'true';
         mockOrchstratorStatusDal.reset();
 
-        const wrapper = orchestratorWrapperSqs(getPluginInfo(), () => {
+        const wrapper = orchestratorUtils.orchestratorWrapperSqs(getPluginInfo(), () => {
             throw new Error('This is an error');
         });
 
@@ -116,7 +117,7 @@ describe('orchestratorWrapperSns', () => {
         process.env.debugInput = 'false';
         mockOrchstratorStatusDal.reset();
         const fn = jest.fn();
-        const wrapper = orchestratorWrapperSns(getPluginInfo(), fn);
+        const wrapper = orchestratorUtils.orchestratorWrapperSns(getPluginInfo(), fn);
         await wrapper(getPluginMessageSns());
 
         expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
@@ -129,7 +130,7 @@ describe('orchestratorWrapperSns', () => {
         mockOrchstratorStatusDal.reset();
         const fn = jest.fn();
         const pluginInfo = getPluginInfo();
-        const wrapper = orchestratorWrapperSns(pluginInfo, fn);
+        const wrapper = orchestratorUtils.orchestratorWrapperSns(pluginInfo, fn);
         const message = getPluginMessageSnsRegistration();
         const result = await wrapper(message);
 
@@ -179,7 +180,7 @@ describe('orchestratorWrapperSns', () => {
         };
         mockOrchstratorStatusDal.getStatusObject.mockResolvedValueOnce(statusObj);
         const fn = jest.fn();
-        const wrapper = orchestratorWrapperSns(plugin, fn);
+        const wrapper = orchestratorUtils.orchestratorWrapperSns(plugin, fn);
         await wrapper(getPluginMessageSns());
 
         expect(mockOrchstratorStatusDal.getStatusObject).toHaveBeenCalledTimes(1);
@@ -229,7 +230,7 @@ describe('orchestratorWrapperSns', () => {
         };
         mockOrchstratorStatusDal.getStatusObject.mockResolvedValueOnce(statusObj);
         const fn = jest.fn();
-        const wrapper = orchestratorWrapperSns(plugin, fn);
+        const wrapper = orchestratorUtils.orchestratorWrapperSns(plugin, fn);
 
         await wrapper(getPluginMessageSns(statusObj.activities));
 
@@ -280,7 +281,7 @@ describe('orchestratorWrapperSns', () => {
         };
         mockOrchstratorStatusDal.getStatusObject.mockResolvedValueOnce(statusObj);
         const fn = jest.fn();
-        const wrapper = orchestratorWrapperSns(plugin, fn);
+        const wrapper = orchestratorUtils.orchestratorWrapperSns(plugin, fn);
 
         await wrapper(getPluginMessageSns(statusObj.activities));
 
@@ -331,7 +332,7 @@ describe('orchestratorWrapperSns', () => {
         };
         mockOrchstratorStatusDal.getStatusObject.mockResolvedValueOnce(statusObj);
         const fn = jest.fn();
-        const wrapper = orchestratorWrapperSns(plugin, fn);
+        const wrapper = orchestratorUtils.orchestratorWrapperSns(plugin, fn);
 
         await wrapper(getPluginMessageSns(statusObj.activities));
 
@@ -344,7 +345,7 @@ describe('orchestratorWrapperSns', () => {
         process.env.debugInput = 'true';
         mockOrchstratorStatusDal.reset();
         const fn = jest.fn();
-        const wrapper = orchestratorWrapperSns(getPluginInfo(), fn);
+        const wrapper = orchestratorUtils.orchestratorWrapperSns(getPluginInfo(), fn);
         await wrapper(getPluginMessageSns());
 
         expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
@@ -362,7 +363,7 @@ describe('orchestratorWrapperSns', () => {
                 mandatory: false
             }
         };
-        const wrapper = orchestratorWrapperSns(pluginInfo, fn);
+        const wrapper = orchestratorUtils.orchestratorWrapperSns(pluginInfo, fn);
         await wrapper(getPluginMessageSns());
 
         expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
@@ -376,7 +377,7 @@ describe('orchestratorWrapperSns', () => {
         process.env.debugInput = 'true';
         mockOrchstratorStatusDal.reset();
 
-        const wrapper = orchestratorWrapperSns(getPluginInfo(), () => {
+        const wrapper = orchestratorUtils.orchestratorWrapperSns(getPluginInfo(), () => {
             throw new OrchestratorError('This is an error');
         });
 
@@ -391,7 +392,7 @@ describe('orchestratorWrapperSns', () => {
         process.env.debugInput = 'true';
         mockOrchstratorStatusDal.reset();
 
-        const wrapper = orchestratorWrapperSns(getPluginInfo(), () => {
+        const wrapper = orchestratorUtils.orchestratorWrapperSns(getPluginInfo(), () => {
             throw new Error('This is an error');
         });
 
@@ -408,6 +409,52 @@ describe('orchestratorWrapperSns', () => {
         expect(mockOrchstratorStatusDal.updatePluginStatusInput[0].state).toBe(OrchestratorComponentState.InProgress);
     });
 });
+
+describe('getOrchestratorSqsPassthrough', () => {
+    test('standard', async () => {
+        mockOrchstratorStatusDal.reset();
+        let sqsParams = null;
+        const sqsOverride = sqsMock(function t(p) { sqsParams = p; }); 
+        orchestratorUtils.setSqsOverride(sqsOverride as any);
+        const pluginInfo = { pluginName: 'test', default: { mandatory: false }, alwaysRun: true} as PluginInfo;
+        const passthrough = orchestratorUtils.getOrchestratorSqsPassthrough(pluginInfo, 'sqsUrl');
+        const event = getPluginMessageSns() as SNSEvent;
+        await passthrough(event);
+        expect(sqsParams).toStrictEqual({
+            QueueUrl: 'sqsUrl',
+            MessageBody: event.Records[0].Sns.Message
+        });
+    });
+
+    test('fifo', async () => {
+        mockOrchstratorStatusDal.reset();
+        let sqsParams = null;
+        const sqsOverride = sqsMock(function t(p) { sqsParams = p; }); 
+        orchestratorUtils.setSqsOverride(sqsOverride as any);
+        const pluginInfo = { pluginName: 'test', default: { mandatory: false }, alwaysRun: true} as PluginInfo;
+        const passthrough = orchestratorUtils.getOrchestratorSqsPassthrough(pluginInfo, 'sqsUrl.fifo');
+        const event = getPluginMessageSns() as SNSEvent;
+        await passthrough(event);
+        expect(sqsParams).toStrictEqual({
+            QueueUrl: 'sqsUrl.fifo',
+            MessageBody: event.Records[0].Sns.Message,
+            MessageGroupId: 'uid-id'
+        });
+    });
+});
+
+function sqsMock(callback: Function) {
+    return {
+        sendMessage: (params) => {
+            callback(params);
+            return {
+                promise: () => {
+                    return new Promise((res, _rej) => { res({}); });
+                }
+            };
+        }
+    };
+}
 
 function getPluginInfo(): PluginInfo {
     return {
@@ -437,7 +484,7 @@ function getPluginMessageSqs() {
     };
 }
 
-function getPluginMessageSns(activities = undefined) {
+export function getPluginMessageSns(activities = undefined) {
     return {
         Records: [{
             Sns:
@@ -452,7 +499,7 @@ function getPluginMessageSns(activities = undefined) {
                         test: {
                             "mandatory": {}
                         },
-                        activities: activities,
+                        activities,
                         policies: ["test"]
                     })
             }
