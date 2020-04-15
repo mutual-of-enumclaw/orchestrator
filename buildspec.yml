@@ -12,6 +12,6 @@ phases:
   build:
     commands:
       - npm run test
-      - run run build
+      - npm run build
       - if [ "$Validate" != "true" ]; then npm publish --access public; fi
       
