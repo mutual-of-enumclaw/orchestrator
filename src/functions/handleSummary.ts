@@ -267,7 +267,7 @@ export async function validateStage(
             if (component.state === OrchestratorComponentState.Error) {
                 console.log('Setting mandatory to optional error state');
                 state = OrchestratorComponentState.OptionalError;
-                asyncError = true;
+                asyncError = ii;
                 break;
             }
         }
