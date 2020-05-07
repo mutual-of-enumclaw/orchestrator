@@ -215,9 +215,10 @@ async function validateActivityStages(
     streamDate: Date) {
 
     await Promise.all([
-        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'async', overall, streamDate),
-        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'pre', overall, streamDate),
-        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'post', overall, streamDate)]);
+        // validateStage(activity, activityStatus, updates, attributes, fieldNames, 'async', overall, streamDate),
+        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'pre', overall, streamDate)
+        // validateStage(activity, activityStatus, updates, attributes, fieldNames, 'post', overall, streamDate)
+    ]);
 }
 
 export async function validateStage(
@@ -275,7 +276,7 @@ export async function validateStage(
         }
 
     }
-
+  
     if (activityStatus[stage].status.state !== state || (state === OrchestratorComponentState.Complete &&
         activityStatus[stage].status.token && activityStatus[stage].status.token !== ' ')) {
         console.log(`Setting ${activity}.${stage}.status.state to ${state}`);
@@ -290,7 +291,8 @@ export async function validateStage(
         activityStatus[stage].status.state = state;
 
         if (state !== OrchestratorComponentState.InProgress &&
-            state !== OrchestratorComponentState.NotStarted) {
+            state !== OrchestratorComponentState.NotStarted &&
+            state !== OrchestratorComponentState.Error) {
 
             if (activityStatus[stage].status.token && activityStatus[stage].status.token !== ' ') {
                 let sendStatusEvent = true;
@@ -322,7 +324,6 @@ export async function validateStage(
                         }
                     }
                 }
-
 
                 if (sendStatusEvent) {
                     console.log('Sending task status');

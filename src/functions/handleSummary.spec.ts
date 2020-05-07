@@ -471,6 +471,29 @@ describe("updateActivityStatus", () => {
             expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
                 .toBe(OrchestratorComponentState.Complete);
         });
+
+        test('focus Basic - single item complete status change - pre', async () => {
+            let called = false;
+            class MockStepFunctions {
+                sendTaskSuccess = () => { return { promise: () => new Promise((res, _rej) => res(called = true)) }; };
+            }
+            const stepFunctions = new MockStepFunctions();
+            setStepFunctions(stepFunctions as any);
+
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory.M = {};
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M = {};
+            const pre = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M;
+            pre.mandatory.M.test.M.state.S = OrchestratorComponentState.Error;
+            pre.status.M = {
+                state: { S: OrchestratorComponentState.InProgress },
+                token: { S: "test" },
+                startTime: { S: "2020-01-01" }
+            };
+            await updateActivityStatus(event);
+            expect(called).toEqual(false);
+        });
     });
 
 
