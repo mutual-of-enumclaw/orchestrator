@@ -472,10 +472,16 @@ describe("updateActivityStatus", () => {
                 .toBe(OrchestratorComponentState.Complete);
         });
 
-        test('focus Basic - single item complete status change - pre', async () => {
-            let called = false;
+        test('Basic - single item error status change - pre', async () => {
+            let successCalled = false;
+            let failureCalled = false;
             class MockStepFunctions {
-                sendTaskSuccess = () => { return { promise: () => new Promise((res, _rej) => res(called = true)) }; };
+                sendTaskSuccess = () => {
+                    return { promise: () => new Promise((res, _rej) => res(successCalled = true)) };
+                }
+                sendTaskFailure = () => {
+                    return { promise: () => new Promise((res, _rej) => res(failureCalled = true)) };
+                }
             }
             const stepFunctions = new MockStepFunctions();
             setStepFunctions(stepFunctions as any);
@@ -492,7 +498,8 @@ describe("updateActivityStatus", () => {
                 startTime: { S: "2020-01-01" }
             };
             await updateActivityStatus(event);
-            expect(called).toEqual(false);
+            expect(successCalled).toEqual(false);
+            expect(failureCalled).toEqual(true);
         });
     });
 

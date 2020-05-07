@@ -228,7 +228,7 @@ export async function validateStage(
 
     let state: OrchestratorComponentState = activityStatus[stage].status.state;
     let asyncComplete = true;
-    let asyncError = false;
+    let asyncError = null;
     let hasSubItems = false;
     for (const ii in activityStatus[stage].mandatory) {
         hasSubItems = true;
@@ -242,7 +242,7 @@ export async function validateStage(
         if (component.state === OrchestratorComponentState.Error) {
             console.log('Setting mandatory to error state');
             state = OrchestratorComponentState.Error;
-            asyncError = true;
+            asyncError = ii;
             break;
         }
     }
@@ -290,8 +290,7 @@ export async function validateStage(
         activityStatus[stage].status.state = state;
 
         if (state !== OrchestratorComponentState.InProgress &&
-            state !== OrchestratorComponentState.NotStarted &&
-            state !== OrchestratorComponentState.Error) {
+            state !== OrchestratorComponentState.NotStarted) {
 
             if (activityStatus[stage].status.token && activityStatus[stage].status.token !== ' ') {
                 let sendStatusEvent = true;
@@ -327,10 +326,17 @@ export async function validateStage(
                 if (sendStatusEvent) {
                     console.log('Sending task status');
                     try {
-                        await stepfunctions.sendTaskSuccess({
-                            output: JSON.stringify(state),
-                            taskToken: activityStatus[stage].status.token
-                        }).promise();
+                        if (state === OrchestratorComponentState.Error) {
+                            await stepfunctions.sendTaskFailure({
+                                cause: asyncError,
+                                taskToken: activityStatus[stage].status.token
+                            }).promise();
+                        } else {
+                            await stepfunctions.sendTaskSuccess({
+                                output: JSON.stringify(state),
+                                taskToken: activityStatus[stage].status.token
+                            }).promise();
+                        }
                     } catch (err) {
                         console.log(JSON.stringify(err));
                         if (err.code !== 'TaskTimedOut') {
