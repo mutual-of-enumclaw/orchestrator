@@ -215,9 +215,9 @@ async function validateActivityStages(
     streamDate: Date) {
 
     await Promise.all([
-        // validateStage(activity, activityStatus, updates, attributes, fieldNames, 'async', overall, streamDate),
-        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'pre', overall, streamDate)
-        // validateStage(activity, activityStatus, updates, attributes, fieldNames, 'post', overall, streamDate)
+        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'async', overall, streamDate),
+        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'pre', overall, streamDate),
+        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'post', overall, streamDate)
     ]);
 }
 
@@ -274,7 +274,6 @@ export async function validateStage(
         if (asyncComplete && !asyncError) {
             state = OrchestratorComponentState.Complete;
         }
-
     }
   
     if (activityStatus[stage].status.state !== state || (state === OrchestratorComponentState.Complete &&
