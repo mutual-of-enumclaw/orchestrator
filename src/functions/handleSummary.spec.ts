@@ -471,6 +471,36 @@ describe("updateActivityStatus", () => {
             expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
                 .toBe(OrchestratorComponentState.Complete);
         });
+
+        test('Basic - single item error status change - pre', async () => {
+            let successCalled = false;
+            let failureCalled = false;
+            class MockStepFunctions {
+                sendTaskSuccess = () => {
+                    return { promise: () => new Promise((res, _rej) => res(successCalled = true)) };
+                }
+                sendTaskFailure = () => {
+                    return { promise: () => new Promise((res, _rej) => res(failureCalled = true)) };
+                }
+            }
+            const stepFunctions = new MockStepFunctions();
+            setStepFunctions(stepFunctions as any);
+
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory.M = {};
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M = {};
+            const pre = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M;
+            pre.mandatory.M.test.M.state.S = OrchestratorComponentState.Error;
+            pre.status.M = {
+                state: { S: OrchestratorComponentState.InProgress },
+                token: { S: "test" },
+                startTime: { S: "2020-01-01" }
+            };
+            await updateActivityStatus(event);
+            expect(successCalled).toEqual(false);
+            expect(failureCalled).toEqual(true);
+        });
     });
 
 

@@ -217,7 +217,8 @@ async function validateActivityStages(
     await Promise.all([
         validateStage(activity, activityStatus, updates, attributes, fieldNames, 'async', overall, streamDate),
         validateStage(activity, activityStatus, updates, attributes, fieldNames, 'pre', overall, streamDate),
-        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'post', overall, streamDate)]);
+        validateStage(activity, activityStatus, updates, attributes, fieldNames, 'post', overall, streamDate)
+    ]);
 }
 
 export async function validateStage(
@@ -227,7 +228,7 @@ export async function validateStage(
 
     let state: OrchestratorComponentState = activityStatus[stage].status.state;
     let asyncComplete = true;
-    let asyncError = false;
+    let asyncError = null;
     let hasSubItems = false;
     for (const ii in activityStatus[stage].mandatory) {
         hasSubItems = true;
@@ -241,7 +242,7 @@ export async function validateStage(
         if (component.state === OrchestratorComponentState.Error) {
             console.log('Setting mandatory to error state');
             state = OrchestratorComponentState.Error;
-            asyncError = true;
+            asyncError = ii;
             break;
         }
     }
@@ -266,16 +267,15 @@ export async function validateStage(
             if (component.state === OrchestratorComponentState.Error) {
                 console.log('Setting mandatory to optional error state');
                 state = OrchestratorComponentState.OptionalError;
-                asyncError = true;
+                asyncError = ii;
                 break;
             }
         }
         if (asyncComplete && !asyncError) {
             state = OrchestratorComponentState.Complete;
         }
-
     }
-
+  
     if (activityStatus[stage].status.state !== state || (state === OrchestratorComponentState.Complete &&
         activityStatus[stage].status.token && activityStatus[stage].status.token !== ' ')) {
         console.log(`Setting ${activity}.${stage}.status.state to ${state}`);
@@ -323,14 +323,20 @@ export async function validateStage(
                     }
                 }
 
-
                 if (sendStatusEvent) {
                     console.log('Sending task status');
                     try {
-                        await stepfunctions.sendTaskSuccess({
-                            output: JSON.stringify(state),
-                            taskToken: activityStatus[stage].status.token
-                        }).promise();
+                        if (state === OrchestratorComponentState.Error) {
+                            await stepfunctions.sendTaskFailure({
+                                cause: asyncError,
+                                taskToken: activityStatus[stage].status.token
+                            }).promise();
+                        } else {
+                            await stepfunctions.sendTaskSuccess({
+                                output: JSON.stringify(state),
+                                taskToken: activityStatus[stage].status.token
+                            }).promise();
+                        }
                     } catch (err) {
                         console.log(JSON.stringify(err));
                         if (err.code !== 'TaskTimedOut') {
