@@ -4,14 +4,48 @@ phases:
   install:
     runtime-version:
       nodejs: 12
-    commands:
-  pre_build:
-    commands:
-      - if [ "$Validate" != "true" ]; then aws s3 cp $S3HomePath ~ --recursive; fi
-      - npm ci
   build:
     commands:
-      - npm run test
-      - npm run build
-      - if [ "$Validate" != "true" ]; then npm publish --access public; fi
+     - |
+        if [ "$Validate" = "true" ]; then
+          npm ci || { echo 'install failed'; exit 1; }
+          npm run lt  || { echo 'lint failed'; exit 1; }
+          npm run test  || { echo 'test failed'; exit 1; }
+          npm publish --dry-run  || { echo 'publish failed'; exit 1; }
+        else
+          # could really do with a check here to make sure this only runs in master?
+          # maybe CODEBUILD_WEBHOOK_TRIGGER? https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
+
+          # git config
+          git config --global user.email "aws.moe@mutualofenumclaw.com"
+          git config --global user.name "build-user-mutualofenumclaw"
+          token=`cat ~/.github`
+
+          # check if commit message matches a version bump e.g. 1.7.437
+          regexp='^\d+\.\d+\.\d+$'
+          message=`git log --format=%B -n 1 $CODEBUILD_RESOLVED_SOURCE_VERSION`
+          # bash regex didn't work here: "[[: not found"
+          match=`node -e "console.log(/$regexp/.test(\"$message\".trim()))"`
+
+          if [ "$match" = "false" ]; then
+            git clone --single-branch --branch master https://$token@github.com/mutual-of-enumclaw/orchestrator.git
+            cd orchestrator
+            npm version patch
+            git commit
+            git push https://$token@github.com/mutual-of-enumclaw/orchestrator.git master || { echo 'git push failed' ; exit 1; }
+          else
+            npm ci || { echo 'install failed'; exit 1; }
+            npm run lt  || { echo 'lint failed'; exit 1; }
+            npm run test  || { echo 'test failed'; exit 1; }
+            npm publish || { echo 'publish failed'; exit 1; }
+            
+            git clone --single-branch --branch master https://$token@github.com/mutual-of-enumclaw/nucleus-lib-services.git
+            cd nucleus-lib-services
+            npm i @moe-tech/orchestrator@latest
+            git commit -am "autoupdate orchestrator"
+            npm version patch
+            git commit
+            git push https://$token@github.com/mutual-of-enumclaw/nucleus-lib-services.git master || { echo 'git push failed' ; exit 1; }
+          fi
+        fi
       
