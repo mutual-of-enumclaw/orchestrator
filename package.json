@@ -17,7 +17,8 @@
         "lt": "npm run lint && npm run test:coverage",
         "refreshVSToken": "vsts-npm-auth -config .npmrc",
         "package": "npx sls package",
-        "deploy": "npx sls deploy"
+        "deploy": "npx sls deploy",
+        "buildPublish": "npm run build && npm publish"
     },
     "dependencies": {
         "@moe-tech/dynamo-delta": "^1.0.25",
