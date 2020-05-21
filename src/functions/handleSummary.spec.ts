@@ -346,7 +346,7 @@ describe("updateActivityStatus", () => {
             expect(dynamoDal.updateInput).toBeNull();
         });
 
-        test('Optional in progress - pre', async () => {
+        test('focus Optional in progress - pre', async () => {
             dynamoDal.reset();
             const event = createOptionalEvent();
             event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
@@ -354,9 +354,9 @@ describe("updateActivityStatus", () => {
             event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
                 post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
-                async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
+                async.M.mandatory.M = {};
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
-                post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
+                post.M.mandatory.M = {};
 
             const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
             const mandatory = rate.M.pre.M.mandatory;
@@ -500,6 +500,36 @@ describe("updateActivityStatus", () => {
             await updateActivityStatus(event);
             expect(successCalled).toEqual(false);
             expect(failureCalled).toEqual(true);
+        });
+
+        test('Basic - not started, has items - pre', async () => {
+            let successCalled = false;
+            let failureCalled = false;
+            class MockStepFunctions {
+                sendTaskSuccess = () => {
+                    return { promise: () => new Promise((res, _rej) => res(successCalled = true)) };
+                }
+                sendTaskFailure = () => {
+                    return { promise: () => new Promise((res, _rej) => res(failureCalled = true)) };
+                }
+            }
+            const stepFunctions = new MockStepFunctions();
+            setStepFunctions(stepFunctions as any);
+
+            dynamoDal.reset();
+            const event = createBasicEvent();
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory.M = {};
+            event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M = {};
+            const pre = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M;
+            pre.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
+            pre.status.M = {
+                state: { S: OrchestratorComponentState.NotStarted },
+                token: { S: "test" },
+                startTime: { S: "2020-01-01" }
+            };
+            await updateActivityStatus(event);
+            expect(successCalled).toEqual(false);
+            expect(failureCalled).toEqual(false);
         });
     });
 

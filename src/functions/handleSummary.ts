@@ -226,6 +226,7 @@ export async function validateStage(
     updates: string[], attributes: any, fieldNames: any, stage: string, overall: OrchestratorWorkflowStatus,
     streamDate: Date) {
 
+    const notComplete = [OrchestratorComponentState.NotStarted, OrchestratorComponentState.InProgress];
     let state: OrchestratorComponentState = activityStatus[stage].status.state;
     let asyncComplete = true;
     let asyncError = null;
@@ -234,10 +235,10 @@ export async function validateStage(
         hasSubItems = true;
         const component = activityStatus[stage].mandatory[ii] as OrchestratorStatus;
 
-        if (component.state === OrchestratorComponentState.InProgress && asyncComplete) {
+        if (notComplete.includes(component.state) && asyncComplete) {
             console.log('Components are not all complete');
             asyncComplete = false;
-            state = OrchestratorComponentState.InProgress;
+            state = component.state;
         }
         if (component.state === OrchestratorComponentState.Error) {
             console.log('Setting mandatory to error state');
