@@ -346,7 +346,7 @@ describe("updateActivityStatus", () => {
             expect(dynamoDal.updateInput).toBeNull();
         });
 
-        test('focus Optional in progress - pre', async () => {
+        test('Optional in progress - pre', async () => {
             dynamoDal.reset();
             const event = createOptionalEvent();
             event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
