@@ -192,7 +192,7 @@ async function orchestratorSqsEnqueueRecord(record: SNSEventRecord, pluginInfo: 
         if(isComplete(message, message, required, pluginInfo)) {
             return;
         }
-        if(pluginInfo.idempotent) {
+        if(pluginInfo.idempotent || pluginInfo.idempotent === undefined) {
             const currentStatus = await oasd.getStatusObject(message.uid, message.workflow);
             if(isComplete(currentStatus, message, required, pluginInfo)) {
                 return;
