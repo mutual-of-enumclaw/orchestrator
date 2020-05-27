@@ -104,7 +104,7 @@ async function ProcessMessage(message: OrchestratorPluginMessage, pluginInfo: Pl
     }
     if(!message || !message.uid || !message.workflow || !message.activity) {
         console.log('Invalid message, orchistrator wrapper ignoring it', message);
-        return;
+        return 'Error: Invalid message, orchistrator wrapper ignoring it';
     }
 
     const oasd = (oasdOverride) ? 
@@ -149,7 +149,7 @@ async function ProcessMessage(message: OrchestratorPluginMessage, pluginInfo: Pl
 
             registerObservableError(err);
             console.log(err.message || err);
-            return;
+            return 'Error: ' + (err.message || err);
         } else {
             console.log(typeof err);
             console.log(JSON.stringify(err));
