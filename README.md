@@ -87,6 +87,7 @@ Sometimes it's important that a particular step has the ability to be resilient 
 To implement:
 
 Typescript plugin file:
+
 ``` typescript
 import { getOrchestratorSqsPassthrough } from '@moe-tech/orchestrator';
 
@@ -99,6 +100,7 @@ export const queueBridge = getOrchestratorSqsPassthrough(plugin, process.env.sqs
 ```
 
 Serverless.yml file:
+
 ``` yml
 ...
 
