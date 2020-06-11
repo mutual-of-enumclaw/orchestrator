@@ -4,7 +4,7 @@
 
 package | version
 --- | ---
-@moe-tech/orchestrator | 1.0.61
+@moe-tech/orchestrator | 1.0.67
 
 ## Walkthrough
 
