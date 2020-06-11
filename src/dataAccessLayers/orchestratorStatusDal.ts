@@ -91,7 +91,7 @@ export class OrchestratorStatusDal {
             },
             ExpressionAttributeValues: {
                 ':state': state,
-                ':message': message,
+                ':message': message?.substr(0,100),
                 ':startTime': updateTime.toString()
             },
         };
