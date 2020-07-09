@@ -37,7 +37,7 @@ export class OrchestratorStatusDal {
         const type = mandatory ? 'mandatory' : 'optional';
         const status = {
             state,
-            message
+            message: message?.substr(0, 180)
         };
         if (!message) {
             delete status.message;
