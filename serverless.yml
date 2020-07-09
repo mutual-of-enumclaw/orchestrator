@@ -7,6 +7,8 @@ service: ${opt:system-name, 'orchestrator'}
 plugins:
   - serverless-webpack
   - serverless-iam-roles-per-function
+  - serverless-pseudo-parameters
+  - serverless-plugin-generic-stack
 
 provider:
   name: aws
@@ -15,13 +17,25 @@ provider:
   stage: ${opt:stage, 'dev'}
   deploymentPrefix: ${self:service}/${self:provider.stage}
   environment:
-    epsagonToken: ${opt:epsagon-token, ''}
-    epsagonAppName: ${opt:epsagon-app-name, ''}
-    epsagonMetadata: ${opt:epsagon-meta, ''}
+    epsagonToken:
+      Ref: EpsagonToken
+    epsagonAppName:
+      Ref: EpsagonAppName
+    epsagonMetadata:
+      Ref: EpsagonMetadata
     statusTable: ${self:custom.tables.status}
 
+  stackParameters:
+    - ParameterKey: "Environment"
+      ParameterValue: ${self:provider.stage}
+    - ParameterKey: EpsagonToken
+      ParameterValue: ${opt:epsagon-token, ''}
+    - ParameterKey: EpsagonAppName
+      ParameterValue: ${opt:epsagon-app-name, ''}
+    - ParameterKey: EpsagonMetadata
+      ParameterValue: ${opt:epsagon-meta, ''}
   stackTags: ${file(./${opt:tagConfig, 'default-tags.yml'})}
-  deploymentBucket: ${opt:deploymentBucket, ''}
+  deploymentBucket: ${opt:deploymentBucket, '${opt:config, ''}'}
   timeout: 60
   
 custom:
@@ -29,9 +43,15 @@ custom:
     includeModules: true
     
   tables:
-    status: ${self:service}-${self:provider.stage}-status
-    plugins: ${self:service}-${self:provider.stage}-plugin
+    status: "#{AWS::StackName}-status"
+    plugins: "#{AWS::StackName}-plugin"
   
+  ParameterTypes:
+    current: ${self:custom.ParameterTypes.${opt:config, 'default'}}
+    serverless: 
+      yml: AWS::SSM::Parameter::Value<String>
+    default: String
+
 functions:
   updateStatus:
     handler: src/functions/handleSummary.updateActivityStatus
@@ -57,7 +77,7 @@ functions:
         Resource: '*'
   initializeActivities:
     handler: src/functions/initializeActivities.initialize
-    iamRoleStatementsName: ${self:service}-${self:provider.stage}-${self:provider.region}-ia
+    iamRoleStatementsName: "#{AWS::StackName}-#{AWS::Region}-ia"
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -69,6 +89,17 @@ functions:
             - Arn
 
 resources:
+  Parameters:
+    EpsagonToken:
+      Type: ${self:custom.ParameterTypes.current}
+      Default: /<EnvironmentName>/epsagon/token
+    EpsagonAppName:
+      Type: ${self:custom.ParameterTypes.current}
+      Default: /<EnvironmentName>/epsagon/app-name
+    EpsagonMetadata:
+      Type: ${self:custom.ParameterTypes.current}
+      Default: /<EnvironmentName>/epsagon/app-name
+
   Resources:
     PluginTable:
       Type: AWS::DynamoDB::Table
@@ -89,7 +120,7 @@ resources:
           - Key: Role
             Value: Configuration
           - Key: NPI
-            Value: true
+            Value: "true"
 
     StatusTable:
       Type: AWS::DynamoDB::Table
@@ -112,14 +143,14 @@ resources:
           - Key: Role
             Value: Status
           - Key: NPI
-            Value: true
+            Value: "true"
 
   Outputs:
     DynamoDbPluginTableName:
       Value: 
         Ref: PluginTable
       Export:
-        Name: ${self:service}-${self:provider.stage}-plugin-name
+        Name: "#{AWS::StackName}-plugin-name"
 
     DynamoDbPluginTableArn:
       Value: 
@@ -127,13 +158,13 @@ resources:
           - PluginTable
           - Arn
       Export:
-        Name: ${self:service}-${self:provider.stage}-plugin-arn
+        Name: "#{AWS::StackName}-plugin-arn"
 
     DynamoDbStatusTableName:
       Value: 
         Ref: StatusTable
       Export:
-        Name: ${self:service}-${self:provider.stage}-status-name
+        Name: "#{AWS::StackName}-status-name"
 
     DynamoDbStatusTableArn:
       Value: 
@@ -141,7 +172,7 @@ resources:
           - StatusTable
           - Arn
       Export:
-        Name: ${self:service}-${self:provider.stage}-status-arn
+        Name: "#{AWS::StackName}-status-arn"
 
     DynamoDbStatusTableStreamArn:
       Value:
@@ -149,7 +180,7 @@ resources:
           - StatusTable
           - StreamArn
       Export:
-        Name: ${self:service}-${self:provider.stage}-status-stream-arn
+        Name: "#{AWS::StackName}-status-stream-arn"
 
     InitailizeActivities:
       Value:
@@ -157,4 +188,4 @@ resources:
           - InitializeActivitiesLambdaFunction
           - Arn
       Export:
-        Name: ${self:service}-${self:provider.stage}-init-activites
+        Name: "#{AWS::StackName}-init-activites"
