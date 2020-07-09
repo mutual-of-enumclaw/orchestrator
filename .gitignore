@@ -65,3 +65,4 @@ typings/
 /junit.xml
 
 .webpack
+.stackery/

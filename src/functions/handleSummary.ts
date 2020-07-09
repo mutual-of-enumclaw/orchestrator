@@ -185,7 +185,7 @@ export async function validateActivity(
         if (ii === 'status') {
             continue;
         }
-        console.log(`activityStatus[ii] ${JSON.stringify(activityStatus[ii])}`);
+        console.log(`activityStatus[${ii}] ${JSON.stringify(activityStatus[ii])}`);
         const statObj = activityStatus[ii].status as OrchestratorStatus;
         activityStatusSummary.updateState(statObj.state);
     }
