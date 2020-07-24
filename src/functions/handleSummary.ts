@@ -9,7 +9,7 @@ import {
     OrchestratorWorkflowStatus,
     getPluginRegisterTimeout
 }
-    from '..';
+from '..';
 import * as AWS from 'aws-sdk';
 import { OrchestratorStatusDal } from '../dataAccessLayers/orchestratorStatusDal';
 import { OrchestratorStage } from '../types';
