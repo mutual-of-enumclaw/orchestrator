@@ -3,7 +3,7 @@
     "author": "Mutual of Enumclaw",
     "publisher": "Mutual of Enumclaw",
     "license": "LGPLv3",
-    "version": "1.0.85",
+    "version": "1.0.86",
     "description": "The core data and related processing for orchestrators",
     "main": "dist/index.js",
     "scripts": {
