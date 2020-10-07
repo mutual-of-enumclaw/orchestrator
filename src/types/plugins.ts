@@ -6,26 +6,28 @@
 import { OrchestratorStage } from '.';
 
 export interface OrchestratorSyncPlugin {
-    orchestratorId: string,
-    stage: OrchestratorStage
-    pluginName: string,
-    order: number,
-    functionName: string,
-    mandatory: boolean,
-    alwaysRun?: boolean
+    orchestratorId: string;
+    stage: OrchestratorStage;
+    pluginName: string;
+    order: number;
+    functionName: string;
+    mandatory: boolean;
+    pluginRegisterTimeout?: number;
+    alwaysRun?: boolean;
 }
 
 export interface PluginInfo {
     pluginName: string;
     default: {
-        mandatory: boolean
+        mandatory: boolean;
+        pluginRegisterTimeout?: number;
     };
     overrides?: {
         [key: string]: {
-            mandatory: boolean
+            mandatory: boolean;
         }
     };
-    order?: number,
+    order?: number;
     alwaysRun?: boolean;
     idempotent?: boolean;
     
