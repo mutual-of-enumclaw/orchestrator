@@ -6,7 +6,7 @@ import { updateActivityStatus, validateActivity, StatusSummary, setServices } fr
 import { MockDynamoDb } from '../../__mock__/mockDynamoDb';
 import { OrchestratorComponentState, OrchestratorActivityStatus } from '..';
 import { DynamoDB } from 'aws-sdk';
-import { OrchestratorPluginDal, OrchestratorStatusDal } from '../../activity/__mock__/libServices';
+import { OrchestratorPluginDal, OrchestratorStatusDal } from '../../__mock__/libServices';
 
 class MockStepFunctions {
     sendTaskSuccess = jest.fn();
