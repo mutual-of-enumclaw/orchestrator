@@ -2,13 +2,30 @@
  * Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
  * License: Public
  */
-import { updateActivityStatus, setDynamoDal, validateActivity, StatusSummary, setStepFunctions } from './handleSummary';
+import { updateActivityStatus, validateActivity, StatusSummary, setServices } from './handleSummary';
 import { MockDynamoDb } from '../../__mock__/mockDynamoDb';
 import { OrchestratorComponentState, OrchestratorActivityStatus } from '..';
 import { DynamoDB } from 'aws-sdk';
+import { OrchestratorPluginDal, OrchestratorStatusDal } from '../../__mock__/libServices';
 
 class MockStepFunctions {
     sendTaskSuccess = jest.fn();
+    sendTaskFailure = jest.fn();
+
+    reset() {
+        this.sendTaskFailure.mockReset();
+        this.sendTaskFailure.mockImplementation(() => {
+            return {
+                promise: async () => {}
+            };
+        });
+        this.sendTaskSuccess.mockReset();
+        this.sendTaskSuccess.mockImplementation(() => {
+            return {
+                promise: async () => {}
+            };
+        });
+    }
 }
 console.log = () => { };
 
@@ -16,8 +33,15 @@ describe("updateActivityStatus", () => {
     process.env.environment = 'unit-test';
     const dynamoDal = new MockDynamoDb();
     const stepFunctions = new MockStepFunctions();
-    setDynamoDal(dynamoDal as any);
-    setStepFunctions(stepFunctions as any);
+    const pluginDal = new OrchestratorPluginDal();
+    const statusDal = new OrchestratorStatusDal();
+    beforeEach(() => {
+        setServices(stepFunctions, dynamoDal, pluginDal, statusDal);
+        stepFunctions.reset();
+        dynamoDal.reset();
+        pluginDal.reset();
+        statusDal.reset();
+    });
 
     test('Null Event', async () => {
         await updateActivityStatus(null);
@@ -42,14 +66,12 @@ describe("updateActivityStatus", () => {
     });
 
     test('Basic - no change to status', async () => {
-        dynamoDal.reset();
         await updateActivityStatus(createBasicEvent());
         expect(dynamoDal.updateInput).toBeNull();
     });
 
     describe('deDupe', () => {
         test('remove dupes', async () => {
-            dynamoDal.reset();
             const event = {
                 Records: [
                     createBasicRecord(),
@@ -71,7 +93,6 @@ describe("updateActivityStatus", () => {
 
     describe('async', () => {
         test('Basic - async not started', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             const status = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.status;
             status.M.state.S = OrchestratorComponentState.NotStarted;
@@ -81,7 +102,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - single item null', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M.test.NULL = true;
             await updateActivityStatus(event);
@@ -89,7 +109,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - single item complete status change', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
                 pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
@@ -107,7 +126,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - multiple items mixed state', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
             mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
@@ -117,7 +135,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - multiple items complete state', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
                 pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
@@ -134,7 +151,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - multiple items one error state', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
             mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
@@ -153,7 +169,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - async not started', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             const status = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.status;
             status.M.state.S = OrchestratorComponentState.NotStarted;
@@ -163,7 +178,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Optional in progress', async () => {
-            dynamoDal.reset();
             const event = createOptionalEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
                 pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
@@ -195,7 +209,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Optional error', async () => {
-            dynamoDal.reset();
             const event = createOptionalEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
                 pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
@@ -228,7 +241,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Optional complete', async () => {
-            dynamoDal.reset();
             const event = createOptionalEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
                 pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
@@ -261,8 +273,8 @@ describe("updateActivityStatus", () => {
     });
 
     describe('pre', () => {
+
         test('Basic - single item null - pre', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory.M.test.NULL = true;
             await updateActivityStatus(event);
@@ -270,7 +282,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - single item complete status change - pre', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory;
             mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
@@ -283,7 +294,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - multiple items mixed state - pre', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory;
             mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
@@ -293,7 +303,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - multiple items complete state - pre', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
                 async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
@@ -310,7 +319,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - multiple items one error state - pre', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
                 async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
@@ -337,7 +345,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - pre not started - pre', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             const status = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.status;
             status.M.state.S = OrchestratorComponentState.NotStarted;
@@ -347,7 +354,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Optional in progress - pre', async () => {
-            dynamoDal.reset();
             const event = createOptionalEvent();
             event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
                 async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
@@ -387,7 +393,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Optional error - pre', async () => {
-            dynamoDal.reset();
             const event = createOptionalEvent();
             event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
                 async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
@@ -427,7 +432,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Optional complete - pre', async () => {
-            dynamoDal.reset();
             const event = createOptionalEvent();
 
             event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
@@ -473,20 +477,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - single item error status change - pre', async () => {
-            let successCalled = false;
-            let failureCalled = false;
-            class MockStepFunctions {
-                sendTaskSuccess = () => {
-                    return { promise: () => new Promise((res, _rej) => res(successCalled = true)) };
-                }
-                sendTaskFailure = () => {
-                    return { promise: () => new Promise((res, _rej) => res(failureCalled = true)) };
-                }
-            }
-            const stepFunctions = new MockStepFunctions();
-            setStepFunctions(stepFunctions as any);
-
-            dynamoDal.reset();
             const event = createBasicEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory.M = {};
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M = {};
@@ -498,25 +488,11 @@ describe("updateActivityStatus", () => {
                 startTime: { S: "2020-01-01" }
             };
             await updateActivityStatus(event);
-            expect(successCalled).toEqual(false);
-            expect(failureCalled).toEqual(true);
+            expect(stepFunctions.sendTaskSuccess).toBeCalledTimes(0);
+            expect(stepFunctions.sendTaskFailure).toBeCalledTimes(1);
         });
 
         test('Basic - not started, has items - pre', async () => {
-            let successCalled = false;
-            let failureCalled = false;
-            class MockStepFunctions {
-                sendTaskSuccess = () => {
-                    return { promise: () => new Promise((res, _rej) => res(successCalled = true)) };
-                }
-                sendTaskFailure = () => {
-                    return { promise: () => new Promise((res, _rej) => res(failureCalled = true)) };
-                }
-            }
-            const stepFunctions = new MockStepFunctions();
-            setStepFunctions(stepFunctions as any);
-
-            dynamoDal.reset();
             const event = createBasicEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory.M = {};
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M = {};
@@ -528,15 +504,14 @@ describe("updateActivityStatus", () => {
                 startTime: { S: "2020-01-01" }
             };
             await updateActivityStatus(event);
-            expect(successCalled).toEqual(false);
-            expect(failureCalled).toEqual(false);
+            expect(stepFunctions.sendTaskSuccess).toBeCalledTimes(0);
+            expect(stepFunctions.sendTaskFailure).toBeCalledTimes(0);
         });
     });
 
 
     describe('post', () => {
         test('Basic - single item null - post', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory.M.test.NULL = true;
             await updateActivityStatus(event);
@@ -544,7 +519,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - single item complete status change - post', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory;
             mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
@@ -558,7 +532,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - multiple items mixed state - post', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory;
             mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
@@ -568,7 +541,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - multiple items complete state - post', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.
                 async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.NotStarted;
@@ -585,7 +557,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - multiple items one error state - post', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
                 async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
@@ -612,7 +583,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Basic - post not started - post', async () => {
-            dynamoDal.reset();
             const event = createBasicEvent();
             const status = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.status;
             status.M.state.S = OrchestratorComponentState.NotStarted;
@@ -622,7 +592,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Optional in progress - post', async () => {
-            dynamoDal.reset();
             const event = createOptionalEvent();
             event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
                 async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
@@ -662,7 +631,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Optional error - post', async () => {
-            dynamoDal.reset();
             const event = createOptionalEvent();
             event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
                 async.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
@@ -702,7 +670,6 @@ describe("updateActivityStatus", () => {
         });
 
         test('Optional complete - post', async () => {
-            dynamoDal.reset();
             const event = createOptionalEvent();
 
             event.Records[0].dynamodb.OldImage.activities.M.Rate.M.
@@ -749,7 +716,6 @@ describe("updateActivityStatus", () => {
     });
 
     test('No Pre', async () => {
-        dynamoDal.reset();
         const event = createBasicEvent();
         const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
         delete rate.M.pre;
@@ -759,7 +725,6 @@ describe("updateActivityStatus", () => {
     });
 
     test('No post', async () => {
-        dynamoDal.reset();
         const event = createBasicEvent();
         const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
         delete rate.M.post;
@@ -769,7 +734,6 @@ describe("updateActivityStatus", () => {
     });
 
     test('No async', async () => {
-        dynamoDal.reset();
         const event = createBasicEvent();
         const rate = event.Records[0].dynamodb.NewImage.activities.M.Rate;
         delete rate.M.async;
@@ -779,7 +743,6 @@ describe("updateActivityStatus", () => {
     });
 
     test('No status', async () => {
-        dynamoDal.reset();
         const event = createBasicEvent();
         delete event.Records[0].dynamodb.NewImage.activities.M.Rate.M.status;
         await updateActivityStatus(event);
@@ -787,7 +750,6 @@ describe("updateActivityStatus", () => {
     });
 
     test('Rate not bubbling up bug', async () => {
-        dynamoDal.reset();
         const event = createBasicEvent();
         event.Records[0].dynamodb.NewImage = DynamoDB.Converter.marshall(require('../data/rating-bug.json'));
         event.Records[0].dynamodb.OldImage = DynamoDB.Converter.marshall(require('../data/rating-bug.json'));
@@ -832,21 +794,6 @@ describe('validate Async', () => {
         validateActivity(activity, activityStatus, workflowStatus, updates, attributes, fieldNames, overall, new Date());
         // assert
         expect(updates.length).toBe(1);
-    });
-});
-
-
-describe('setDynamoDal', () => {
-    test('Non-unit test env', () => {
-        process.env.environment = 'not unit test';
-        let error = null;
-        try {
-            setDynamoDal({} as any);
-        } catch (err) {
-            error = err.message;
-        }
-
-        expect(error).toBe('Unit testing feature being used outside of unit testing');
     });
 });
 
