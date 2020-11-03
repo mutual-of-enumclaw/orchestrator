@@ -9,9 +9,10 @@ import {
     OrchestratorWorkflowStatus,
     getPluginRegisterTimeout
 }
-    from '..';
+from '..';
 import * as AWS from 'aws-sdk';
 import { OrchestratorStatusDal } from '../dataAccessLayers/orchestratorStatusDal';
+import { OrchestratorPluginDal } from '../dataAccessLayers/orchestratorPluginDal';
 import { OrchestratorStage } from '../types';
 import { setError } from 'epsagon';
 
@@ -71,19 +72,14 @@ export class StatusSummary {
 
 let dynamoDal: AWS.DynamoDB.DocumentClient = new AWS.DynamoDB.DocumentClient();
 let stepfunctions = new AWS.StepFunctions();
+let pluginDalMock: OrchestratorPluginDal;
+let statusDalMock: OrchestratorStatusDal;
 
-export function setStepFunctions(value: AWS.StepFunctions) {
-    if (process.env.environment !== 'unit-test') {
-        throw new Error('Unit testing feature being used outside of unit testing');
-    }
-    stepfunctions = value;
-}
-
-export function setDynamoDal(dal: AWS.DynamoDB.DocumentClient) {
-    if (process.env.environment !== 'unit-test') {
-        throw new Error('Unit testing feature being used outside of unit testing');
-    }
-    dynamoDal = dal;
+export function setServices(step: any, dynamo: any, pluginMock: any, statusMock: any) {
+    dynamoDal = dynamo;
+    stepfunctions = step;
+    pluginDalMock = pluginMock;
+    statusDalMock = statusDalMock;
 }
 
 export const updateActivityStatus = lambdaWrapperAsync(async (event: DynamoDBStreamEvent) => {
@@ -290,14 +286,22 @@ export async function validateStage(
         setFieldName('state', fieldNames);
         activityStatus[stage].status.state = state;
 
-        if (state !== OrchestratorComponentState.InProgress &&
-            state !== OrchestratorComponentState.NotStarted) {
+        if (state === OrchestratorComponentState.Complete || 
+            state === OrchestratorComponentState.Error ||
+            state === OrchestratorComponentState.OptionalError) {
 
             if (activityStatus[stage].status.token && activityStatus[stage].status.token !== ' ') {
                 let sendStatusEvent = true;
                 if (activityStatus[stage].status.startTime) {
                     const startTime = new Date(activityStatus[stage].status.startTime);
-                    const MIN_REGISTRATION_TIME = getPluginRegisterTimeout(overall, activity);
+                    const pluginDal = pluginDalMock || new OrchestratorPluginDal(process.env.pluginTable, activity);
+                    const plugins = (await pluginDal.getPlugins(stage as OrchestratorStage)).filter(x => {
+                        if(x.mandatory) {
+                            return false;
+                        }
+                        return !activityStatus[stage].optional[x.pluginName];
+                    });
+                    const MIN_REGISTRATION_TIME = getPluginRegisterTimeout(overall, activity, plugins);
                     if (startTime.getTime() > streamDate.getTime() - MIN_REGISTRATION_TIME) {
                         console.log('Status update too fast, ensuring no more registrations occur');
                         let waitTime = MIN_REGISTRATION_TIME - (streamDate.getTime() - startTime.getTime());
@@ -313,11 +317,13 @@ export async function validateStage(
                                 waitTime);
                         });
 
-                        const statusDal = new OrchestratorStatusDal(process.env.statusTable);
+                        const statusDal = statusDalMock || new OrchestratorStatusDal(process.env.statusTable);
                         const newStatus = await statusDal.getStatusObject(overall.uid, overall.workflow, true);
 
                         if (Object.keys(activityStatus[stage].mandatory).length !==
-                            Object.keys(newStatus.activities[activity][stage].mandatory).length) {
+                            Object.keys(newStatus.activities[activity][stage].mandatory).length &&
+                            Object.keys(activityStatus[stage].optional).length !==
+                            Object.keys(newStatus.activities[activity][stage].optional).length) {
                             console.log('Setting send event to false');
                             sendStatusEvent = false;
                         }
@@ -346,8 +352,7 @@ export async function validateStage(
                     }
                     delete activityStatus[stage].status.token;
                 }
-            } else if (stage === OrchestratorStage.BulkProcessing &&
-                state !== OrchestratorComponentState.OptionalError) {
+            } else if (stage === OrchestratorStage.BulkProcessing) {
                 const errorText =
                     `Activity "${activity}".async plugin state set to "${state}" without step function token`;
                 console.log(errorText);

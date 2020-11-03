@@ -3,5 +3,6 @@
  * License: Public
  */
 export * from './dataAccessLayers/orchestratorStatusDal';
+export * from './dataAccessLayers/orchestratorPluginDal';
 export * from './types';
 export * from './utils';

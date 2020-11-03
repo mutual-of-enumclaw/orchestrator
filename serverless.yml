@@ -24,6 +24,7 @@ provider:
     epsagonMetadata:
       Ref: EpsagonMetadata
     statusTable: ${self:custom.tables.status}
+    pluginTable: ${self:custom.tables.plugins}
 
   stackParameters:
     - ParameterKey: "Environment"
@@ -58,7 +59,7 @@ functions:
     events:
       - stream:
           type: dynamodb
-          arn: 
+          arn:
             Fn::GetAtt:
               - StatusTable
               - StreamArn
@@ -73,7 +74,15 @@ functions:
               - Arn
       - Effect: Allow
         Action:
+          - dynamodb:Query
+        Resource:
+          - Fn::GetAtt:
+              - PluginTable
+              - Arn
+      - Effect: Allow
+        Action:
           - states:SendTaskSuccess
+          - states:SendTaskFailure
         Resource: '*'
   initializeActivities:
     handler: src/functions/initializeActivities.initialize
@@ -99,7 +108,10 @@ resources:
     EpsagonMetadata:
       Type: ${self:custom.ParameterTypes.current}
       Default: /<EnvironmentName>/epsagon/app-name
-
+    Environment:
+      Type: ${self:custom.ParameterTypes.current}
+      Default: /<EnvironmentName>/name
+      
   Resources:
     PluginTable:
       Type: AWS::DynamoDB::Table

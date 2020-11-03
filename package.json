@@ -3,7 +3,7 @@
     "author": "Mutual of Enumclaw",
     "publisher": "Mutual of Enumclaw",
     "license": "LGPLv3",
-    "version": "1.0.70",
+    "version": "1.0.92",
     "description": "The core data and related processing for orchestrators",
     "main": "dist/index.js",
     "scripts": {
@@ -36,7 +36,7 @@
         "hard-source-webpack-plugin": "^0.13.1",
         "jest": "^25.3.0",
         "jest-junit": "^7.0.0",
-        "serverless": "^1.67.3",
+        "serverless": "^1.75.0",
         "serverless-iam-roles-per-function": "^1.0.4",
         "serverless-plugin-generic-stack": "^1.0.2",
         "serverless-plugin-include-dependencies": "^3.2.1",
