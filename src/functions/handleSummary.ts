@@ -333,12 +333,12 @@ export async function validateStage(
                 if (sendStatusEvent) {
                     console.log('Sending task status');
                     try {
-                        if (state === OrchestratorComponentState.Error) {
+                        if (state === OrchestratorComponentState.Error || state === OrchestratorComponentState.OptionalError) {
                             await stepfunctions.sendTaskFailure({
                                 cause: asyncError,
                                 taskToken: activityStatus[stage].status.token
                             }).promise();
-                        } else {
+                        } else if(state === OrchestratorComponentState.Complete) {
                             await stepfunctions.sendTaskSuccess({
                                 output: JSON.stringify(state),
                                 taskToken: activityStatus[stage].status.token
