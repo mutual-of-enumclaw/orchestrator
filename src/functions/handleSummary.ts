@@ -333,16 +333,21 @@ export async function validateStage(
                 if (sendStatusEvent) {
                     console.log('Sending task status');
                     try {
-                        if (state === OrchestratorComponentState.Error || state === OrchestratorComponentState.OptionalError) {
+                        if (state === OrchestratorComponentState.Error || 
+                            state === OrchestratorComponentState.OptionalError) {
                             await stepfunctions.sendTaskFailure({
                                 cause: asyncError,
                                 taskToken: activityStatus[stage].status.token
                             }).promise();
+                            
+                            delete activityStatus[stage].status.token;
                         } else if(state === OrchestratorComponentState.Complete) {
                             await stepfunctions.sendTaskSuccess({
                                 output: JSON.stringify(state),
                                 taskToken: activityStatus[stage].status.token
                             }).promise();
+                            
+                            delete activityStatus[stage].status.token;
                         }
                     } catch (err) {
                         console.log(JSON.stringify(err));
@@ -350,7 +355,6 @@ export async function validateStage(
                             throw err;
                         }
                     }
-                    delete activityStatus[stage].status.token;
                 }
             } else if (stage === OrchestratorStage.BulkProcessing) {
                 const errorText =
