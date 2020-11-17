@@ -95,6 +95,13 @@ function isComplete(
             return true;
     }
 
+    if(activity[message.stage] &&
+        activity[message.stage][required] &&
+        activity[message.stage][required][pluginInfo.pluginName] &&
+        activity[message.stage][required][pluginInfo.pluginName].state === OrchestratorComponentState.DoNotRun) {
+            return true;
+    }
+
     return false;
 }
 
@@ -212,7 +219,7 @@ async function orchestratorSqsEnqueueRecord(record: SNSEventRecord, pluginInfo: 
     };
 
     if (sqsUrl.toLowerCase().endsWith(".fifo")) {
-        params['MessageGroupId'] = message.uid;
+        params['MessageGroupId'] = pluginInfo.fifoKey? message[pluginInfo.fifoKey] : message.uid;
     }
 
     await sqs.sendMessage(params).promise();

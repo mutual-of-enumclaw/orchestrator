@@ -46,6 +46,7 @@ export enum OrchestratorComponentState {
     MandatoryCompleted = 'Mandatory Completed',
     Complete = 'Complete',
     Error = 'Error',
-    OptionalError = 'Optional Task Error'
+    OptionalError = 'Optional Task Error',
+    DoNotRun = 'Do Not Run'
 }
 

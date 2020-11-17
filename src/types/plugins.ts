@@ -33,4 +33,7 @@ export interface PluginInfo {
     
     /**Used as part of auto documentation */
     description?: string;
+    
+    /**Used for specifying how to group transactions in a fifo queue*/
+    fifoKey?: string;
 }
