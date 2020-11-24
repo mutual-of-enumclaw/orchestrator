@@ -1,0 +1,141 @@
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  updateStatus:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-updateStatus
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: updateStatus
+      CodeUri: src/functions/handleSummary
+      Handler: index.updateActivityStatus
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+                - dynamodb:GetItem
+              Resource:
+                - Fn::GetAtt:
+                    - StatusTable
+                    - Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+              Resource:
+                - Fn::GetAtt:
+                    - PluginTable
+                    - Arn
+            - Effect: Allow
+              Action:
+                - states:SendTaskSuccess
+                - states:SendTaskFailure
+              Resource: '*'
+      Events:
+        StatusTable:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt StatusTable.StreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 1
+      Environment:
+        Variables:
+          pluginTable: !Ref PluginTable
+          statusTable: !Ref StatusTable
+    Metadata:
+      RuntimeOption: typescript
+
+
+  initializeActivities:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-initializeActivities
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: initializeActivities
+      CodeUri: src/functions/initializeActivities
+      Handler: initializeActivities.initialize
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+              Resource:
+                Fn::GetAtt:
+                  - StatusTable
+                  - Arn
+      Environment:
+        Variables:
+          statusTable: !Ref StatusTable
+    Metadata:
+      RuntimeOption: typescript
+
+  PluginTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        KeySchema:
+          - AttributeName: orchestratorId
+            KeyType: HASH
+          - AttributeName: subscriptionArn
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: orchestratorId
+            AttributeType: S
+          - AttributeName: subscriptionArn
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        TableName: !Sub ${AWS::StackName}-plugin
+        Tags:
+          - Key: Role
+            Value: Configuration
+          - Key: NPI
+            Value: "true"
+
+  StatusTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        KeySchema:
+          - AttributeName: uid
+            KeyType: HASH
+          - AttributeName: workflow
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: uid
+            AttributeType: S
+          - AttributeName: workflow
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        TableName: !Sub ${AWS::StackName}-status
+        Tags:
+          - Key: Role
+            Value: Status
+          - Key: NPI
+            Value: "true"
+
+  ##
+  ## Start Activities Section
+  ##
+
+  ##
+  ## End Activities Section
+  ##
+
+Parameters:
+  StackTagName:
+    Type: String
+    Description: Stack Name (injected by Stackery at deployment time)
+  EnvironmentTagName:
+    Type: String
+    Description: Environment Name (injected by Stackery at deployment time)
+    

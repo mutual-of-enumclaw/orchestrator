@@ -17,11 +17,13 @@
         "lt": "npm run lint && npm run test:coverage",
         "refreshVSToken": "vsts-npm-auth -config .npmrc",
         "package": "npx sls package",
+        "activities": "npx orch-utils activities",
         "deploy": "npx sls deploy",
         "buildPublish": "npm run build && npm publish"
     },
     "dependencies": {
         "@moe-tech/dynamo-delta": "^1.0.25",
+        "@moe-tech/orch-utils": "file:orch-utils",
         "@types/aws-sdk": "^2.7.0",
         "@types/rewire": "^2.5.28",
         "epsagon": "^1.58.6"

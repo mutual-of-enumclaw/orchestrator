@@ -1,6 +1,6 @@
 import { initialize, setDynamoDal, resetErrorStatusInSection, getActivity } from './initializeActivities'
-import { OrchestratorWorkflowStatus, OrchestratorComponentState } from '..';
-import { OrchestratorSyncStatus } from '../types';
+import { OrchestratorWorkflowStatus, OrchestratorComponentState } from '../..';
+import { OrchestratorSyncStatus } from '../../types';
 class MockDynamoDb {
     putInput: any = null;
     getInput: any = null;

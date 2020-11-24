@@ -1,0 +1,8 @@
+{
+    "name": "@moe-tech/orch-utils",
+    "version": "1.0.0",
+    "main": "plugin.js",
+    "bin": {
+        "orch-utils": "./index.js"
+    }
+}

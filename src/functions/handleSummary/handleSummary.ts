@@ -3,17 +3,17 @@
  * License: Public
  */
 import { DynamoDBStreamEvent, DynamoDBRecord } from 'aws-lambda';
-import { lambdaWrapperAsync } from '../utils/epsagonUtils';
+import { lambdaWrapperAsync } from '../../utils/epsagonUtils';
 import {
     OrchestratorActivityStatus, OrchestratorStatus, OrchestratorComponentState,
     OrchestratorWorkflowStatus,
     getPluginRegisterTimeout
 }
-from '..';
+from '../..';
 import * as AWS from 'aws-sdk';
-import { OrchestratorStatusDal } from '../dataAccessLayers/orchestratorStatusDal';
-import { OrchestratorPluginDal } from '../dataAccessLayers/orchestratorPluginDal';
-import { OrchestratorStage } from '../types';
+import { OrchestratorStatusDal } from '../../dataAccessLayers/orchestratorStatusDal';
+import { OrchestratorPluginDal } from '../../dataAccessLayers/orchestratorPluginDal';
+import { OrchestratorStage } from '../../types';
 import { setError } from 'epsagon';
 
 export class StatusSummary {

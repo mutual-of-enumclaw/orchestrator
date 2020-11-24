@@ -66,3 +66,5 @@ typings/
 
 .webpack
 .stackery/
+
+deployHooks

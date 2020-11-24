@@ -2,7 +2,7 @@ import { DynamoDB } from 'aws-sdk';
 import {
     OrchestratorComponentState, lambdaWrapperAsync, OrchestratorWorkflowStatus,
     OrchestratorActivityStatus, OrchestratorAsyncStatus, OrchestratorSyncStatus
-} from '..';
+} from '../..';
 
 let dynamodb: DynamoDB.DocumentClient = null;
 
