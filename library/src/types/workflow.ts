@@ -4,6 +4,27 @@
  */
 import { OrchestratorActivityStatus, OrchestratorStage } from '.';
 
+export enum OrchestratorComponentState {
+    NotStarted = 'Not Started',
+    InProgress = 'In Progress',
+    MandatoryCompleted = 'Mandatory Completed',
+    Complete = 'Complete',
+    Error = 'Error',
+    OptionalError = 'Optional Task Error',
+    DoNotRun = 'Do Not Run'
+}
+
+export class OrchestratorError extends Error {
+    public setStatus: boolean = true;
+}
+
+export interface OrchestratorStatus {
+    state: OrchestratorComponentState;
+    message?: string;
+    startTime?: string;
+    token?: string;
+}
+
 export interface OrchestratorWorkflowStatus {
     uid: string;
     workflow: string;
@@ -20,10 +41,6 @@ export interface OrchestratorWorkflowStatus {
     pluginRegisterTimeout?: number;
 }
 
-export class OrchestratorError extends Error {
-    public setStatus: boolean = true;
-}
-
 export interface OrchestratorPluginMessage extends OrchestratorWorkflowStatus {
     stages: {
         [key:string]: string;
@@ -32,21 +49,3 @@ export interface OrchestratorPluginMessage extends OrchestratorWorkflowStatus {
     stage?: OrchestratorStage;
     initialize?: boolean;
 }
-
-export interface OrchestratorStatus {
-    state: OrchestratorComponentState;
-    message?: string;
-    startTime?: string;
-    token?: string;
-}
-
-export enum OrchestratorComponentState {
-    NotStarted = 'Not Started',
-    InProgress = 'In Progress',
-    MandatoryCompleted = 'Mandatory Completed',
-    Complete = 'Complete',
-    Error = 'Error',
-    OptionalError = 'Optional Task Error',
-    DoNotRun = 'Do Not Run'
-}
-

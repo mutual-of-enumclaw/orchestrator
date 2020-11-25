@@ -9,105 +9,104 @@ export class MockDynamoDb {
     public putInput: any;
     public updateInputs: Array<any>;
 
-    public reset() {
-        this.error = '';
-        this.updateReturn = null;
-        this.updateInput = null;
-        this.scanReturn = null;
-        this.queryReturn = null;
-        this.returnObject = null;
-        this.deleteInput = null;
-        this.putInput = null;
-        this.updateInputs = [];
+    public reset () {
+      this.error = '';
+      this.updateReturn = null;
+      this.updateInput = null;
+      this.scanReturn = null;
+      this.queryReturn = null;
+      this.returnObject = null;
+      this.deleteInput = null;
+      this.putInput = null;
+      this.updateInputs = [];
     }
 
-    public get(params): any {
-        return {
-            promise: () => {
-                return new Promise((resolve, reject) => {
-                    resolve({
-                        '$response': {
-                            error: this.error,
-                        },
-                        Item: this.returnObject
-                    });
-                });
-            }
-        };
+    public get (params): any {
+      return {
+        promise: () => {
+          return new Promise((resolve, reject) => {
+            resolve({
+              $response: {
+                error: this.error
+              },
+              Item: this.returnObject
+            });
+          });
+        }
+      };
     }
 
-    public put(params): any {
-        this.putInput = params;
-        return {
-            promise: () => {
-                return new Promise((resolve, reject) => {
-                    resolve({
-                        '$response': {
-                            error: this.error,
-                            data: this.returnObject
-                        }
-                    });
-                });
-            }
-        };
+    public put (params): any {
+      this.putInput = params;
+      return {
+        promise: () => {
+          return new Promise((resolve, reject) => {
+            resolve({
+              $response: {
+                error: this.error,
+                data: this.returnObject
+              }
+            });
+          });
+        }
+      };
     }
 
-    public query(params): any {
-        return {
-            promise: () => {
-                return new Promise((resolve, reject) => {
-                    resolve({
-                        '$response': {
-                            error: this.error,
-                        },
-                        Items: this.queryReturn
-                    });
-                });
-            }
-        };
+    public query (params): any {
+      return {
+        promise: () => {
+          return new Promise((resolve, reject) => {
+            resolve({
+              $response: {
+                error: this.error
+              },
+              Items: this.queryReturn
+            });
+          });
+        }
+      };
     }
 
-
-    public scan(scanParams: any): any {
-        return {
-            promise: () => {
-                return new Promise((resolve, reject) => {
-                    resolve({
-                        '$response': {
-                            error: this.error,
-                        },
-                        ...this.scanReturn
-                    });
-                });
-            }
-        };
+    public scan (scanParams: any): any {
+      return {
+        promise: () => {
+          return new Promise((resolve, reject) => {
+            resolve({
+              $response: {
+                error: this.error
+              },
+              ...this.scanReturn
+            });
+          });
+        }
+      };
     }
 
-    public update(updateParams: any): any {
-        this.updateInputs.push(updateParams);
-        this.updateInput = updateParams;
-        return {
-            promise: () => {
-                return new Promise((resolve, reject) => {
-                    resolve({
-                        '$response': {
-                            error: this.error,
-                        },
-                        ...this.updateReturn
-                    });
-                });
-            }
-        };
+    public update (updateParams: any): any {
+      this.updateInputs.push(updateParams);
+      this.updateInput = updateParams;
+      return {
+        promise: () => {
+          return new Promise((resolve, reject) => {
+            resolve({
+              $response: {
+                error: this.error
+              },
+              ...this.updateReturn
+            });
+          });
+        }
+      };
     }
 
-    public delete(deleteParams: any): any {
-        this.deleteInput = deleteParams;
-        return {
-            promise: () => {
-                return new Promise((resolve) => {
-                    resolve();
-                });
-            }
-        };
+    public delete (deleteParams: any): any {
+      this.deleteInput = deleteParams;
+      return {
+        promise: () => {
+          return new Promise((resolve) => {
+            resolve();
+          });
+        }
+      };
     }
 }

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 const fs = require('fs');
+const glob = require('glob');
 const { SSM } = require('aws-sdk');
 
 const ssm = new SSM();
@@ -20,7 +21,58 @@ async function processCliCommand() {
             console.log('Creating orchestrator activities');
             await loadActivities(args);
             break;
+        case 'clean':
+            await clean(args)
+            break;
     }
+}
+
+async function clean(args) {
+    fs.rmdirSync('library/dist', { recursive: true });
+    let files = new glob.sync('**/*.js', {
+        ignore: [
+            'orch-utils/**',
+            '**/node_modules/**',
+            'source-map-install.js',
+            'webpack.config.js',
+            'examples/**',
+            'jest.config.js'
+        ]
+    });
+    console.log(files);
+    files.forEach(x => {
+        fs.unlinkSync(x);
+    });
+
+    files = new glob.sync('**/*.d.ts', {
+        ignore: [
+            'orch-utils/**',
+            '**/node_modules/**',
+            'source-map-install.js',
+            'webpack.config.js',
+            'examples/**',
+            'jest.config.js'
+        ]
+    });
+    console.log(files);
+    files.forEach(x => {
+        fs.unlinkSync(x);
+    });
+
+    files = new glob.sync('**/*.js.map', {
+        ignore: [
+            'orch-utils/**',
+            '**/node_modules/**',
+            'source-map-install.js',
+            'webpack.config.js',
+            'examples/**',
+            'jest.config.js'
+        ]
+    });
+    console.log(files);
+    files.forEach(x => {
+        fs.unlinkSync(x);
+    });
 }
 
 async function loadActivities(args) {

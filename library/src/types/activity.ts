@@ -11,14 +11,6 @@ export enum OrchestratorStage {
     PostProcessing = 'post'
 }
 
-export interface OrchestratorActivityStatus {
-    pre: OrchestratorSyncStatus;
-    async: OrchestratorAsyncStatus;
-    post: OrchestratorSyncStatus;
-    status: OrchestratorStatus;
-    pluginRegisterTimeout?: number;
-}
-
 export interface OrchestratorSyncStatus {
     mandatory: {[key: string]: OrchestratorStatus};
     optional: {[key: string]: OrchestratorStatus};
@@ -29,4 +21,12 @@ export interface OrchestratorAsyncStatus {
     mandatory: {[key: string]: OrchestratorStatus};
     optional: {[key: string]: OrchestratorStatus};
     status: OrchestratorStatus;
+}
+
+export interface OrchestratorActivityStatus {
+    pre: OrchestratorSyncStatus;
+    async: OrchestratorAsyncStatus;
+    post: OrchestratorSyncStatus;
+    status: OrchestratorStatus;
+    pluginRegisterTimeout?: number;
 }

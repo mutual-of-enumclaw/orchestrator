@@ -117,8 +117,16 @@ Resources:
             Value: "true"
 
   
-  
-  
+  metrics:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: metrics/template.yml
+      Parameters:
+        StackTagName: !Sub ${StackTagName}-metrics
+        EnvironmentTagName: !Ref EnvironmentTagName
+        StatusTableName: !Ref StatusTable
+        StatusTableArn: !GetAtt StatusTable.Arn
+        StatusTableStreamArn: !GetAtt StatusTable.StreamArn
   
   ##
   ## Start Activities Section

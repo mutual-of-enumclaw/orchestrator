@@ -4,5 +4,8 @@
     "main": "plugin.js",
     "bin": {
         "orch-utils": "./index.js"
+    },
+    "dependencies": {
+        "glob": "^7.1.6"
     }
 }

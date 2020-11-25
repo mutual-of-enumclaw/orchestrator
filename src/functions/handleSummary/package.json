@@ -2,6 +2,7 @@
   "name": "handleSummary",
   "version": "1.0.0",
   "devDependencies": {
+    "@moe-tech/orchestrator": "file:../../../library",
     "aws-sdk": "~2"
   }
 }

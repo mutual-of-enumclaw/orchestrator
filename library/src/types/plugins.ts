@@ -30,10 +30,10 @@ export interface PluginInfo {
     order?: number;
     alwaysRun?: boolean;
     idempotent?: boolean;
-    
-    /**Used as part of auto documentation */
+
+    /** Used as part of auto documentation */
     description?: string;
-    
-    /**Used for specifying how to group transactions in a fifo queue*/
+
+    /** Used for specifying how to group transactions in a fifo queue */
     fifoKey?: string;
 }

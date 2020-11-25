@@ -61,10 +61,11 @@ typings/
 .next
 .serverless
 
-/dist
 /junit.xml
 
 .webpack
 .stackery/
 
 deployHooks
+
+dist

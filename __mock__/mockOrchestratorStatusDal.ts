@@ -1,30 +1,31 @@
-import { OrchestratorComponentState, OrchestratorStage } from "../src";
+import { OrchestratorComponentState, OrchestratorStage } from '../library';
 
 class MockOrchstratorStatusDal {
     public updatePluginStatusInput = [];
 
-    reset() {
-        console.log('resetting')
-        this.updatePluginStatusInput = [];
-        this.updatePluginStatus.mockClear();
-        this.getStatusObject.mockReset();
+    reset () {
+      console.log('resetting');
+      this.updatePluginStatusInput = [];
+      this.updatePluginStatus.mockClear();
+      this.getStatusObject.mockReset();
     }
 
     updatePluginStatus = jest.fn().mockImplementation((
-        uid: string, workflow: string, activity: string, stage: OrchestratorStage,
-        mandatory: boolean, pluginName: string, state: OrchestratorComponentState,
-        message: string) => {
-        this.updatePluginStatusInput.push({
-            uid,
-            workflow,
-            activity,
-            stage,
-            mandatory,
-            pluginName,
-            state,
-            message
-        });
+      uid: string, workflow: string, activity: string, stage: OrchestratorStage,
+      mandatory: boolean, pluginName: string, state: OrchestratorComponentState,
+      message: string) => {
+      this.updatePluginStatusInput.push({
+        uid,
+        workflow,
+        activity,
+        stage,
+        mandatory,
+        pluginName,
+        state,
+        message
+      });
     });
+
     getStatusObject = jest.fn();
 }
 
