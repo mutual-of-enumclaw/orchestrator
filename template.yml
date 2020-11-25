@@ -20,16 +20,12 @@ Resources:
                 - dynamodb:UpdateItem
                 - dynamodb:GetItem
               Resource:
-                - Fn::GetAtt:
-                    - StatusTable
-                    - Arn
+                - !GetAtt StatusTable.Arn
             - Effect: Allow
               Action:
                 - dynamodb:Query
               Resource:
-                - Fn::GetAtt:
-                    - PluginTable
-                    - Arn
+                - !GetAtt PluginTable.Arn
             - Effect: Allow
               Action:
                 - states:SendTaskSuccess
@@ -69,10 +65,7 @@ Resources:
               Action:
                 - dynamodb:PutItem
                 - dynamodb:GetItem
-              Resource:
-                Fn::GetAtt:
-                  - StatusTable
-                  - Arn
+              Resource: !GetAtt StatusTable.Arn
       Environment:
         Variables:
           statusTable: !Ref StatusTable
@@ -123,9 +116,55 @@ Resources:
           - Key: NPI
             Value: "true"
 
+  
+  
+  
+  
   ##
   ## Start Activities Section
   ##
+
+  activityTest:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: activity/template.yml
+      Parameters:
+        ParentStackName: !Ref AWS::StackName
+        Name: "Test"
+        EnvironmentTagName: !Ref EnvironmentTagName
+        StatusTableName: !Ref StatusTable
+        StatusTableArn: !GetAtt StatusTable.Arn
+        PluginTableName: !Ref PluginTable
+        PluginTableArn: !GetAtt PluginTable.Arn
+    
+
+  activityTest2:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: activity/template.yml
+      Parameters:
+        ParentStackName: !Ref AWS::StackName
+        Name: "Test2"
+        EnvironmentTagName: !Ref EnvironmentTagName
+        StatusTableName: !Ref StatusTable
+        StatusTableArn: !GetAtt StatusTable.Arn
+        PluginTableName: !Ref PluginTable
+        PluginTableArn: !GetAtt PluginTable.Arn
+    
+
+  activityTest3:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: activity/template.yml
+      Parameters:
+        ParentStackName: !Ref AWS::StackName
+        Name: "Test3"
+        EnvironmentTagName: !Ref EnvironmentTagName
+        StatusTableName: !Ref StatusTable
+        StatusTableArn: !GetAtt StatusTable.Arn
+        PluginTableName: !Ref PluginTable
+        PluginTableArn: !GetAtt PluginTable.Arn
+    
 
   ##
   ## End Activities Section

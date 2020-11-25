@@ -4,8 +4,8 @@
  */
 
 import { OrchestratorStatusDal } from './orchestratorStatusDal';
-import { OrchestratorComponentState, OrchestratorStage } from '..';
-import { MockDynamoDb } from '../../__mock__/mockDynamoDb';
+import { OrchestratorComponentState, OrchestratorStage } from '../types';
+import { MockDynamoDb } from '../../../__mock__/mockDynamoDb';
 
 const mockDb = new MockDynamoDb();
 

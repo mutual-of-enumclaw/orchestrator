@@ -24,6 +24,7 @@ async function processCliCommand() {
 }
 
 async function loadActivities(args) {
+    const yamlFile = './template.yml';
     const paramResponse = await ssm.getParameter({
         Name: args['--ssm-name']
     }).promise();
@@ -37,24 +38,27 @@ async function loadActivities(args) {
     console.log('Creating activities', activityNames);
 
     const activities = activityNames.map(name => {
+        name = name.trim();
         return `
-        activity${name}:
-            Type: AWS::Serverless::Application
-            Properties:
-                Location: activity/template.yml
-                Parameters:
-                    Name: "${name}"
-                    StatusTableName: !Ref StatusTable
-                    StatusTableArn: !GetAtt StatusTable.Arn
-                    PluginTableName: !Ref PluginTable
-                    PluginTableArn: !GetAtt PluginTable.Arn
-        `
+  activity${name}:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: activity/template.yml
+      Parameters:
+        ParentStackName: !Ref AWS::StackName
+        Name: "${name}"
+        EnvironmentTagName: !Ref EnvironmentTagName
+        StatusTableName: !Ref StatusTable
+        StatusTableArn: !GetAtt StatusTable.Arn
+        PluginTableName: !Ref PluginTable
+        PluginTableArn: !GetAtt PluginTable.Arn
+    `
     });
 
     
-    const templateContent = fs.readFileSync('./template.yaml').toString('utf-8');
-    templateContent.replace(
-        /\#\#\n\W+\#\# Start Activities Section\n\W+\#\#\n.*\n\W+\#\# End Activities Section\n\W+\#\#/,
+    let templateContent = fs.readFileSync(yamlFile).toString('utf-8');
+    templateContent = templateContent.replace(
+        /\#\#\n\W+\#\# Start Activities Section\n\W+\#\#\n(.|\n)*\n\W+\#\# End Activities Section\n\W+\#\#/,
         [].concat(
             `
   ##
@@ -67,7 +71,7 @@ async function loadActivities(args) {
   ##`
         ).join('\n'));
 
-    
+    fs.writeFileSync(yamlFile, templateContent);
     return 0;
 }
 

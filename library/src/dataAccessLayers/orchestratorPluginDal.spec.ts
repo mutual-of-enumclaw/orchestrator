@@ -5,7 +5,7 @@
 
 import { OrchestratorPluginDal } from "./orchestratorPluginDal";
 import { OrchestratorStage } from "../types";
-import { MockDynamoDb } from '../../activity/__mock__/mockDynamoDb';
+import { MockDynamoDb } from '../../../activity/__mock__/mockDynamoDb';
 
 const mockDb = new MockDynamoDb();
 

@@ -18,8 +18,9 @@
         "refreshVSToken": "vsts-npm-auth -config .npmrc",
         "package": "npx sls package",
         "activities": "npx orch-utils activities",
-        "deploy": "npx sls deploy",
-        "buildPublish": "npm run build && npm publish"
+        "deploy": "sam deploy",
+        "buildPublish": "npm run build && npm publish",
+        "deployNk": "npm run deploy -- --stack-name nk-orch --s3-bucket moe-deployment-snd --s3-prefix sam/nk-orch --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides StackTagName=nk-orch EnvironmentTagName=snd"
     },
     "dependencies": {
         "@moe-tech/dynamo-delta": "^1.0.25",
