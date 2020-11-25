@@ -128,6 +128,7 @@ Resources:
         StatusTableArn: !GetAtt StatusTable.Arn
         StatusTableStreamArn: !GetAtt StatusTable.StreamArn
   
+  
   ##
   ## Start Activities Section
   ##

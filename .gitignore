@@ -68,4 +68,4 @@ typings/
 
 deployHooks
 
-dist
+/library/dist
