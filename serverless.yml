@@ -133,6 +133,8 @@ resources:
             Value: Configuration
           - Key: NPI
             Value: "true"
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
 
     StatusTable:
       Type: AWS::DynamoDB::Table
@@ -156,6 +158,8 @@ resources:
             Value: Status
           - Key: NPI
             Value: "true"
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
 
   Outputs:
     DynamoDbPluginTableName:
