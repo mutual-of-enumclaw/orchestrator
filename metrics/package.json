@@ -1,0 +1,8 @@
+{
+    "name": "@moe-tech/orchestrator-metrics",
+    "version": "1.0.0",
+    "scripts": {
+        "prebuild": "cd src/library && npm i && tsc -d && cd ../functions && npm i",
+        "build": "cd src/functions && tsc -d"
+    }
+}
