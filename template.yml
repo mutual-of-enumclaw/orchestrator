@@ -137,7 +137,6 @@ Resources:
         StatusTableName: !Ref StatusTable
         StatusTableArn: !GetAtt StatusTable.Arn
         StatusTableStreamArn: !GetAtt StatusTable.StreamArn
-        OrchestratorLayerArn: !Ref Library
   
   
   ##
