@@ -132,7 +132,7 @@ Resources:
     Properties:
       Location: metrics/template.yml
       Parameters:
-        StackTagName: !Sub ${StackTagName}-metrics
+        StackTagName: !Sub ${AWS::StackName}-metrics
         EnvironmentTagName: !Ref EnvironmentTagName
         StatusTableName: !Ref StatusTable
         StatusTableArn: !GetAtt StatusTable.Arn
