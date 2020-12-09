@@ -68,6 +68,8 @@ typings/
 
 deployHooks
 
+.aws-sam
+
 dist
 **/src/**/*.js
 **/src/**/*.js.map
