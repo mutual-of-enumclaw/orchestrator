@@ -1,4 +1,13 @@
 Transform: AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Runtime: nodejs12.x
+    CodeUri: src/functions
+    MemorySize: 128
+    Timeout: 30
+    Layers:
+      - !Ref Library
+
 Resources:
   updateStatus:
     Type: AWS::Serverless::Function
@@ -7,12 +16,7 @@ Resources:
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: updateStatus
-      CodeUri: src
-      Handler: functions/handleSummary.updateActivityStatus
-      Runtime: nodejs12.x
-      MemorySize: 128
-      Timeout: 30
-      Tracing: Active
+      Handler: handleSummary.updateActivityStatus
       Policies:
         - Statement:
             - Effect: Allow
@@ -53,12 +57,7 @@ Resources:
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: initializeActivities
-      CodeUri: src
-      Handler: functions/initializeActivities.initialize
-      Runtime: nodejs12.x
-      MemorySize: 128
-      Timeout: 30
-      Tracing: Active
+      Handler: initializeActivities.initialize
       Policies:
         - Statement:
             - Effect: Allow
@@ -116,6 +115,17 @@ Resources:
           - Key: NPI
             Value: "true"
 
+  Library:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Layer ${ResourceName}
+        - ResourceName: library
+      ContentUri: library
+      RetentionPolicy: Retain
+    Metadata:
+      BuildMethod: nodejs12.x
+  
   
   metrics:
     Type: AWS::Serverless::Application
@@ -127,6 +137,7 @@ Resources:
         StatusTableName: !Ref StatusTable
         StatusTableArn: !GetAtt StatusTable.Arn
         StatusTableStreamArn: !GetAtt StatusTable.StreamArn
+        OrchestratorLayerArn: !Ref Library
   
   
   ##

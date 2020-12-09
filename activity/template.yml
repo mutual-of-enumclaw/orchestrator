@@ -1,4 +1,13 @@
 Transform: AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Runtime: nodejs12.x
+    CodeUri: src/functions
+    MemorySize: 128
+    Timeout: 30
+    Layers:
+      - !Ref Library
+      - !Ref OrchestratorLibrary
 Parameters:
   ParentStackName:
     Type: String
@@ -17,6 +26,10 @@ Parameters:
     Type: String
   PluginTableArn:
     Type: String
+  StackTagName:
+    Type: String
+    Description: Stack Name (injected by Stackery at deployment time)
+    
 Resources:
   parallelTopic:
     Type: AWS::SNS::Topic
@@ -32,7 +45,6 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       DisplayName: !Sub ${ParentStackName}-${Name}-post+
-
       TopicName: !Sub ${ParentStackName}-${Name}-post
   parallelStart:
     Type: AWS::Serverless::Function
@@ -65,7 +77,7 @@ Resources:
             - Effect: Allow
               Action:
                 - states:SendTaskSuccess
-              Resource: "*"
+              Resource: '*'
       Environment:
         Variables:
           snsTopic: !Ref parallelTopic
@@ -106,7 +118,7 @@ Resources:
                 - lambda:InvokeFunction
                 - sns:ListSubscriptionsByTopic
               Resource:
-                - "*"
+                - '*'
       Environment:
         Variables:
           activity: !Ref Name
@@ -146,7 +158,7 @@ Resources:
               Action:
                 - lambda:InvokeFunction
                 - sns:ListSubscriptionsByTopic
-              Resource: "*"
+              Resource: '*'
       Environment:
         Variables:
           activity: !Ref Name
@@ -181,7 +193,7 @@ Resources:
               Action:
                 - lambda:InvokeFunction
                 - sns:ListSubscriptionsByTopic
-              Resource: "*"
+              Resource: '*'
       Environment:
         Variables:
           activity: !Ref Name
@@ -240,7 +252,7 @@ Resources:
               Action:
                 - lambda:InvokeFunction
                 - sns:ListSubscriptionsByTopic
-              Resource: "*"
+              Resource: '*'
       Environment:
         Variables:
           activity: !Ref Name
@@ -298,7 +310,7 @@ Resources:
               Action:
                 - lambda:InvokeFunction
                 - sns:ListSubscriptionsByTopic
-              Resource: "*"
+              Resource: '*'
       Environment:
         Variables:
           activity: !Ref Name
@@ -341,25 +353,24 @@ Resources:
         - AWSXrayWriteOnlyAccess
     Metadata:
       RuntimeOption: typescript
-
   activityWorkflowRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
               Service:
-                - "states.amazonaws.com"
+                - states.amazonaws.com
             Action:
-              - "sts:AssumeRole"
+              - sts:AssumeRole
       Policies:
-        - PolicyName: "root"
+        - PolicyName: root
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: '2012-10-17'
             Statement:
-              - Effect: "Allow"
+              - Effect: Allow
                 Action:
                   - lambda:InvokeFunction
                   - dyanmodb:UpdateItem
@@ -368,7 +379,6 @@ Resources:
                   - !GetAtt sncPostProc.Arn
                   - !GetAtt parallelStart.Arn
                   - !Ref StatusTableArn
-
   activityWorkflow:
     Type: AWS::StepFunctions::StateMachine
     Properties:
@@ -455,3 +465,24 @@ Resources:
             }
           }
         }
+  Library:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Layer ${ResourceName}
+        - ResourceName: library
+      ContentUri: src/library
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: nodejs12.x
+
+  OrchestratorLibrary:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Layer ${ResourceName}
+        - ResourceName: library
+      ContentUri: ../library
+      RetentionPolicy: Retain
+    Metadata:
+      BuildMethod: nodejs12.x
