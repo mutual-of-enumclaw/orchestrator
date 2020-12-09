@@ -6,7 +6,7 @@
 import { OrchestratorComponentState, OrchestratorStage, stepLambdaAsyncWrapper, OrchestratorStatusDal, 
     OrchestratorWorkflowStatus, getPluginRegisterTimeout, OrchestratorActivityStatus, OrchestratorPluginDal }
     from '@moe-tech/orchestrator';
-import { SNSUtils } from '../utils/snsUtils';
+import { SNSUtils } from '@moe-tech/orch-activity-lib';
 import { install } from 'source-map-support';
 import { StepFunctions } from 'aws-sdk';
 

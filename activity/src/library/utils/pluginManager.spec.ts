@@ -5,9 +5,9 @@
 
 import { PluginManager } from './pluginManager';
 import { CloudwatchEvent } from '../types/cloudwatchEvent';
-import { MockPluginManagementDal, MakeLambdaCallWrapper } from '../../__mock__/libServices';
+import { MockPluginManagementDal, MakeLambdaCallWrapper } from '../__mock__/libServices';
 import { OrchestratorStage } from '@moe-tech/orchestrator';
-import { MockLambda } from '../../__mock__/aws';
+import { MockLambda } from '../__mock__/aws';
 
 const pluginDal = new MockPluginManagementDal();
 const lambda = new MockLambda();

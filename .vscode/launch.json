@@ -1,0 +1,395 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "metrics:reportMetrics",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/metrics/.aws-sam/build/reportMetrics",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/metrics/.aws-sam/build/reportMetrics/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "metrics:alertSupportTeam",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/metrics/.aws-sam/build/alertSupportTeam",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/metrics/.aws-sam/build/alertSupportTeam/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "metrics:startValidStateMachine",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/metrics/.aws-sam/build/startValidStateMachine",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/metrics/.aws-sam/build/startValidStateMachine/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest:parallelStart",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/parallelStart",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/parallelStart/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest:sncPreProc",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/sncPreProc",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/sncPreProc/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest:sncPostProc",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/sncPostProc",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/sncPostProc/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest:pluginAdd",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/pluginAdd",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/pluginAdd/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest:pluginRemove",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/pluginRemove",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/pluginRemove/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest:pluginUpdate",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/pluginUpdate",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/pluginUpdate/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest:refreshAllRegistrations",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/refreshAllRegistrations",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/refreshAllRegistrations/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest2:parallelStart",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/parallelStart",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/parallelStart/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest2:sncPreProc",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/sncPreProc",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/sncPreProc/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest2:sncPostProc",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/sncPostProc",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/sncPostProc/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest2:pluginAdd",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/pluginAdd",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/pluginAdd/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest2:pluginRemove",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/pluginRemove",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/pluginRemove/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest2:pluginUpdate",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/pluginUpdate",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/pluginUpdate/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest2:refreshAllRegistrations",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/refreshAllRegistrations",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/refreshAllRegistrations/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest3:parallelStart",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/parallelStart",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/parallelStart/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest3:sncPreProc",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/sncPreProc",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/sncPreProc/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest3:sncPostProc",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/sncPostProc",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/sncPostProc/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest3:pluginAdd",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/pluginAdd",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/pluginAdd/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest3:pluginRemove",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/pluginRemove",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/pluginRemove/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest3:pluginUpdate",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/pluginUpdate",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/pluginUpdate/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "activityTest3:refreshAllRegistrations",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/activity/.aws-sam/build/refreshAllRegistrations",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/activity/.aws-sam/build/refreshAllRegistrations/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "updateStatus",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/.aws-sam/build/updateStatus",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/.aws-sam/build/updateStatus/app.js"
+      ],
+      "sourceMaps": true
+    },
+    {
+      "name": "initializeActivities",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 5858,
+      "localRoot": "${workspaceRoot}/.aws-sam/build/initializeActivities",
+      "remoteRoot": "/var/task",
+      "protocol": "inspector",
+      "stopOnEntry": false,
+      "outFiles": [
+        "${workspaceRoot}/.aws-sam/build/initializeActivities/app.js"
+      ],
+      "sourceMaps": true
+    }
+  ]
+}

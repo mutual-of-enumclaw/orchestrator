@@ -10,7 +10,7 @@ module.exports = {
     mode: process.env.NODE_ENV || "production",
     entry: () => awsSamPlugin.entry(),
     devtool: 'source-map',
-    externals: ['aws-sdk', 'epsagon'],
+    externals: [nodeExternals()],
     resolve: {
         extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     },

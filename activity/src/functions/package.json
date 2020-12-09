@@ -1,0 +1,8 @@
+{
+    "name": "@moe-tech/orch-activity",
+    "version": "1.0.0",
+    "dependencies": {
+        "@moe-tech/orch-activity-lib": "file:../library",
+        "@moe-tech/orchestrator": "file:../../../library"
+    }
+}

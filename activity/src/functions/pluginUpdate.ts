@@ -3,11 +3,9 @@
  * License: Public
  */
 
-import { CloudwatchEvent } from '../types/cloudwatchEvent';
-import { lambdaWrapperAsync, OrchestratorStage, OrchestratorStatusDal } from '@moe-tech/orchestrator';
-import { PluginManager } from '../utils/pluginManager';
+import { lambdaWrapperAsync, OrchestratorStage } from '@moe-tech/orchestrator';
 import { install } from 'source-map-support';
-import { PluginManagementDal } from '../utils/pluginManagementDal';
+import { PluginManager, CloudwatchEvent } from '@moe-tech/orch-activity-lib';
 
 install();
 

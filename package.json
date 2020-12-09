@@ -1,5 +1,5 @@
 {
-    "name": "@moe-tech/orchestrator",
+    "name": "orchestrator",
     "author": "Mutual of Enumclaw",
     "publisher": "Mutual of Enumclaw",
     "license": "LGPLv3",
@@ -7,12 +7,12 @@
     "description": "The core data and related processing for orchestrators",
     "main": "dist/index.js",
     "scripts": {
-        "build": "npm run buildLibrary && npm run buildActivity && npm run buildMetrics && npm run buildCore",
+        "build": "npm run buildLibrary && npm run buildCore",
         "test": "npx jest",
         "installAll": "npm run installHS && npm run installIA && npm run installActivity && npm run installLibrary && npm run installMetrics",
         "installHS": "cd src/functions/handleSummary && npm i",
         "installIA": "cd src/functions/initializeActivities && npm i",
-        "installActivity": "cd activity && npm i",
+        "installActivity": "cd activity/src && npm i",
         "installLibrary": "cd library && npm i",
         "installMetrics": "cd metrics && npm i",
         "test:coverage": "npm run test -- --coverage",
@@ -21,18 +21,21 @@
         "lint:fix": "npm run lint --fix",
         "refreshVSToken": "vsts-npm-auth -config .npmrc",
         "activities": "npx orch-utils activities",
-        "clean": "npx orch-utils clean",
+        "buildCore": "tsc -d",
         "buildLibrary": "cd library && npm run build",
-        "buildActivity": "cd activity && npm i && npm run build",
-        "buildMetrics": "cd metrics && npm i && npm run build",
-        "buildCore": "npm i && npx tsc -d",
+        "buildActivity": "cd activity/src && npm run build",
+        "buildMetrics": "cd metrics && npm run build",
         "deploy": "sam deploy --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND",
         "buildPublish": "npm run build && npm publish",
         "deployNk": "npm run deploy -- --stack-name nk-orch --s3-bucket moe-deployment-snd --s3-prefix sam/nk-orch --parameter-overrides StackTagName=nk-orch EnvironmentTagName=snd"
     },
-    "dependencies": {},
+    "dependencies": {
+        "aws-sam-webpack-plugin": "^0.7.0"
+    },
     "devDependencies": {
         "@moe-tech/orch-utils": "file:orch-utils",
+        "@moe-tech/orchestrator": "file:./library",
+        "@types/aws-lambda": "^8.10.64",
         "@types/jest": "^23.3.9",
         "@types/node": "^10.17.19",
         "@typescript-eslint/eslint-plugin": "^4.8.2",
@@ -45,12 +48,17 @@
         "eslint-plugin-node": "^11.1.0",
         "eslint-plugin-promise": "^4.2.1",
         "eslint-plugin-standard": "^4.1.0",
+        "hard-source-webpack-plugin": "^0.13.1",
         "jest": "^25.5.4",
         "jest-junit": "^7.0.0",
+        "serverless-webpack": "^5.3.5",
         "source-map-support": "^0.5.13",
         "ts-jest": "^25.3.1",
         "ts-loader": "^6.2.2",
-        "typescript": "^3.8.3"
+        "typescript": "^3.9.7",
+        "webpack": "^5.10.0",
+        "webpack-cli": "^4.2.0",
+        "webpack-node-externals": "^2.5.2"
     },
     "files": [
         "/dist",

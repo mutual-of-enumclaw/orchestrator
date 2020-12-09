@@ -16,10 +16,7 @@
         "forceConsistentCasingInFileNames": true
     },
     "include": [
-        "./src/**/*",
-        "./library/src/**/*",
-        "./activity/src/**/*",
-        "./metrics/src/**/*"
+        "./**/*"
     ],
     "exclude": [
         "node_modules",

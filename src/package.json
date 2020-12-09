@@ -1,0 +1,11 @@
+{
+    "name": "orchestrator-core",
+    "version": "1.0.0",
+    "devDependencies": {
+        "@moe-tech/orchestrator": "file:../library",
+        "epsagon": "^1.102.2"
+    },
+    "dependencies": {
+        "@types/node": "^14.14.11"
+    }
+}

@@ -7,8 +7,8 @@ Resources:
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: updateStatus
-      CodeUri: src/functions/handleSummary
-      Handler: index.updateActivityStatus
+      CodeUri: src
+      Handler: functions/handleSummary.updateActivityStatus
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 30
@@ -53,8 +53,8 @@ Resources:
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: initializeActivities
-      CodeUri: src/functions/initializeActivities
-      Handler: initializeActivities.initialize
+      CodeUri: src
+      Handler: functions/initializeActivities.initialize
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 30
@@ -173,7 +173,6 @@ Resources:
         StatusTableArn: !GetAtt StatusTable.Arn
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
-    
 
   ##
   ## End Activities Section

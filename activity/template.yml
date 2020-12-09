@@ -41,8 +41,8 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: parallelStart
-      CodeUri: src
-      Handler: functions/parallelStart.fanOut
+      CodeUri: src/functions
+      Handler: parallelStart.fanOut
       Runtime: nodejs12.x
       MemorySize: 3008
       Timeout: 30
@@ -81,8 +81,8 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: sncPreProc
-      CodeUri: src
-      Handler: functions/syncStage.start
+      CodeUri: src/functions
+      Handler: syncStage.start
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 900
@@ -122,8 +122,8 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: syncStage
-      CodeUri: src
-      Handler: functions/syncStage.start
+      CodeUri: src/functions
+      Handler: syncStage.start
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 900
@@ -162,8 +162,8 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginAdd
-      CodeUri: src
-      Handler: functions/pluginAdd.handler
+      CodeUri: src/functions
+      Handler: pluginAdd.handler
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 30
@@ -221,8 +221,8 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginRemove
-      CodeUri: src
-      Handler: functions/pluginRemove.handler
+      CodeUri: src/functions
+      Handler: pluginRemove.handler
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 30
@@ -280,8 +280,8 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginUpdate
-      CodeUri: src
-      Handler: functions/updateFunction.handler
+      CodeUri: src/functions
+      Handler: pluginUpdate.handler
       Runtime: nodejs12.x
       MemorySize: 3008
       Timeout: 30
@@ -331,8 +331,8 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: refreshAllRegistrations
-      CodeUri: src
-      Handler: functions/refreshAllRegistrations.handler
+      CodeUri: src/functions
+      Handler: refreshAllRegistrations.handler
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 900

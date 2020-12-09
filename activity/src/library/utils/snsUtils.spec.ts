@@ -4,7 +4,7 @@
  */
 
 import {SNSUtils} from './snsUtils';
-import { MockSNS } from '../../__mock__/aws';
+import { MockSNS } from '../__mock__/aws';
 
 const sns = new MockSNS();
 const utils = new SNSUtils('Test');

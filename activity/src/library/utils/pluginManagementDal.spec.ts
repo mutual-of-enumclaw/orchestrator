@@ -4,7 +4,7 @@
  */
 
 import { PluginManagementDal } from './pluginManagementDal';
-import { MockDynamoDb } from '../../__mock__/mockDynamoDb';
+import { MockDynamoDb } from '../__mock__/mockDynamoDb';
 
 const dynamoDb = new MockDynamoDb();
 const dal = new PluginManagementDal('Test', 'orchId', 'stageName');
