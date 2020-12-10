@@ -6,6 +6,7 @@ const { SSM } = require('aws-sdk');
 const ssm = new SSM();
 
 async function processCliCommand() {
+    console.log(process.argv);
     const args = {};
     for(let i = 3; i < process.argv.length; i++) {
         if(process.argv[i].startsWith('--')) {
@@ -81,8 +82,10 @@ async function loadActivities(args) {
     let ssmName = args['--ssm-name']
     if(!ssmName && args['--stackery-json']) {
         const stackery = JSON.parse(args['--stackery-json']);
+        console.log(stackery);
         ssmName = `/${stackery.environmentName}/orchestrator/${stackery.stackName.replace(/\-/g, '')}/activities`;
     }
+    console.log('ssmName', ssmName);
     const paramResponse = await ssm.getParameter({
         Name: ssmName
     }).promise();
@@ -133,5 +136,12 @@ async function loadActivities(args) {
     return 0;
 }
 
-
-processCliCommand();
+processCliCommand()
+    .then(() => { 
+        console.log('Complete'); 
+        process.exit(0);
+    })
+    .catch((err) => {
+        console.log(err);
+        process.exit(1);
+    });

@@ -1,6 +1,6 @@
 stages:
  setup:
-   - npm run activities -- --stackery-json '$1'
+   - node orch-utils/index.js activities --stackery-json $1
    - stackery deploy-stage setup
  build:
    - stackery deploy-stage convert-edge-functions
