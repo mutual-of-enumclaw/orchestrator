@@ -76,9 +76,15 @@ async function clean(args) {
 }
 
 async function loadActivities(args) {
+
     const yamlFile = './template.yml';
+    let ssmName = args['--ssm-name']
+    if(!ssmName && args['--stackery-json']) {
+        const stackery = JSON.parse(args['--stackery-json']);
+        ssmName = `/${stackery.environmentName}/orchestrator/${stackery.stackName.replace(/\-/g, '')}/activities`;
+    }
     const paramResponse = await ssm.getParameter({
-        Name: args['--ssm-name']
+        Name: ssmName
     }).promise();
 
     if(!paramResponse.Parameter) {

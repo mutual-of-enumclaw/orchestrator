@@ -155,34 +155,6 @@ Resources:
         StatusTableArn: !GetAtt StatusTable.Arn
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
-    
-
-  activityTest2:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "Test2"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !Ref StatusTable
-        StatusTableArn: !GetAtt StatusTable.Arn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-    
-
-  activityTest3:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "Test3"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !Ref StatusTable
-        StatusTableArn: !GetAtt StatusTable.Arn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
 
   ##
   ## End Activities Section
