@@ -3,8 +3,6 @@ const fs = require('fs');
 const glob = require('glob');
 const { SSM } = require('aws-sdk');
 
-const ssm = new SSM();
-
 async function processCliCommand() {
     console.log(process.argv);
     const args = {};
@@ -84,8 +82,11 @@ async function loadActivities(args) {
         const stackery = JSON.parse(args['--stackery-json']);
         console.log(stackery);
         ssmName = `/${stackery.environmentName}/orchestrator/${stackery.stackName.replace(/\-/g, '')}/activities`;
+        process.env.AWS_PROFILE = stackery.awsProfile;
     }
     console.log('ssmName', ssmName);
+
+    const ssm = new SSM();
     const paramResponse = await ssm.getParameter({
         Name: ssmName
     }).promise();
