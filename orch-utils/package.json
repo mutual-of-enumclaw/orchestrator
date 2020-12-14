@@ -1,7 +1,10 @@
 {
+    "author": "Mutual of Enumclaw",
+    "publisher": "Mutual of Enumclaw",
+    "license": "LGPLv3",
     "name": "@moe-tech/orch-utils",
     "version": "1.0.0",
-    "main": "plugin.js",
+    "main": "index.js",
     "bin": {
         "orch-utils": "./index.js"
     },
