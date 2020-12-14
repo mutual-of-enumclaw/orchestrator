@@ -1,6 +1,5 @@
 stages:
  setup:
-   - env
    - npm run installUtils
    - node orch-utils/index.js activities --stackery-json
    - stackery deploy-stage setup
