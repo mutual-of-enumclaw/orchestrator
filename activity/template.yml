@@ -6,7 +6,6 @@ Globals:
     MemorySize: 128
     Timeout: 30
     Layers:
-      - !Ref Library
       - !Ref OrchestratorLayerArn
 Parameters:
   ParentStackName:
@@ -469,17 +468,6 @@ Resources:
             }
           }
         }
-  Library:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: !Sub ${ParentStackName}-${Name}-library
-      Description: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Layer ${ResourceName}
-        - ResourceName: library
-      ContentUri: src/library
-      RetentionPolicy: Delete
-    Metadata:
-      BuildMethod: nodejs12.x
 
 Outputs:
   preProcessing:

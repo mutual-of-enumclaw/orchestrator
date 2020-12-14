@@ -2,9 +2,8 @@
  * Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
  * License: Public
  */
-import { lambdaWrapperAsync, OrchestratorStage } from '@moe-tech/orchestrator';
+import { lambdaWrapperAsync, OrchestratorStage, PluginManager } from '@moe-tech/orchestrator';
 import { install } from 'source-map-support';
-import { PluginManager } from '@moe-tech/orch-activity-lib';
 import { SNS } from 'aws-sdk';
 
 install();

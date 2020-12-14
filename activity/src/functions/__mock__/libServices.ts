@@ -1,4 +1,3 @@
-import { bool } from 'aws-sdk/clients/signer';
 import { OrchestratorStage, OrchestratorComponentState, OrchestratorSyncPlugin } from '@moe-tech/orchestrator';
 
 export class MockSNSUtils {

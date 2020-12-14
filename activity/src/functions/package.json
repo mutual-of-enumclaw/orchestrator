@@ -4,5 +4,8 @@
     "devDependencies": {
         "@moe-tech/orch-activity-lib": "file:../library",
         "@moe-tech/orchestrator": "file:../../../library"
+    },
+    "dependencies": {
+        "source-map-support": "^0.5.19"
     }
 }

@@ -4,9 +4,9 @@
  */
 
 import { fanOut, setServices } from './parallelStart';
-import { MockSNSUtils, OrchestratorStatusDal, OrchestratorPluginDal } from '@moe-tech/orch-activity-lib/__mock__/libServices';
+import { MockSNSUtils, OrchestratorStatusDal, OrchestratorPluginDal } from './__mock__/libServices';
 import { OrchestratorComponentState } from '@moe-tech/orchestrator';
-import { MockStepFunctions } from '@moe-tech/orch-activity-lib/__mock__/aws';
+import { MockStepFunctions } from './__mock__/aws';
 
 const sns = new MockSNSUtils();
 const dal = new OrchestratorStatusDal();

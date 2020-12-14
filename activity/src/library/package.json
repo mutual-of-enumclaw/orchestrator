@@ -1,7 +1,0 @@
-{
-    "name": "orchestrator-activity-lib-layer",
-    "version": "1.0.0",
-    "dependencies": {
-        "@moe-tech/orch-activity-lib": "file:src"
-    }
-}

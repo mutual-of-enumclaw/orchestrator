@@ -4,8 +4,8 @@
  */
 
 import { start, setServices } from './syncStage';
-import { OrchestratorPluginDal, OrchestratorStatusDal } from '@moe-tech/orch-activity-lib/__mock__/libServices';
-import { MockLambda } from '@moe-tech/orch-activity-lib/__mock__/aws';
+import { OrchestratorPluginDal, OrchestratorStatusDal } from './__mock__/libServices';
+import { MockLambda } from './__mock__/aws';
 import { OrchestratorComponentState } from '@moe-tech/orchestrator';
 
 
