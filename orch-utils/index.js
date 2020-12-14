@@ -77,12 +77,11 @@ async function clean(args) {
 async function loadActivities(args) {
 
     const yamlFile = './template.yml';
-    let ssmName = args['--ssm-name']
+    let ssmName = args['--ssm-name'];
     if(!ssmName && args['--stackery-json']) {
-        const stackery = JSON.parse(args['--stackery-json']);
+        const stackery = JSON.parse(process.env.STACKERY_DEPLOY_INFO);
         console.log(stackery);
-        ssmName = `/${stackery.environmentName}/orchestrator/${stackery.stackName.replace(/\-/g, '')}/activities`;
-        process.env.AWS_PROFILE = stackery.awsProfile;
+        ssmName = `/${stackery.environmentName}/orchestrator/stacks/${stackery.stackName.replace(/\-/g, '')}/activities`;
     }
     console.log('ssmName', ssmName);
 
@@ -93,10 +92,10 @@ async function loadActivities(args) {
 
     if(!paramResponse.Parameter) {
         console.log('Could not find parameter');
-        return -1;
+        throw new Error('Could not find parameter');
     }
     
-    const activityNames = paramResponse.Parameter.Value.split(',');
+    const activityNames = JSON.parse(paramResponse.Parameter.Value);
     console.log('Creating activities', activityNames);
 
     const activities = activityNames.map(name => {
@@ -114,6 +113,7 @@ async function loadActivities(args) {
         StatusTableArn: !GetAtt StatusTable.Arn
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
+        OrchestratorLayerArn: !Ref Library
     `
     });
 
@@ -134,7 +134,6 @@ async function loadActivities(args) {
         ).join('\n'));
 
     fs.writeFileSync(yamlFile, templateContent);
-    return 0;
 }
 
 processCliCommand()

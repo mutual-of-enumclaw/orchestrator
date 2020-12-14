@@ -3,11 +3,11 @@
  * License: Public
  */
 
+import { DynamoDB } from 'aws-sdk';
 import { OrchestratorStage, OrchestratorSyncPlugin } from '../types';
-import * as AWS from 'aws-sdk';
 
 export class OrchestratorPluginDal {
-    private dal: AWS.DynamoDB.DocumentClient = new AWS.DynamoDB.DocumentClient();
+    private dal: AWS.DynamoDB.DocumentClient = new DynamoDB.DocumentClient();
     constructor (private pluginTable: string, private orchestratorId: string) {
     }
 

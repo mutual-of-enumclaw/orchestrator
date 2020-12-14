@@ -7,7 +7,7 @@ Globals:
     Timeout: 30
     Layers:
       - !Ref Library
-      - !Ref OrchestratorLibrary
+      - !Ref OrchestratorLayerArn
 
 Parameters:
   StatusTableName:
@@ -22,6 +22,9 @@ Parameters:
   StackTagName:
     Type: String
     Description: Stack Name (injected by Stackery at deployment time)
+  OrchestratorLayerArn:
+    Type: String
+    Default: arn:aws:lambda:us-west-2:000000000000:layer:not-a-real-layer:1
 
 Resources:
   snsTopicFailure:
@@ -225,21 +228,11 @@ Resources:
             BatchSize: 1
     Metadata:
       RuntimeOption: typescript
-  
-  OrchestratorLibrary:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      Description: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Layer ${ResourceName}
-        - ResourceName: library
-      ContentUri: ../library
-      RetentionPolicy: Retain
-    Metadata:
-      BuildMethod: nodejs12.x
 
   Library:
     Type: AWS::Serverless::LayerVersion
     Properties:
+      LayerName: !Sub ${StackTagName}-library
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Layer ${ResourceName}
         - ResourceName: library
@@ -247,3 +240,4 @@ Resources:
       RetentionPolicy: Retain
     Metadata:
       BuildMethod: nodejs12.x
+

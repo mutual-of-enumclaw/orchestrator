@@ -2,15 +2,11 @@
  * Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
  * License: Public
  */
-import * as AWS from 'aws-sdk';
-import {
-  OrchestratorStatus, OrchestratorComponentState, OrchestratorSyncPlugin,
-  OrchestratorStage,
-  OrchestratorWorkflowStatus
-} from '..';
+import { DynamoDB } from 'aws-sdk';
+import { OrchestratorComponentState, OrchestratorStage, OrchestratorWorkflowStatus } from '..';
 
 export class OrchestratorStatusDal {
-    private dal: AWS.DynamoDB.DocumentClient = new AWS.DynamoDB.DocumentClient();
+    private dal: AWS.DynamoDB.DocumentClient = new DynamoDB.DocumentClient();
     constructor (private statusTable: string) {
     }
 

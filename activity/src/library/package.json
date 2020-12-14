@@ -1,9 +1,7 @@
 {
-    "name": "@moe-tech/orch-activity-lib",
+    "name": "orchestrator-activity-lib-layer",
     "version": "1.0.0",
-    "main": "index.js",
-    "dependencies": {},
-    "devDependencies": {
-        "aws-sdk": "^2.806.0"
+    "dependencies": {
+        "@moe-tech/orch-activity-lib": "file:src"
     }
 }

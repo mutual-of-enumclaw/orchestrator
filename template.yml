@@ -9,6 +9,16 @@ Globals:
       - !Ref Library
 
 Resources:
+  RootStackParamStore:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: 
+        !Sub 
+          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/base
+          - parmStack: !Join ['', !Split ['-', !Ref AWS::StackName]]
+      Value: !Ref AWS::StackName
+      Type: String
+
   updateStatus:
     Type: AWS::Serverless::Function
     Properties:
@@ -118,6 +128,7 @@ Resources:
   Library:
     Type: AWS::Serverless::LayerVersion
     Properties:
+      LayerName: !Sub ${AWS::StackName}-library
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Layer ${ResourceName}
         - ResourceName: library
@@ -137,24 +148,67 @@ Resources:
         StatusTableName: !Ref StatusTable
         StatusTableArn: !GetAtt StatusTable.Arn
         StatusTableStreamArn: !GetAtt StatusTable.StreamArn
+        OrchestratorLayerArn: !Ref Library
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   ##
   ## Start Activities Section
   ##
 
-  activityTest:
+  activityStep1:
     Type: AWS::Serverless::Application
     Properties:
       Location: activity/template.yml
       Parameters:
         ParentStackName: !Ref AWS::StackName
-        Name: "Test"
+        Name: "Step1"
         EnvironmentTagName: !Ref EnvironmentTagName
         StatusTableName: !Ref StatusTable
         StatusTableArn: !GetAtt StatusTable.Arn
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
+        OrchestratorLayerArn: !Ref Library
+    
+
+  activityStep2:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: activity/template.yml
+      Parameters:
+        ParentStackName: !Ref AWS::StackName
+        Name: "Step2"
+        EnvironmentTagName: !Ref EnvironmentTagName
+        StatusTableName: !Ref StatusTable
+        StatusTableArn: !GetAtt StatusTable.Arn
+        PluginTableName: !Ref PluginTable
+        PluginTableArn: !GetAtt PluginTable.Arn
+        OrchestratorLayerArn: !Ref Library
+    
+
+  activityStep3:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: activity/template.yml
+      Parameters:
+        ParentStackName: !Ref AWS::StackName
+        Name: "Step3"
+        EnvironmentTagName: !Ref EnvironmentTagName
+        StatusTableName: !Ref StatusTable
+        StatusTableArn: !GetAtt StatusTable.Arn
+        PluginTableName: !Ref PluginTable
+        PluginTableArn: !GetAtt PluginTable.Arn
+        OrchestratorLayerArn: !Ref Library
+    
 
   ##
   ## End Activities Section
@@ -167,4 +221,45 @@ Parameters:
   EnvironmentTagName:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
-    
+
+Outputs:
+    DynamoDbPluginTableName:
+      Value: 
+        Ref: PluginTable
+      Export:
+        Name: !Sub "${AWS::StackName}-plugin-name"
+
+    DynamoDbPluginTableArn:
+      Value: 
+        Fn::GetAtt: 
+          - PluginTable
+          - Arn
+      Export:
+        Name: !Sub "${AWS::StackName}-plugin-arn"
+
+    DynamoDbStatusTableName:
+      Value: 
+        Ref: StatusTable
+      Export:
+        Name: !Sub "${AWS::StackName}-status-name"
+
+    DynamoDbStatusTableArn:
+      Value: 
+        Fn::GetAtt: 
+          - StatusTable
+          - Arn
+      Export:
+        Name: !Sub "${AWS::StackName}-status-arn"
+
+    DynamoDbStatusTableStreamArn:
+      Value:
+        Fn::GetAtt:
+          - StatusTable
+          - StreamArn
+      Export:
+        Name: !Sub "${AWS::StackName}-status-stream-arn"
+
+    InitailizeActivities:
+      Value: !GetAtt initializeActivities.Arn
+      Export:
+        Name: !Sub "${AWS::StackName}-init-activites"

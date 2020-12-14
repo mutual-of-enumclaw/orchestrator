@@ -7,7 +7,7 @@ Globals:
     Timeout: 30
     Layers:
       - !Ref Library
-      - !Ref OrchestratorLibrary
+      - !Ref OrchestratorLayerArn
 Parameters:
   ParentStackName:
     Type: String
@@ -29,7 +29,10 @@ Parameters:
   StackTagName:
     Type: String
     Description: Stack Name (injected by Stackery at deployment time)
-    
+  OrchestratorLayerArn:
+    Type: String
+    Default: arn:aws:lambda:us-west-2:000000000000:layer:not-a-real-layer:1
+
 Resources:
   parallelTopic:
     Type: AWS::SNS::Topic
@@ -373,12 +376,13 @@ Resources:
               - Effect: Allow
                 Action:
                   - lambda:InvokeFunction
-                  - dyanmodb:UpdateItem
+                  - dynamodb:UpdateItem
                 Resource:
                   - !GetAtt sncPreProc.Arn
                   - !GetAtt sncPostProc.Arn
                   - !GetAtt parallelStart.Arn
                   - !Ref StatusTableArn
+
   activityWorkflow:
     Type: AWS::StepFunctions::StateMachine
     Properties:
@@ -468,6 +472,7 @@ Resources:
   Library:
     Type: AWS::Serverless::LayerVersion
     Properties:
+      LayerName: !Sub ${ParentStackName}-${Name}-library
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Layer ${ResourceName}
         - ResourceName: library
@@ -476,13 +481,27 @@ Resources:
     Metadata:
       BuildMethod: nodejs12.x
 
-  OrchestratorLibrary:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      Description: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Layer ${ResourceName}
-        - ResourceName: library
-      ContentUri: ../library
-      RetentionPolicy: Retain
-    Metadata:
-      BuildMethod: nodejs12.x
+Outputs:
+  preProcessing:
+    Value:
+      Ref: preTopic
+    Export:
+      Name: !Sub "${ParentStackName}-${Name}-pre-processing"
+
+  parallelProcessing:
+    Value:
+      Ref: parallelTopic
+    Export:
+      Name: !Sub "${ParentStackName}-${Name}-parallel-processing"
+
+  postProcessing:
+    Value:
+      Ref: postTopic
+    Export:
+      Name: !Sub "${ParentStackName}-${Name}-post-processing"
+
+  activityWorkflowArn:
+    Value:
+      Ref: activityWorkflow
+    Export:
+      Name: !Sub "${ParentStackName}-${Name}-workflow"

@@ -1,30 +1,7 @@
 {
-    "name": "@moe-tech/orchestrator",
-    "author": "Mutual of Enumclaw",
-    "publisher": "Mutual of Enumclaw",
-    "license": "LGPLv3",
-    "version": "1.0.97",
-    "description": "The core data and related processing for orchestrators",
-    "main": "src/index.js",
-    "scripts": {
-        "build": "npx tsc -d",
-        "test": "npx jest",
-        "test:coverage": "npm run test -- --coverage",
-        "test:watch": "node_modules/.bin/jest --watch",
-        "buildPublish": "npm run build && npm publish"
-    },
+    "name": "orchestrator-layer",
+    "version": "1.0.0",
     "dependencies": {
-        "epsagon": "^1.100.1"
-    },
-    "devDependencies": {
-        "@types/jest": "^26.0.15",
-        "@types/node": "^14.14.10",
-        "aws-lambda": "^1.0.6",
-        "aws-sdk": "^2.799.0",
-        "jest": "^26.6.3",
-        "ts-jest": "^26.4.4"
-    },
-    "files": [
-        "/dist"
-    ]
+        "@moe-tech/orchestrator": "file:src"
+    }
 }

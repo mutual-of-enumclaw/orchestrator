@@ -10,6 +10,7 @@
         "prebuild": "npm run installLibrary && npm run installHS && npm run installActivity && npm run installMetrics",
         "build": "tsc -d",
         "test": "npx jest",
+        "installUtils": "cd orch-utils && npm i",
         "installHS": "cd src && npm i",
         "installActivity": "cd activity && npm run prebuild",
         "installLibrary": "cd library && npm i && tsc -d",
