@@ -1,4 +1,4 @@
-import { OrchestratorStage, OrchestratorComponentState, OrchestratorSyncPlugin } from '@moe-tech/orchestrator';
+import { OrchestratorStage, OrchestratorComponentState, OrchestratorSyncPlugin } from '..';
 
 export class MockSNSUtils {
     public subscriberCount: number;
