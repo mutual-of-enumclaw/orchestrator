@@ -2,7 +2,7 @@ stages:
  setup:
    - env
    - npm run installUtils
-   - node orch-utils/index.js activities --stackery-json
+   - npm run activities -- activities --stackery-json
    - stackery deploy-stage setup
  build:
    - stackery deploy-stage convert-edge-functions
