@@ -1,15 +1,14 @@
-import * as alertSupportTeam from './alertSupportTeam';
-import { MockSns } from '@moe-tech/orch-metrics-lib/__mock__/aws';
-import { MockMetricsDb } from '@moe-tech/orch-metrics-lib/__mock__/dal';
+import { MockSNS } from '@moe-tech/orchestrator/__mock__/aws';
+import { MockMetricsDb } from '@moe-tech/orchestrator/__mock__/dals';
 
-const mock = new MockSns();
+const mock = new MockSNS();
 const metricDb = new MockMetricsDb();
+
+import * as alertSupportTeam from './alertSupportTeam';
 
 describe('handler', () => {
   process.env.environment = 'unit-test';
-  alertSupportTeam.setSns(mock as any);
-  alertSupportTeam.setMetricsDb(metricDb as any);
-
+  
   test('Null Body', async () => {
     mock.reset();
     metricDb.reset();
@@ -20,8 +19,8 @@ describe('handler', () => {
       error = err.message;
     }
     expect(error).toBe('The event does not contain required fields');
-    expect(mock.called).toBe(0);
-    expect(metricDb.putIssueFailureCallCount).toBe(0);
+    expect(mock.publish).toBeCalledTimes(0);
+    expect(metricDb.putIssueFailure).toBeCalledTimes(0);
   });
 
   test('No id provided', async () => {
@@ -34,8 +33,8 @@ describe('handler', () => {
       error = err.message;
     }
     expect(error).toBe('The event does not contain required fields');
-    expect(mock.called).toBe(0);
-    expect(metricDb.putIssueFailureCallCount).toBe(0);
+    expect(mock.publish).toBeCalledTimes(0);
+    expect(metricDb.putIssueFailure).toBeCalledTimes(0);
   });
 
   test('No workflow provided', async () => {
@@ -48,24 +47,24 @@ describe('handler', () => {
       error = err.message;
     }
     expect(error).toBe('The event does not contain required fields');
-    expect(mock.called).toBe(0);
-    expect(metricDb.putIssueFailureCallCount).toBe(0);
+    expect(mock.publish).toBeCalledTimes(0);
+    expect(metricDb.putIssueFailure).toBeCalledTimes(0);
   });
 
   test('Id and workflow provided', async () => {
     mock.reset();
     metricDb.reset();
     await alertSupportTeam.handler({ uid: '123', workflow: 'test' } as any, null, null);
-    expect(mock.called).toBe(1);
-    expect(metricDb.putIssueFailureCallCount).toBe(1);
+    expect(mock.publish).toBeCalledTimes(1);
+    expect(metricDb.putIssueFailure).toBeCalledTimes(1);
   });
 
   test('Second Pass', async () => {
     mock.reset();
     metricDb.reset();
     await alertSupportTeam.handler({ uid: '123', workflow: 'test', alertSent: true } as any, null, null);
-    expect(mock.called).toBe(0);
-    expect(metricDb.putIssueFailureCallCount).toBe(1);
+    expect(mock.publish).toBeCalledTimes(0);
+    expect(metricDb.putIssueFailure).toBeCalledTimes(1);
   });
 });
 

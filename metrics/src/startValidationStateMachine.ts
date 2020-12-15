@@ -1,24 +1,9 @@
 import * as AWS from 'aws-sdk';
-import { lambdaWrapperAsync } from '@moe-tech/orchestrator';
 import { Handler, DynamoDBStreamEvent, DynamoDBRecord } from 'aws-lambda';
-import { StepData, WorkflowRegister } from '@moe-tech/orch-metrics-lib';
+import { StepData, WorkflowRegister, lambdaWrapperAsync } from '@moe-tech/orchestrator';
 
 let stepFunctions: AWS.StepFunctions;
 let workflowRegister: WorkflowRegister;
-
-export function setStepFunctionObject (obj: AWS.StepFunctions) {
-  if (process.env.environment !== 'unit-test') {
-    throw new Error('A system is trying to use a unit test capability');
-  }
-  stepFunctions = obj;
-}
-
-export function setWorkflowRegister (obj: WorkflowRegister) {
-  if (process.env.environment !== 'unit-test') {
-    throw new Error('A system is trying to use a unit test capability');
-  }
-  workflowRegister = obj;
-}
 
 export const handler: Handler = lambdaWrapperAsync(async function handler (event: DynamoDBStreamEvent) {
   if (!event || !event.Records) {

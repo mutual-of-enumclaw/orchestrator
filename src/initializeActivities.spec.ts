@@ -1,34 +1,12 @@
-import { initialize, setDynamoDal, resetErrorStatusInSection, getActivity } from './initializeActivities';
+import { MockDynamoDb } from '@moe-tech/orchestrator/__mock__/aws';
 import { OrchestratorComponentState, OrchestratorSyncStatus } from '@moe-tech/orchestrator';
 
-class MockDynamoDb {
-    putInput: any = null;
-    getInput: any = null;
-
-    reset () {
-      this.putInput = null;
-      this.getInput = null;
-    }
-
-    put (params) {
-      this.putInput = params;
-      return this;
-    }
-
-    get (params) {
-      this.getInput = params;
-      return this;
-    }
-
-    promise = jest.fn();
-}
-
 console.log = () => {};
-
 const dynamodb = new MockDynamoDb();
+
+import { initialize, resetErrorStatusInSection, getActivity } from './initializeActivities';
+
 describe('initialize', () => {
-  process.env.environment = 'unit-test';
-  setDynamoDal(dynamodb as any);
   test('Null event', async () => {
     dynamodb.reset();
     let error = null;
@@ -126,7 +104,7 @@ describe('initialize', () => {
 
     };
 
-    dynamodb.promise.mockResolvedValueOnce(savedVal);
+    dynamodb.getReturn = savedVal.Item;
     const event = createEvent();
     event.stages = { Test1: undefined, Test2: undefined };
     let ex;
@@ -153,7 +131,7 @@ describe('initialize', () => {
       }
     };
 
-    dynamodb.promise.mockResolvedValueOnce(savedVal);
+    dynamodb.getReturn = savedVal.Item;
     const event = createEvent();
     event.stages = { Test1: undefined, Test2: undefined };
     await initialize(event);
@@ -183,7 +161,7 @@ describe('initialize', () => {
     value.pre.mandatory.completed = { state: OrchestratorComponentState.Complete };
     value.pre.mandatory.failed = { state: OrchestratorComponentState.Error };
     value.pre.optional.optionalError = { state: OrchestratorComponentState.OptionalError };
-    dynamodb.promise.mockResolvedValueOnce(savedVal);
+    dynamodb.getReturn = savedVal.Item;
     const event = createEvent();
     event.stages = { Test1: null, Test2: null };
     const result = await initialize(event);
@@ -264,10 +242,10 @@ describe('initialize', () => {
       // This happens early on in the initialize process.  This step is to simulate that.
       event.workflow = event.metadata.workflow;
 
-      dynamodb.promise.mockResolvedValueOnce(savedVal);
+      dynamodb.getReturn = null;
       const value = await getActivity(event);
       expect(value).toBeUndefined();
-      expect(dynamodb.getInput).toMatchObject({ TableName: 'statusTable', Key: { uid: '123', workflow: 'test' } });
+      expect(dynamodb.get).toBeCalledWith({ TableName: 'statusTable', Key: { uid: '123', workflow: 'test' } });
     });
     test('return undefined if call returns item as undefined', async () => {
       dynamodb.reset();
@@ -280,24 +258,11 @@ describe('initialize', () => {
       // This happens early on in the initialize process.  This step is to simulate that.
       event.workflow = event.metadata.workflow;
 
-      dynamodb.promise.mockResolvedValueOnce(savedVal);
+      dynamodb.getReturn = undefined;
       const value = await getActivity(event);
       expect(value).toBeUndefined();
-      expect(dynamodb.getInput).toMatchObject({ TableName: 'statusTable-test', Key: { uid: '123', workflow: 'test' } });
+      expect(dynamodb.get).toBeCalledWith({ TableName: 'statusTable-test', Key: { uid: '123', workflow: 'test' } });
     });
-  });
-});
-
-describe('setDynamoDal', () => {
-  test('setDynamoDal', () => {
-    process.env.environment = 'not unit test';
-    let error = null;
-    try {
-      setDynamoDal({} as any);
-    } catch (err) {
-      error = err.message;
-    }
-    expect(error).toBe('Unit testing feature being used outside of unit testing');
   });
 });
 

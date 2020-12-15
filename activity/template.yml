@@ -2,7 +2,7 @@ Transform: AWS::Serverless-2016-10-31
 Globals:
   Function:
     Runtime: nodejs12.x
-    CodeUri: src/functions
+    CodeUri: src
     MemorySize: 128
     Timeout: 30
     Layers:
@@ -95,8 +95,7 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: sncPreProc
-      CodeUri: src/functions
-      Handler: syncStage.start
+      Handler: dist/syncStage.start
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 900
@@ -136,10 +135,7 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: syncStage
-      CodeUri: src/functions
-      Handler: syncStage.start
-      Runtime: nodejs12.x
-      MemorySize: 128
+      Handler: dist/syncStage.start
       Timeout: 900
       Policies:
         - Statement:
@@ -176,12 +172,7 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginAdd
-      CodeUri: src/functions
-      Handler: pluginAdd.handler
-      Runtime: nodejs12.x
-      MemorySize: 128
-      Timeout: 30
-      Tracing: Active
+      Handler: dist/pluginAdd.handler
       Policies:
         - Statement:
             - Effect: Allow
@@ -235,12 +226,7 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginRemove
-      CodeUri: src/functions
-      Handler: pluginRemove.handler
-      Runtime: nodejs12.x
-      MemorySize: 128
-      Timeout: 30
-      Tracing: Active
+      Handler: dist/pluginRemove.handler
       Policies:
         - Statement:
             - Effect: Allow
@@ -294,11 +280,8 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginUpdate
-      CodeUri: src/functions
-      Handler: pluginUpdate.handler
-      Runtime: nodejs12.x
+      Handler: dist/pluginUpdate.handler
       MemorySize: 3008
-      Timeout: 30
       Policies:
         - Statement:
             - Effect: Allow
@@ -345,12 +328,8 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: refreshAllRegistrations
-      CodeUri: src/functions
-      Handler: refreshAllRegistrations.handler
-      Runtime: nodejs12.x
-      MemorySize: 128
+      Handler: dist/refreshAllRegistrations.handler
       Timeout: 900
-      Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
     Metadata:

@@ -1,9 +1,0 @@
-{
-    "name": "@moe-tech/orch-metrics-lib",
-    "version": "1.0.0",
-    "main": "index.js",
-    "dependencies": {},
-    "devDependencies": {
-        "aws-sdk": "^2.806.0"
-    }
-}

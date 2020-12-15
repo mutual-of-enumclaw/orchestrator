@@ -2,13 +2,12 @@
  * Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
  * License: Public
  */
+import { MockDynamoDb } from '../__mock__/aws';
+const dynamoDb = new MockDynamoDb();
 
 import { PluginManagementDal } from './pluginManagementDal';
-import { MockDynamoDb } from '../__mock__/mockDynamoDb';
 
-const dynamoDb = new MockDynamoDb();
 const dal = new PluginManagementDal('Test', 'orchId', 'stageName');
-(dal as any).dal = dynamoDb;
 
 describe('addPlugin', () => {
     test('Basic add', async () => {

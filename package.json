@@ -13,7 +13,7 @@
         "installHS": "cd src && npm i",
         "installUtils": "npm ci --prefix orch-utils",
         "installActivity": "cd activity && npm run prebuild",
-        "installLibrary": "cd library && npm i && tsc -d",
+        "installLibrary": "npm i --prefix library/src && tsc -d library/src && npm i --prefix library",
         "installMetrics": "cd metrics && npm run prebuild",
         "test:coverage": "npm run test -- --coverage",
         "test:watch": "node_modules/.bin/jest --watch",

@@ -154,7 +154,7 @@ export const start = stepLambdaAsyncWrapper(async (event: OrchestratorWorkflowSt
                     }
                 } catch (err) {
                     error = err;
-                    await new Promise((resolve) => {
+                    await new Promise<void>((resolve) => {
                         setTimeout(
                             () => {
                                 resolve();
@@ -195,7 +195,7 @@ export const start = stepLambdaAsyncWrapper(async (event: OrchestratorWorkflowSt
 
                } catch (err) {
                 statusError = err;
-                   await new Promise((resolve) => {
+                   await new Promise<void>((resolve) => {
                        setTimeout(
                            () => {
                                resolve();

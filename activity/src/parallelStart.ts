@@ -159,7 +159,7 @@ export const fanOut = stepLambdaAsyncWrapper(async (asyncEvent: AsyncParameters)
 
     const timeout = getPluginRegisterTimeout(overallStatus, activity, plugins);
     if(timeout !== 0) {
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             setTimeout(
                 () => {
                     resolve();

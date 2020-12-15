@@ -1,5 +1,4 @@
-import { MetricsDb, MetricsReporting, WorkflowRegister } from '@moe-tech/orch-metrics-lib';
-import { lambdaWrapperAsync } from '@moe-tech/orchestrator';
+import { lambdaWrapperAsync, MetricsDb, MetricsReporting, WorkflowRegister } from '@moe-tech/orchestrator';
 import { Handler } from 'aws-lambda';
 import { install } from 'source-map-support';
 install();

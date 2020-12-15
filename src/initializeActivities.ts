@@ -2,16 +2,9 @@ import { DynamoDB } from 'aws-sdk';
 import {
   OrchestratorComponentState, lambdaWrapperAsync, OrchestratorWorkflowStatus,
   OrchestratorActivityStatus, OrchestratorAsyncStatus, OrchestratorSyncStatus
-} from '@moe-tech/orchestrator';
+} from 'activity/src/node_modules/@moe-tech/orchestrator';
 
-let dynamodb: DynamoDB.DocumentClient = null;
-
-export function setDynamoDal (dal: DynamoDB.DocumentClient) {
-  if (process.env.environment !== 'unit-test') {
-    throw new Error('Unit testing feature being used outside of unit testing');
-  }
-  dynamodb = dal;
-}
+let dynamodb: DynamoDB.DocumentClient = new DynamoDB.DocumentClient();
 
 export async function initializeWorkflow (event: OrchestratorWorkflowStatus) {
   if (!event || !event.uid) {
@@ -23,9 +16,6 @@ export async function initializeWorkflow (event: OrchestratorWorkflowStatus) {
   }
   if (!event.stages) {
     throw new Error('Stages has not been defined');
-  }
-  if (!dynamodb) {
-    dynamodb = new DynamoDB.DocumentClient();
   }
 
   // Move workflow over to parent early to avoid confusion in

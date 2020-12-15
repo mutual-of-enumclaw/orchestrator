@@ -301,7 +301,7 @@ export async function validateStage (
             if (waitTime > MIN_REGISTRATION_TIME) {
               waitTime = MIN_REGISTRATION_TIME;
             }
-            await new Promise((resolve) => {
+            await new Promise<void>((resolve) => {
               setTimeout(
                 () => {
                   resolve();

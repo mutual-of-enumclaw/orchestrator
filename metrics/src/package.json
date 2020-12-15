@@ -3,8 +3,7 @@
     "version": "1.0.0",
     "dependencies": {},
     "devDependencies": {
-        "@moe-tech/orch-metrics-lib": "file:../library",
-        "@moe-tech/orchestrator": "file:../../../library",
+        "@moe-tech/orchestrator": "file:../../library/src",
         "@types/aws-lambda": "^8.10.64",
         "aws-lambda": "^1.0.6",
         "aws-sam-webpack-plugin": "^0.7.0",

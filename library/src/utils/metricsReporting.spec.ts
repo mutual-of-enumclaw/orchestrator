@@ -1,11 +1,16 @@
-import { MetricsReporting } from './metricsReporting';
 import { MockCloudwatch } from '../__mock__/aws';
 
 const cloudwatch = new MockCloudwatch();
 const reporting = new MetricsReporting();
 
+import { MetricsReporting } from './metricsReporting';
+
 describe('handler', () => {
   reporting.cloudwatch = cloudwatch as any;
+
+  beforeEach(() => {
+    cloudwatch.reset();
+  });
 
   test('No workflow specified', async () => {
     cloudwatch.reset();
@@ -16,7 +21,7 @@ describe('handler', () => {
       error = err.message;
     }
     expect(error).toBe('Parameter workflow not specified');
-    expect(cloudwatch.called).toBe(0);
+    expect(cloudwatch.putMetricData).toBeCalledTimes(0);
   });
 
   test('Null db result', async () => {
@@ -24,7 +29,7 @@ describe('handler', () => {
 
     await reporting.reportFailures('workflow param', 0);
 
-    expect(cloudwatch.called).toBe(1);
+    expect(cloudwatch.putMetricData).toBeCalledTimes(1);
     expect(cloudwatch.putMetricParams.MetricData[0].Value).toBe(0);
     expect(cloudwatch.putMetricParams.MetricData[0].Dimensions[1].Name).toBe('Workflow');
     expect(cloudwatch.putMetricParams.MetricData[0].Dimensions[1].Value).toBe('workflow param');
@@ -35,7 +40,7 @@ describe('handler', () => {
 
     await reporting.reportFailures('workflow param', 1);
 
-    expect(cloudwatch.called).toBe(1);
+    expect(cloudwatch.putMetricData).toBeCalledTimes(1);
     expect(cloudwatch.putMetricParams.MetricData[0].Value).toBe(1);
     expect(cloudwatch.putMetricParams.MetricData[0].Dimensions[1].Name).toBe('Workflow');
     expect(cloudwatch.putMetricParams.MetricData[0].Dimensions[1].Value).toBe('workflow param');
@@ -46,7 +51,7 @@ describe('handler', () => {
 
     await reporting.reportFailures('workflow param', 15);
 
-    expect(cloudwatch.called).toBe(1);
+    expect(cloudwatch.putMetricData).toBeCalledTimes(1);
     expect(cloudwatch.putMetricParams.MetricData[0].Value).toBe(15);
     expect(cloudwatch.putMetricParams.MetricData[0].Dimensions[1].Name).toBe('Workflow');
     expect(cloudwatch.putMetricParams.MetricData[0].Dimensions[1].Value).toBe('workflow param');

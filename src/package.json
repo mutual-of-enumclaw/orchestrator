@@ -2,7 +2,7 @@
     "name": "orchestrator-core",
     "version": "1.0.0",
     "devDependencies": {
-        "@moe-tech/orchestrator": "file:../library",
+        "@moe-tech/orchestrator": "file:../library/src",
         "epsagon": "^1.102.2"
     },
     "dependencies": {

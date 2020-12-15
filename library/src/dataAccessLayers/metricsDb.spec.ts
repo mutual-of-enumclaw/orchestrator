@@ -25,7 +25,7 @@ describe('getIssueFailures', () => {
   metricsDb.dynamoDb = dynamoDb as any;
 
   test('15', async () => {
-    dynamoDb.scanRetval = {
+    dynamoDb.scanReturn = {
       Items: [{}, {}]
     } as any;
     const result = await metricsDb.getIssueFailures();
@@ -33,7 +33,7 @@ describe('getIssueFailures', () => {
   });
 
   test('1', async () => {
-    dynamoDb.scanRetval = {
+    dynamoDb.scanReturn = {
       Items: [{}]
     } as any;
     const result = await metricsDb.getIssueFailures();
@@ -41,7 +41,7 @@ describe('getIssueFailures', () => {
   });
 
   test('0', async () => {
-    dynamoDb.scanRetval = {
+    dynamoDb.scanReturn = {
       Items: []
     } as any;
     const result = await metricsDb.getIssueFailures();
@@ -49,7 +49,7 @@ describe('getIssueFailures', () => {
   });
 
   test('Null', async () => {
-    dynamoDb.scanRetval = {
+    dynamoDb.scanReturn = {
       Items: null
     } as any;
     const result = await metricsDb.getIssueFailures();
@@ -57,7 +57,7 @@ describe('getIssueFailures', () => {
   });
 
   test('Undefined', async () => {
-    dynamoDb.scanRetval = {} as any;
+    dynamoDb.scanReturn = {} as any;
     const result = await metricsDb.getIssueFailures();
     expect(result.length).toBe(0);
   });

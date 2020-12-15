@@ -1,6 +1,5 @@
 import * as AWS from 'aws-sdk';
-import { StepData, MetricsDb } from '@moe-tech/orch-metrics-lib';
-import { lambdaWrapperAsync } from '@moe-tech/orchestrator';
+import { lambdaWrapperAsync, MetricsDb, StepData } from '@moe-tech/orchestrator';
 import { Handler } from 'aws-lambda';
 
 let sns: AWS.SNS;

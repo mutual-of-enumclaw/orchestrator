@@ -2,11 +2,10 @@ Transform: AWS::Serverless-2016-10-31
 Globals:
   Function:
     Runtime: nodejs12.x
-    CodeUri: src/functions
+    CodeUri: src
     MemorySize: 128
     Timeout: 30
     Layers:
-      - !Ref Library
       - !Ref OrchestratorLayerArn
 
 Parameters:
@@ -228,16 +227,4 @@ Resources:
             BatchSize: 1
     Metadata:
       RuntimeOption: typescript
-
-  Library:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: !Sub ${StackTagName}-library
-      Description: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Layer ${ResourceName}
-        - ResourceName: library
-      ContentUri: src/library
-      RetentionPolicy: Retain
-    Metadata:
-      BuildMethod: nodejs12.x
 
