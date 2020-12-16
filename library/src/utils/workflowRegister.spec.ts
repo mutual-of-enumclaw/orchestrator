@@ -1,10 +1,10 @@
-import { WorkflowRegister } from './workflowRegister';
 import { MockS3 } from '../__mock__/aws';
 
 const bucketName = 'test';
 const s3 = new MockS3();
+
+import { WorkflowRegister } from './workflowRegister';
 const register = new WorkflowRegister(bucketName);
-(register as any).s3 = s3;
 
 describe('constructor', () => {
   test('No bucket specified', () => {
@@ -23,7 +23,7 @@ describe('constructor', () => {
 describe('list', () => {
   test('Null returned', async () => {
     s3.reset();
-    s3.listResult = null;
+    s3.listObjectsResults = null;
     let error = null;
     try {
       await register.list();
@@ -32,12 +32,12 @@ describe('list', () => {
     }
 
     expect(error).toBe('Result from s3 was invalid');
-    expect(s3.listInput.Bucket).toBe(bucketName);
+    expect(s3.listObjectsInput[0].Bucket).toBe(bucketName);
   });
 
   test('Null returned', async () => {
     s3.reset();
-    s3.listResult = { Contents: null };
+    s3.listObjectsResults = { Contents: null };
     let error = null;
     try {
       await register.list();
@@ -46,45 +46,45 @@ describe('list', () => {
     }
 
     expect(error).toBe('Result from s3 was invalid');
-    expect(s3.listInput.Bucket).toBe(bucketName);
+    expect(s3.listObjectsInput[0].Bucket).toBe(bucketName);
   });
 
   test('Empty list', async () => {
     s3.reset();
-    s3.listResult = createListResult();
-    s3.listResult.Contents = [];
+    s3.listObjectsResults = createListResult();
+    s3.listObjectsResults.Contents = [];
     const result = await register.list();
 
-    expect(s3.listInput.Bucket).toBe(bucketName);
+    expect(s3.listObjectsInput[0].Bucket).toBe(bucketName);
     expect(result).toMatchObject([]);
   });
 
   test('Single Result', async () => {
     s3.reset();
-    s3.listResult = createListResult();
+    s3.listObjectsResults = createListResult();
     const result = await register.list();
 
-    expect(s3.listInput.Bucket).toBe(bucketName);
+    expect(s3.listObjectsInput[0].Bucket).toBe(bucketName);
     expect(result).toMatchObject(['test']);
   });
 
   test('Multiple Results', async () => {
     s3.reset();
-    s3.listResult = createListResult();
-    s3.listResult.Contents.push({ Key: 'test2' });
+    s3.listObjectsResults = createListResult();
+    s3.listObjectsResults.Contents.push({ Key: 'test2' });
     const result = await register.list();
 
-    expect(s3.listInput.Bucket).toBe(bucketName);
+    expect(s3.listObjectsInput[0].Bucket).toBe(bucketName);
     expect(result).toMatchObject(['test', 'test2']);
   });
 
   test('Empty Key', async () => {
     s3.reset();
-    s3.listResult = createListResult();
-    s3.listResult.Contents.push({ Key: '' });
+    s3.listObjectsResults = createListResult();
+    s3.listObjectsResults.Contents.push({ Key: '' });
     const result = await register.list();
 
-    expect(s3.listInput.Bucket).toBe(bucketName);
+    expect(s3.listObjectsInput[0].Bucket).toBe(bucketName);
     expect(result).toMatchObject(['test']);
   });
 });
@@ -105,17 +105,17 @@ describe('register', () => {
   test('Workflow has value w/ space', async () => {
     s3.reset();
     await register.register('workflow test');
-    expect(s3.putInput.Bucket).toBe(bucketName);
-    expect(s3.putInput.Key).toBe('workflow-test');
-    expect(s3.putInput.Body).toBe('');
+    expect(s3.listObjectsInput[0].Bucket).toBe(bucketName);
+    expect(s3.listObjectsInput[0].Key).toBe('workflow-test');
+    expect(s3.listObjectsInput[0].Body).toBe('');
   });
 
   test('Workflow has value w/o space', async () => {
     s3.reset();
     await register.register('workflowtest');
-    expect(s3.putInput.Bucket).toBe(bucketName);
-    expect(s3.putInput.Key).toBe('workflowtest');
-    expect(s3.putInput.Body).toBe('');
+    expect(s3.listObjectsInput[0].Bucket).toBe(bucketName);
+    expect(s3.listObjectsInput[0].Key).toBe('workflowtest');
+    expect(s3.listObjectsInput[0].Body).toBe('');
   });
 });
 

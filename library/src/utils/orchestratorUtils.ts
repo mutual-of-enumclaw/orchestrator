@@ -1,7 +1,11 @@
 import {
-  OrchestratorStatusDal, OrchestratorComponentState,
+  OrchestratorComponentState,
   OrchestratorPluginMessage, PluginInfo, OrchestratorWorkflowStatus
-} from '..';
+} from '../types';
+
+import {
+  OrchestratorStatusDal
+} from '../dataAccessLayers/orchestratorStatusDal';
 import { lambdaWrapperAsync, registerObservableError, setLabel } from './epsagonUtils';
 import { SNSEvent, SNSEventRecord } from 'aws-lambda';
 import { SQS } from 'aws-sdk';

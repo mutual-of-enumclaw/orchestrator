@@ -1,5 +1,7 @@
+import { OrchestratorStatusDal } from '../dataAccessLayers/orchestratorStatusDal';
+import { OrchestratorComponentState, OrchestratorStage } from '../types';
 import { MetricsDb } from '../dataAccessLayers/metricsDb';
-import { MetricsReporting, WorkflowRegister } from '..';
+import { MetricsReporting, WorkflowRegister } from '../utils';
 
 export class MockMetricsDb {
     public putIssueFailureCallCount: number = 0;
@@ -65,4 +67,39 @@ export class MockWorkflowRegister {
         this.registerInput = workflow;
       })
     }
+}
+
+export class MockOrchstratorStatusDal {
+  public getStatusObject = jest.fn();
+  public updatePluginStatus = jest.fn();
+  public updatePluginStatusInput: any[] = [];
+  public updateStageStatus = jest.fn();
+
+  constructor() {
+    OrchestratorStatusDal.prototype.getStatusObject = this.getStatusObject;
+    OrchestratorStatusDal.prototype.updatePluginStatus = this.updatePluginStatus;
+    OrchestratorStatusDal.prototype.updateStageStatus = this.updateStageStatus;
+  }
+
+  reset() {
+    this.updatePluginStatusInput = [];
+    this.updatePluginStatus.mockReset();
+    this.updatePluginStatus.mockImplementation(async (uid: string, workflow: string, activity: string, stage: OrchestratorStage, mandatory: boolean, pluginName: string, state: OrchestratorComponentState, message: string) => {
+      this.updatePluginStatusInput.push({
+        uid,
+        workflow,
+        activity,
+        stage,
+        mandatory,
+        pluginName,
+        state,
+        message
+      });
+    });
+
+    this.getStatusObject.mockReset();
+    this.getStatusObject.mockImplementation(async () => {
+
+    });
+  }
 }

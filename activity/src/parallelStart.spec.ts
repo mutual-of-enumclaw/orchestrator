@@ -3,18 +3,19 @@
  * License: Public
  */
 
-import { fanOut, setServices } from './parallelStart';
-import { MockSNSUtils, OrchestratorStatusDal, OrchestratorPluginDal } from './__mock__/libServices';
 import { OrchestratorComponentState } from '@moe-tech/orchestrator';
-import { MockStepFunctions } from './__mock__/aws';
+import { MockSNSUtils, MockOrchestratorStatusDal, MockOrchestratorPluginDal } from '@moe-tech/orchestrator/__mock__/libServices';
+import { MockStepFunctions } from '@moe-tech/orchestrator/__mock__/aws';
 
 const sns = new MockSNSUtils();
-const dal = new OrchestratorStatusDal();
-const pluginDal = new OrchestratorPluginDal();
+const dal = new MockOrchestratorStatusDal();
+const pluginDal = new MockOrchestratorPluginDal();
 const stepfunctions = new MockStepFunctions();
+
+import { fanOut } from './parallelStart';
+
 describe('fanOut', () => {
     process.env.environment = 'unit-test';
-    setServices(stepfunctions, 'test', sns, dal, pluginDal);
 
     beforeEach(() => {
         pluginDal.reset();

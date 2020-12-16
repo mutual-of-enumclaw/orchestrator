@@ -149,7 +149,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${StackTagName}-report
-      Handler: reportMetrics.handler
+      Handler: dist/reportMetrics.handler
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: reportMetrics
@@ -179,7 +179,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${StackTagName}-alertSupportTeam
-      Handler: alertSupportTeam.handler
+      Handler: dist/alertSupportTeam.handler
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: alertSupportTeam
@@ -201,7 +201,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${StackTagName}-startValidStateMachine
-      Handler: startValidationStateMachine.handler
+      Handler: dist/startValidationStateMachine.handler
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: startValidStateMachine

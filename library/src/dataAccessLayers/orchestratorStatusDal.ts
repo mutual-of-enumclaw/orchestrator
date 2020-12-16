@@ -3,7 +3,7 @@
  * License: Public
  */
 import { DynamoDB } from 'aws-sdk';
-import { OrchestratorComponentState, OrchestratorStage, OrchestratorWorkflowStatus } from '..';
+import { OrchestratorComponentState, OrchestratorStage, OrchestratorWorkflowStatus } from '../types';
 
 export class OrchestratorStatusDal {
     private dal: AWS.DynamoDB.DocumentClient = new DynamoDB.DocumentClient();

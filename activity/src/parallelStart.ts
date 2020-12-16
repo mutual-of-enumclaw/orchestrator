@@ -19,18 +19,6 @@ let sns: SNSUtils;
 let stepfunctions = new StepFunctions();
 let activity: string = process.env.activity;
 
-export function setServices(stepService: any, 
-                            activityName: string, 
-                            snsUtils: any, 
-                            statusDalService: any,
-                            pluginDalService: any) {
-    stepfunctions = stepService;
-    activity = activityName;
-    sns = snsUtils;
-    statusDal = statusDalService;
-    pluginDal = pluginDalService;
-}
-
 interface AsyncParameters {
     data: OrchestratorWorkflowStatus,
     asyncToken: string

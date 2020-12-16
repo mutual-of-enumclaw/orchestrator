@@ -3,11 +3,12 @@
  * License: Public
  */
 
-import { OrchestratorStatusDal } from './orchestratorStatusDal';
 import { OrchestratorComponentState, OrchestratorStage } from '../types';
-import { MockDynamoDb } from '../../../__mock__/mockDynamoDb';
+import { MockDynamoDb } from '../__mock__/aws';
 
 const mockDb = new MockDynamoDb();
+
+import { OrchestratorStatusDal } from './orchestratorStatusDal';
 
 describe('getStatusObject', () => {
   const dal = new OrchestratorStatusDal('Test');

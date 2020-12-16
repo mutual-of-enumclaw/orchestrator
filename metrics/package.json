@@ -2,6 +2,6 @@
     "name": "@moe-tech/orchestrator-metrics",
     "version": "1.0.0",
     "scripts": {
-        "build": "cd src/functions && tsc -d"
+        "build": "tsc -d -p src"
     }
 }

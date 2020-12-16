@@ -4,8 +4,7 @@
  */
 
 import { PluginManagementDal } from "./pluginManagementDal";
-import { OrchestratorStage, OrchestratorSyncPlugin } from "@moe-tech/orchestrator";
-import { CloudwatchEvent } from "../types/cloudwatchEvent";
+import { OrchestratorStage, OrchestratorSyncPlugin, CloudwatchEvent } from "../types";
 import { Lambda } from 'aws-sdk';
 import { Stage } from "aws-sdk/clients/amplify";
 

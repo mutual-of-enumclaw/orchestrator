@@ -3,19 +3,18 @@
  * License: Public
  */
 
-import { start, setServices } from './syncStage';
-import { OrchestratorPluginDal, OrchestratorStatusDal } from './__mock__/libServices';
-import { MockLambda } from './__mock__/aws';
+import { MockOrchestratorPluginDal, MockOrchestratorStatusDal } from '@moe-tech/orchestrator/__mock__/libServices';
+import { MockLambda } from '@moe-tech/orchestrator/__mock__/aws';
 import { OrchestratorComponentState } from '@moe-tech/orchestrator';
 
-
-const dal = new OrchestratorStatusDal();
-const pluginDal = new OrchestratorPluginDal();
+const dal = new MockOrchestratorStatusDal();
+const pluginDal = new MockOrchestratorPluginDal();
 const mockLambda = new MockLambda();
 process.env.environment = 'unit-test';
 
+import { start } from './syncStage';
+
 describe('start test', () => {
-    setServices('test', dal as any, pluginDal as any, mockLambda as any);
     beforeEach(() => {
         dal.reset();
         mockLambda.reset();

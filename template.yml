@@ -26,7 +26,7 @@ Resources:
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: updateStatus
-      Handler: handleSummary.updateActivityStatus
+      Handler: dist/handleSummary.updateActivityStatus
       Policies:
         - Statement:
             - Effect: Allow
@@ -67,7 +67,7 @@ Resources:
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: initializeActivities
-      Handler: initializeActivities.initialize
+      Handler: dist/initializeActivities.initialize
       Policies:
         - Statement:
             - Effect: Allow
@@ -149,6 +149,18 @@ Resources:
         StatusTableArn: !GetAtt StatusTable.Arn
         StatusTableStreamArn: !GetAtt StatusTable.StreamArn
         OrchestratorLayerArn: !Ref Library
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   

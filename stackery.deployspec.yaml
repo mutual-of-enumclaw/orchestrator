@@ -1,8 +1,8 @@
 stages:
  setup:
-   - env
    - npm run installUtils
    - npm run activities -- activities --stackery-json
+   - npm run build
    - stackery deploy-stage setup
  build:
    - stackery deploy-stage convert-edge-functions

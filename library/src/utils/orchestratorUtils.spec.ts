@@ -1,14 +1,15 @@
-import * as orchestratorUtils from './orchestratorUtils';
 import {
   OrchestratorError, PluginInfo, OrchestratorComponentState,
   OrchestratorStage, OrchestratorPluginMessage
 } from '../types';
-import { mockOrchstratorStatusDal } from '../../../__mock__/mockOrchestratorStatusDal';
+import { MockOrchstratorStatusDal } from '../__mock__/dals';
 import { SNSEvent } from 'aws-lambda';
 
 process.env.environment = 'unit-test';
 // console.log = () => {};
-orchestratorUtils.setOASDOverride(mockOrchstratorStatusDal as any);
+const mockOrchstratorStatusDal = new MockOrchstratorStatusDal();
+
+import * as orchestratorUtils from './orchestratorUtils';
 
 describe('orchestratorWrapperSqs', () => {
   test('valid', async () => {
@@ -18,7 +19,7 @@ describe('orchestratorWrapperSqs', () => {
     const wrapper = orchestratorUtils.orchestratorWrapperSqs(getPluginInfo(), fn);
     await wrapper(getPluginMessageSqs());
 
-    expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
+    expect(mockOrchstratorStatusDal.updatePluginStatus).toBeCalledTimes(2);
     expect(mockOrchstratorStatusDal.updatePluginStatusInput[0].state).toBe(OrchestratorComponentState.InProgress);
     expect(mockOrchstratorStatusDal.updatePluginStatusInput[1].state).toBe(OrchestratorComponentState.Complete);
   });

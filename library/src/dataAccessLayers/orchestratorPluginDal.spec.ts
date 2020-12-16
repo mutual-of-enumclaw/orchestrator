@@ -3,15 +3,15 @@
  * License: Public
  */
 
-import { OrchestratorPluginDal } from './orchestratorPluginDal';
 import { OrchestratorStage } from '../types';
-import { MockDynamoDb } from '../../../activity/__mock__/mockDynamoDb';
+import { MockDynamoDb } from '../__mock__/aws';
 
 const mockDb = new MockDynamoDb();
 
+import { OrchestratorPluginDal } from './orchestratorPluginDal';
+const dal = new OrchestratorPluginDal('Test', 'Orch');
+
 describe('getSyncPlugins', () => {
-  const dal = new OrchestratorPluginDal('Test', 'Orch');
-  (dal as any).dal = mockDb;
 
   test('stage not defined', async () => {
     let error = null;

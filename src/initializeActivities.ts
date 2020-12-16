@@ -2,7 +2,7 @@ import { DynamoDB } from 'aws-sdk';
 import {
   OrchestratorComponentState, lambdaWrapperAsync, OrchestratorWorkflowStatus,
   OrchestratorActivityStatus, OrchestratorAsyncStatus, OrchestratorSyncStatus
-} from 'activity/src/node_modules/@moe-tech/orchestrator';
+} from '@moe-tech/orchestrator';
 
 let dynamodb: DynamoDB.DocumentClient = new DynamoDB.DocumentClient();
 

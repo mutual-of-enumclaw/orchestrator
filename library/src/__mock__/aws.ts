@@ -1,4 +1,37 @@
-import { CloudWatch, DynamoDB, Lambda, SNS, StepFunctions } from 'aws-sdk';
+import { CloudWatch, DynamoDB, Lambda, S3, SNS, StepFunctions } from 'aws-sdk';
+
+export class MockS3 {
+  public listObjectsV2 = jest.fn();
+  public listObjectsResults = null;
+  public listObjectsInput: any[] = [];
+  public putObject = jest.fn();
+
+  constructor() {
+    S3.prototype.listObjectsV2 = this.listObjectsV2;
+    S3.prototype.putObject = this.putObject;
+  }
+
+  reset() {
+    this.listObjectsResults = null;
+    this.listObjectsInput = [];
+    this.listObjectsV2.mockReset();
+    this.listObjectsV2.mockImplementation((params) => {
+      this.listObjectsInput.push(params);
+      return {
+        promise: async() => {
+          return this.listObjectsResults;
+        }
+      }
+    });
+
+    this.putObject.mockReset();
+    this.putObject.mockImplementation(() => {
+      return {
+        promise: async () => {}
+      }
+    });
+  }
+}
 
 export class MockDynamoDb {
   public getReturn: any;

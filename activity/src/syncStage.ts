@@ -15,16 +15,6 @@ let activity: string = process.env.activity;
 const stage = (process.env.stage === 'pre') ? OrchestratorStage.PreProcessing : OrchestratorStage.PostProcessing;
 let lambda = new AWS.Lambda();
 
-export function setServices(activityId: string, 
-                            statusDalService: OrchestratorStatusDal, 
-                            pluginDalService: OrchestratorPluginDal,
-                            lambdaService: AWS.Lambda) {
-    activity = activityId;
-    statusDal = statusDalService;
-    pluginDal = pluginDalService;
-    lambda = lambdaService;
-}
-
 function getPluginStatus(overallStatus: OrchestratorWorkflowStatus, 
                          plugin: OrchestratorSyncPlugin) : OrchestratorStatus {
     if(overallStatus.activities &&
