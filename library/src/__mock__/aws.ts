@@ -5,6 +5,7 @@ export class MockS3 {
   public listObjectsResults = null;
   public listObjectsInput: any[] = [];
   public putObject = jest.fn();
+  public putObjectInput: any[] = [];
 
   constructor() {
     S3.prototype.listObjectsV2 = this.listObjectsV2;
@@ -24,8 +25,10 @@ export class MockS3 {
       }
     });
 
+    this.putObjectInput = [];
     this.putObject.mockReset();
-    this.putObject.mockImplementation(() => {
+    this.putObject.mockImplementation((params) => {
+      this.putObjectInput.push(params);
       return {
         promise: async () => {}
       }
@@ -38,7 +41,7 @@ export class MockDynamoDb {
   public queryReturn: Array<any>;
   public error: string;
   public updateReturn: any;
-  public updateInput: any;
+  public updateInputs: any[];
   public deleteInput: any;
   public putInput: any = null;
   public scanReturn: any = null;
@@ -49,19 +52,22 @@ export class MockDynamoDb {
   public update = jest.fn();
   public delete = jest.fn();
 
-  constructor() {
-      DynamoDB.DocumentClient.prototype.get = this.get;
-      DynamoDB.DocumentClient.prototype.put = this.put;
-      DynamoDB.DocumentClient.prototype.query = this.query;
-      DynamoDB.DocumentClient.prototype.scan = this.scan;
-      DynamoDB.DocumentClient.prototype.update = this.update;
-      DynamoDB.DocumentClient.prototype.delete = this.delete;
+  constructor(dynamoClass = null) {
+    if(!dynamoClass) {
+      dynamoClass = DynamoDB.DocumentClient;
+    }
+    dynamoClass.prototype.get = this.get;
+    dynamoClass.prototype.put = this.put;
+    dynamoClass.prototype.query = this.query;
+    dynamoClass.prototype.scan = this.scan;
+    dynamoClass.prototype.update = this.update;
+    dynamoClass.prototype.delete = this.delete;
   }
 
   public reset () {
     this.error = '';
     this.updateReturn = null;
-    this.updateInput = null;
+    this.updateInputs = [];
     this.scanReturn = null;
     this.queryReturn = null;
     this.getReturn = null;
@@ -126,7 +132,7 @@ export class MockDynamoDb {
 
     this.update.mockReset();
     this.update.mockImplementation((updateParams: any) => {
-      this.updateInput = updateParams;
+      this.updateInputs.push(updateParams);
       return {
         promise: async () => {
           return {
@@ -150,23 +156,29 @@ export class MockDynamoDb {
 }
 
 export class MockLambda {
-  public invokeRetval = {};
+  public invokeRetval: any = {};
   public invokeParams = [];
   public invoke = jest.fn();
 
-  constructor() {
-      Lambda.prototype.invoke = this.invoke;
+  constructor(lambdaClass = null) {
+    if(!lambdaClass) {
+      lambdaClass = Lambda;
+    }
+    lambdaClass.prototype.invoke = this.invoke;
   }
 
   public reset () {
     this.invokeRetval = {};
     this.invokeParams = [];
 
-    this.invoke.mockReset();
+    this.invoke.mockReset();    
     this.invoke.mockImplementation((params) => {
       this.invokeParams.push(params);
       return {
         promise: async () => {
+          if(this.invokeRetval.FunctionError) {
+            throw new Error(this.invokeRetval.FunctionError);
+          }
           return this.invokeRetval;
         }
       };
@@ -183,9 +195,12 @@ export class MockSNS {
   public publish = jest.fn();
   public listSubscriptionsByTopic = jest.fn();
 
-  constructor() {
-      SNS.prototype.publish = this.publish;
-      SNS.prototype.listSubscriptionsByTopic = this.listSubscriptionsByTopic;
+  constructor(snsClass = null) {
+    if(!snsClass) {
+      snsClass = SNS;
+    }
+      snsClass.prototype.publish = this.publish;
+      snsClass.prototype.listSubscriptionsByTopic = this.listSubscriptionsByTopic;
   }
 
   reset () {
@@ -226,14 +241,37 @@ export class MockSNS {
 
 export class MockStepFunctions {
   sendTaskSuccess = jest.fn();
+  startExecution = jest.fn();
+  sendTaskFailure = jest.fn();
 
-  constructor() {
-      StepFunctions.prototype.sendTaskSuccess = this.sendTaskSuccess;
+
+  constructor(stepFunctionClass = null) {
+    if(!stepFunctionClass) {
+      stepFunctionClass = StepFunctions;
+    }
+    stepFunctionClass.prototype.sendTaskSuccess = this.sendTaskSuccess;
+    stepFunctionClass.prototype.startExecution = this.startExecution;
+    stepFunctionClass.prototype.sendTaskFailure = this.sendTaskFailure;
   }
 
   reset () {
     this.sendTaskSuccess.mockReset();
     this.sendTaskSuccess.mockImplementation((input) => {
+      return {
+        promise: async () => {}
+      };
+    });
+
+    this.startExecution.mockReset();
+    this.startExecution.mockImplementation((params) => {
+      return {
+        promise: async () => {
+        }
+      };
+    });
+
+    this.sendTaskFailure.mockReset();
+    this.sendTaskFailure.mockImplementation(() => {
       return {
         promise: async () => {}
       };

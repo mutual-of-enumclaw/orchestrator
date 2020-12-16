@@ -1,14 +1,19 @@
 import { MockDynamoDb } from '@moe-tech/orchestrator/__mock__/aws';
 import { OrchestratorComponentState, OrchestratorSyncStatus } from '@moe-tech/orchestrator';
+import { DynamoDB } from 'aws-sdk';
 
 console.log = () => {};
-const dynamodb = new MockDynamoDb();
+const dynamodb = new MockDynamoDb(DynamoDB.DocumentClient);
+process.env.statusTable = "TestStatusTable";
 
 import { initialize, resetErrorStatusInSection, getActivity } from './initializeActivities';
 
 describe('initialize', () => {
-  test('Null event', async () => {
+  beforeEach(() => {
     dynamodb.reset();
+  });
+
+  test('Null event', async () => {
     let error = null;
     try {
       await initialize(null);
@@ -21,7 +26,6 @@ describe('initialize', () => {
   });
 
   test('Empty uid', async () => {
-    dynamodb.reset();
     let error = null;
     try {
       const event = createEvent();
@@ -36,7 +40,6 @@ describe('initialize', () => {
   });
 
   test('Empty workflow', async () => {
-    dynamodb.reset();
     let error = null;
     try {
       const event = createEvent();
@@ -50,7 +53,6 @@ describe('initialize', () => {
     expect(dynamodb.putInput).toBeNull();
   });
   test('Undefined stages', async () => {
-    dynamodb.reset();
     let error = null;
     try {
       const event = createEvent();
@@ -64,18 +66,16 @@ describe('initialize', () => {
     expect(dynamodb.putInput).toBeNull();
   });
   test('Valid', async () => {
-    dynamodb.reset();
     const event = createEvent();
     const result = await initialize(event);
     const expected = createExpected(result.currentDate, {
       Stage1: createStep()
     });
     expect(result).toMatchObject(expected);
-    expect(dynamodb.putInput).toBeDefined();
+    expect(dynamodb.put).toBeCalled();
     expect(dynamodb.putInput.ConditionExpression).toBe('attribute_not_exists(uid)');
   });
   test('Valid multiple steps', async () => {
-    dynamodb.reset();
     const event = createEvent();
     event.stages = { Test1: null, Test2: null };
     const result = await initialize(event);
@@ -88,7 +88,6 @@ describe('initialize', () => {
   });
 
   test('failed mismatching metadata.', async () => {
-    dynamodb.reset();
     const savedVal = {
       Item: {
         activities: {
@@ -117,7 +116,6 @@ describe('initialize', () => {
   });
 
   test('Metadata out of order.', async () => {
-    dynamodb.reset();
     const savedVal = {
       Item: {
         metadata: {
@@ -138,7 +136,6 @@ describe('initialize', () => {
   });
 
   test('Valid multiple fail test.', async () => {
-    dynamodb.reset();
     const savedVal = {
       Item: {
         activities: {
@@ -172,6 +169,10 @@ describe('initialize', () => {
     expect(dynamodb.putInput).toBeDefined();
   });
   describe('resetErrorStatusInSection', () => {
+    beforeEach(() => {
+      dynamodb.reset();
+    });
+
     test('optional: set errors to not started, but leave other statuss in tact', () => {
       // arrange
       const value = {
@@ -197,7 +198,7 @@ describe('initialize', () => {
       expect(value.optional.plugin2.state === OrchestratorComponentState.NotStarted);
       expect(value.optional.plugin3.state === OrchestratorComponentState.NotStarted);
     });
-    test('mandatory: set errors to not started, but leave other statuss in tact', () => {
+    test('mandatory: set errors to not started, but leave other status in tact', () => {
       // arrange
       const value = {
         status: {
@@ -218,11 +219,9 @@ describe('initialize', () => {
       // act
       resetErrorStatusInSection(value);
       // assert
-      expect(value.mandatory.plugin1.state === OrchestratorComponentState.Complete);
-      expect(value.mandatory.plugin2.state === OrchestratorComponentState.NotStarted);
-      expect(value.mandatory.plugin3.state === OrchestratorComponentState.NotStarted);
-
-      expect(dynamodb.putInput.ConditionExpression).toBeUndefined();
+      expect(value.mandatory.plugin1.state).toBe(OrchestratorComponentState.Complete);
+      expect(value.mandatory.plugin2.state).toBe(OrchestratorComponentState.NotStarted);
+      expect(value.mandatory.plugin3.state).toBe(OrchestratorComponentState.NotStarted);
     });
     test('not error when no data is passed', () => {
       const value = undefined;
@@ -313,7 +312,7 @@ function createExpected (currentDate: number, activities: any) {
 }
 
 function createEvent (): any {
-  return {
+  const retval = {
     uid: '123',
     stages: {
       Stage1: ''
@@ -327,4 +326,5 @@ function createEvent (): any {
       workflow: 'test'
     }
   };
+  return retval;
 }

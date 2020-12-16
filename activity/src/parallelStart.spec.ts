@@ -3,14 +3,21 @@
  * License: Public
  */
 
-import { OrchestratorComponentState } from '@moe-tech/orchestrator';
-import { MockSNSUtils, MockOrchestratorStatusDal, MockOrchestratorPluginDal } from '@moe-tech/orchestrator/__mock__/libServices';
+import { OrchestratorComponentState, OrchestratorPluginDal, OrchestratorStatusDal, SNSUtils } from '@moe-tech/orchestrator';
+import { MockSNSUtils } from '@moe-tech/orchestrator/__mock__/libServices';
+import { MockOrchestratorStatusDal, MockOrchestratorPluginDal } from '@moe-tech/orchestrator/__mock__/dals';
 import { MockStepFunctions } from '@moe-tech/orchestrator/__mock__/aws';
+import { StepFunctions } from 'aws-sdk';
 
-const sns = new MockSNSUtils();
-const dal = new MockOrchestratorStatusDal();
-const pluginDal = new MockOrchestratorPluginDal();
-const stepfunctions = new MockStepFunctions();
+process.env.snsTopic = 'testTopic';
+process.env.statusTable = 'TestStatusTable';
+process.env.pluginTable = 'TestPluginTable';
+process.env.activity = 'test';
+
+const sns = new MockSNSUtils(SNSUtils);
+const dal = new MockOrchestratorStatusDal(OrchestratorStatusDal);
+const pluginDal = new MockOrchestratorPluginDal(OrchestratorPluginDal);
+const stepfunctions = new MockStepFunctions(StepFunctions);
 
 import { fanOut } from './parallelStart';
 
@@ -20,6 +27,8 @@ describe('fanOut', () => {
     beforeEach(() => {
         pluginDal.reset();
         stepfunctions.reset();
+        sns.reset();
+        dal.reset();
     });
     
     test('Null Event', async () => {
@@ -44,8 +53,6 @@ describe('fanOut', () => {
         expect(error).toBe("Event data unexpected (uid: 'undefined')");
     });
     test('SNS Subscription is 0', async () => {
-        sns.reset();
-        dal.reset();
         sns.subscriberCount = 0;
         const result = await fanOut(getDefaultEvent());
 
@@ -53,8 +60,6 @@ describe('fanOut', () => {
         expect(dal.getStatusObjectInput).toBeDefined();
     });
     test('SNS Subscription is 1', async () => {
-        sns.reset();
-        dal.reset();
         sns.subscriberCount = 1;
         dal.getStatusObjectResult = {
             activities: {
@@ -70,16 +75,16 @@ describe('fanOut', () => {
                 }
             },
         };
+        pluginDal.getPluginsResults = [{}];
         const result = await fanOut(getDefaultEvent());
 
         expect(result).toBe(OrchestratorComponentState.InProgress);
-        expect(dal.getStatusObjectInput).toBeDefined();
+        expect(dal.getStatusObject).toBeCalled();
     });
     test('No Overall Status Object', async () => {
-        sns.reset();
-        dal.reset();
         dal.getStatusObjectResult = null;
         let error = null;
+        pluginDal.getPluginsResults = [{}];
         try {
             await fanOut(getDefaultEvent());
         } catch (err) {
@@ -88,12 +93,11 @@ describe('fanOut', () => {
         expect(error).toBe('The status object cannot be found');
     });
     test('No Sub-Status Object', async () => {
-        sns.reset();
-        dal.reset();
         dal.getStatusObjectResult = {
             activities: {}
         };
         let error = null;
+        pluginDal.getPluginsResults = [{}];
         try {
             await fanOut(getDefaultEvent());
         } catch (err) {

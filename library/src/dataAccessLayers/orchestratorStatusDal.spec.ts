@@ -5,14 +5,16 @@
 
 import { OrchestratorComponentState, OrchestratorStage } from '../types';
 import { MockDynamoDb } from '../__mock__/aws';
-
 const mockDb = new MockDynamoDb();
 
 import { OrchestratorStatusDal } from './orchestratorStatusDal';
 
 describe('getStatusObject', () => {
   const dal = new OrchestratorStatusDal('Test');
-  (dal as any).dal = mockDb;
+
+  beforeEach(() => {
+    mockDb.reset();
+  });
 
   test('Empty id', async () => {
     let error = null;
@@ -42,16 +44,19 @@ describe('getStatusObject', () => {
 
 describe('updateStageStatus', () => {
   const dal = new OrchestratorStatusDal('Test');
-  (dal as any).dal = mockDb;
+  beforeEach(() => {
+    mockDb.reset();
+  });
+
   test('null values', async () => {
     mockDb.reset();
     await dal.updateStageStatus('', '', '', null, null, '');
-    expect(mockDb.updateInput).toBeDefined();
+    expect(mockDb.update).toBeCalled();
   });
 
   test('valid values', async () => {
     await dal.updateStageStatus('test', 'test', 'test', OrchestratorStage.PreProcessing,
       OrchestratorComponentState.Complete, 'test');
-    expect(mockDb.updateInput).toBeDefined();
+    expect(mockDb.update).toBeCalled();
   });
 });

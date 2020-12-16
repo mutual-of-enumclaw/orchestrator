@@ -1,9 +1,9 @@
 import { MockCloudwatch } from '../__mock__/aws';
 
 const cloudwatch = new MockCloudwatch();
-const reporting = new MetricsReporting();
 
 import { MetricsReporting } from './metricsReporting';
+const reporting = new MetricsReporting();
 
 describe('handler', () => {
   reporting.cloudwatch = cloudwatch as any;

@@ -12,7 +12,9 @@ import { OrchestratorPluginDal } from './orchestratorPluginDal';
 const dal = new OrchestratorPluginDal('Test', 'Orch');
 
 describe('getSyncPlugins', () => {
-
+  beforeEach(() => {
+    mockDb.reset();
+  });
   test('stage not defined', async () => {
     let error = null;
     try {

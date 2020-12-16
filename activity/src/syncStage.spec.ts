@@ -3,16 +3,22 @@
  * License: Public
  */
 
-import { MockOrchestratorPluginDal, MockOrchestratorStatusDal } from '@moe-tech/orchestrator/__mock__/libServices';
+import { MockOrchestratorPluginDal, MockOrchestratorStatusDal } from '@moe-tech/orchestrator/__mock__/dals';
 import { MockLambda } from '@moe-tech/orchestrator/__mock__/aws';
-import { OrchestratorComponentState } from '@moe-tech/orchestrator';
+import { OrchestratorComponentState, OrchestratorStatusDal, OrchestratorPluginDal } from '@moe-tech/orchestrator';
+import { Lambda } from 'aws-sdk';
 
-const dal = new MockOrchestratorStatusDal();
-const pluginDal = new MockOrchestratorPluginDal();
-const mockLambda = new MockLambda();
-process.env.environment = 'unit-test';
+const dal = new MockOrchestratorStatusDal(OrchestratorStatusDal);
+const pluginDal = new MockOrchestratorPluginDal(OrchestratorPluginDal);
+const mockLambda = new MockLambda(Lambda);
+process.env.statusTable = 'TestStatusTable';
+process.env.pluginTable = 'TestPluginTable';
+process.env.activity = 'test';
+process.env.unittest = 'true';
+
 
 import { start } from './syncStage';
+
 
 describe('start test', () => {
     beforeEach(() => {
@@ -60,7 +66,7 @@ describe('start test', () => {
             }
         };
         pluginDal.getPluginsResults = [
-            { } as any
+            { pluginName: 'test'} as any
         ];
         const event = getDefaultEvent();
         let error = null;
@@ -70,7 +76,7 @@ describe('start test', () => {
             error = err.message;
         }
 
-        expect(error).toBe(`Plugin does not have required values ${JSON.stringify({})}`);
+        expect(error).toBe(`Plugin does not have required values ${JSON.stringify({ pluginName: 'test' })}`);
     });
 
     test('No registered plugins', async () => {
@@ -79,7 +85,7 @@ describe('start test', () => {
         await start(event);
 
         expect(mockLambda.invokeParams.length).toBe(0);
-        expect(dal.updateStageStatusInput.state).toBe(OrchestratorComponentState.Complete);
+        expect(dal.updateStageStatusInput[1].state).toBe(OrchestratorComponentState.Complete);
     });
 
     test('Valid', async () => {
@@ -113,6 +119,9 @@ describe('start test', () => {
 
     test('Lambda Exception Thrown', async () => {
         mockLambda.invokeRetval = { FunctionError: 'This is an error' };
+        pluginDal.getPluginsResults = [
+            { pluginName: 'test', functionName: 'test' } as any
+        ];
         dal.getStatusObjectResult = {
             activities: {
                 test: {
@@ -146,9 +155,8 @@ describe('start test', () => {
         }
 
         expect(error).toBe('This is an error');
-        expect(dal.updateStageStatusInput.state).toBe(OrchestratorComponentState.Error);
-        expect(dal.updatePluginStatusInput.state).toBe(OrchestratorComponentState.Error);
-        expect(dal.updateStageStatusInput.message).toBe('This is an error');
+        expect(dal.updateStageStatusInput[1].state).toBe(OrchestratorComponentState.Error);
+        expect(dal.updateStageStatusInput[1].message).toBe('This is an error');
     });
 });
 

@@ -1,5 +1,5 @@
 import * as reportMetrics from './reportMetrics';
-import { MockMetricsDb, MockMetricReporting, MockWorkflowRegister } from '@moe-tech/orch-metrics-lib/__mock__/dal';
+import { MockMetricsDb, MockMetricReporting, MockWorkflowRegister } from '@moe-tech/orchestrator/__mock__/dals';
 
 const metricsReporting = new MockMetricReporting();
 const metricsDb = new MockMetricsDb();

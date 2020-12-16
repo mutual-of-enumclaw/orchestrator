@@ -1,7 +1,8 @@
 import { OrchestratorStatusDal } from '../dataAccessLayers/orchestratorStatusDal';
 import { OrchestratorComponentState, OrchestratorStage } from '../types';
 import { MetricsDb } from '../dataAccessLayers/metricsDb';
-import { MetricsReporting, WorkflowRegister } from '../utils';
+import { MetricsReporting, PluginManagementDal, WorkflowRegister } from '../utils';
+import { OrchestratorPluginDal } from '../dataAccessLayers/orchestratorPluginDal';
 
 export class MockMetricsDb {
     public putIssueFailureCallCount: number = 0;
@@ -10,9 +11,12 @@ export class MockMetricsDb {
     public putIssueFailure = jest.fn();
     public getIssueFailures = jest.fn();
 
-    constructor() {
-        MetricsDb.prototype.putIssueFailure = this.putIssueFailure;
-        MetricsDb.prototype.getIssueFailures = this.getIssueFailures;
+    constructor(metricsClass) {
+      if(!metricsClass) {
+        metricsClass = MetricsDb;
+      }
+      metricsClass.prototype.putIssueFailure = this.putIssueFailure;
+      metricsClass.prototype.getIssueFailures = this.getIssueFailures;
     }
     public reset () {
       this.putIssueFailure.mockReset();
@@ -49,9 +53,12 @@ export class MockWorkflowRegister {
     public list = jest.fn();
     public register = jest.fn();
 
-    constructor() {
-        WorkflowRegister.prototype.list = this.list;
-        WorkflowRegister.prototype.register = this.register;
+    constructor(workflowClass) {
+      if(!workflowClass) {
+        workflowClass = WorkflowRegister;
+      }
+      workflowClass.prototype.list = this.list;
+      workflowClass.prototype.register = this.register;
     }
 
     public reset () {
@@ -69,22 +76,44 @@ export class MockWorkflowRegister {
     }
 }
 
-export class MockOrchstratorStatusDal {
+export class MockOrchestratorStatusDal {
+  public getStatusObjectInput = null;
+  public getStatusObjectResult = null;
+  public getSyncPluginsCalls = 0;
+  public getSyncPluginsRetval: any[] = [];
+  public updateStageStatusInput: any[] = [];
+  public updatePluginStatusInput: any[] = [];
   public getStatusObject = jest.fn();
   public updatePluginStatus = jest.fn();
-  public updatePluginStatusInput: any[] = [];
   public updateStageStatus = jest.fn();
 
-  constructor() {
-    OrchestratorStatusDal.prototype.getStatusObject = this.getStatusObject;
-    OrchestratorStatusDal.prototype.updatePluginStatus = this.updatePluginStatus;
-    OrchestratorStatusDal.prototype.updateStageStatus = this.updateStageStatus;
+  constructor(statusClass = null) {
+    if(!statusClass) {
+      statusClass = OrchestratorStatusDal;
+    }
+    statusClass.prototype.getStatusObject = this.getStatusObject;
+    statusClass.prototype.updatePluginStatus = this.updatePluginStatus;
+    statusClass.prototype.updateStageStatus = this.updateStageStatus;
   }
 
-  reset() {
+  public reset () {
+    this.getStatusObjectInput = null;
+    this.getStatusObjectResult = null;
+    this.getSyncPluginsCalls = 0;
+    this.getSyncPluginsRetval = [];
+    this.updateStageStatusInput = [];
     this.updatePluginStatusInput = [];
+
+    this.getStatusObject.mockReset();
+    this.getStatusObject.mockImplementation(async (uid: string, activity: string) => {
+      this.getStatusObjectInput = { uid, activity };
+      return this.getStatusObjectResult;
+    });
+
     this.updatePluginStatus.mockReset();
-    this.updatePluginStatus.mockImplementation(async (uid: string, workflow: string, activity: string, stage: OrchestratorStage, mandatory: boolean, pluginName: string, state: OrchestratorComponentState, message: string) => {
+    this.updatePluginStatus.mockImplementation((uid: string, workflow: string, activity: string, stage: OrchestratorStage,
+                                      mandatory: boolean, pluginName: string, state: OrchestratorComponentState,
+                                      message: string) => {
       this.updatePluginStatusInput.push({
         uid,
         workflow,
@@ -97,9 +126,70 @@ export class MockOrchstratorStatusDal {
       });
     });
 
-    this.getStatusObject.mockReset();
-    this.getStatusObject.mockImplementation(async () => {
+    this.updateStageStatus.mockReset();
+    this.updateStageStatus.mockImplementation((uid: string, workflow: string, activity: string, stage: OrchestratorStage,
+                                              state: OrchestratorComponentState, message: string) => {
+      this.updateStageStatusInput.push({
+        uid,
+        workflow,
+        activity,
+        stage,
+        state,
+        message
+      });
+    });
+  }
+}
 
+export class MockOrchestratorPluginDal {
+  getPlugins = jest.fn();
+  getPluginsResults: any[] = [];
+
+  constructor(pluginDalClass = null) {
+    if(!pluginDalClass) {
+      pluginDalClass = OrchestratorPluginDal;
+    }
+    pluginDalClass.prototype.getPlugins = this.getPlugins;
+  }
+
+  reset() {
+    this.getPluginsResults = [];
+    this.getPlugins.mockReset();
+    this.getPlugins.mockImplementation(async () => {
+      return this.getPluginsResults;
+    });
+  }
+}
+
+export class MockPluginManagementDal {
+  public addPluginInput: Array<any> = [];
+  public removePluginInput: Array<any> = [];
+
+  public removePlugin = jest.fn();
+  public addPlugin = jest.fn();
+
+  constructor() {
+    PluginManagementDal.prototype.addPlugin = this.addPlugin;
+    PluginManagementDal.prototype.removePlugin = this.removePlugin;
+  }
+
+  public reset () {
+    this.addPluginInput = [];
+    this.removePluginInput = [];
+
+    this.addPlugin.mockReset();
+    this.addPlugin.mockImplementation((subscriptionArn, params: any) => {
+      this.addPluginInput.push({ 
+        subscriptionArn,
+        ...params
+      });
+    });
+
+    this.removePlugin.mockReset();
+    this.removePlugin.mockImplementation((subscriptionArn) => {
+      this.removePluginInput.push({
+        subscriptionArn
+      });
     });
   }
 }

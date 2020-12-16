@@ -9,11 +9,12 @@ import { stepLambdaAsyncWrapper, OrchestratorWorkflowStatus,
     from '@moe-tech/orchestrator';
 import * as AWS from 'aws-sdk';
 
-let statusDal: OrchestratorStatusDal = null;
-let pluginDal: OrchestratorPluginDal = null;
-let activity: string = process.env.activity;
+
+const activity: string = process.env.activity;
+const statusDal: OrchestratorStatusDal = new OrchestratorStatusDal(process.env.statusTable);
+const pluginDal: OrchestratorPluginDal = new OrchestratorPluginDal(process.env.pluginTable, activity);
 const stage = (process.env.stage === 'pre') ? OrchestratorStage.PreProcessing : OrchestratorStage.PostProcessing;
-let lambda = new AWS.Lambda();
+const lambda = new AWS.Lambda();
 
 function getPluginStatus(overallStatus: OrchestratorWorkflowStatus, 
                          plugin: OrchestratorSyncPlugin) : OrchestratorStatus {
@@ -28,10 +29,6 @@ function getPluginStatus(overallStatus: OrchestratorWorkflowStatus,
 }
 
 export const start = stepLambdaAsyncWrapper(async (event: OrchestratorWorkflowStatus) => {
-    if (!statusDal) {
-        statusDal = new OrchestratorStatusDal(process.env.statusTable);
-        pluginDal = new OrchestratorPluginDal(process.env.pluginTable, activity);
-    }
     console.log(JSON.stringify(event));
     if (!event) {
         throw new Error('Event data unexpected');
@@ -131,10 +128,11 @@ export const start = stepLambdaAsyncWrapper(async (event: OrchestratorWorkflowSt
                 try {
                     const status = getPluginStatus(overallStatus, plugin);
                     if(status.state !== OrchestratorComponentState.Complete) {
-                        const result = await lambda.invoke({
+                        const resultPromise = lambda.invoke({
                             FunctionName: plugin.functionName,
                             Payload: JSON.stringify(snsMessage)
-                        }).promise();
+                        });
+                        const result = await resultPromise.promise();
 
                         if (result.FunctionError) {
                             throw new Error(result.FunctionError as string);
@@ -144,13 +142,15 @@ export const start = stepLambdaAsyncWrapper(async (event: OrchestratorWorkflowSt
                     }
                 } catch (err) {
                     error = err;
-                    await new Promise<void>((resolve) => {
-                        setTimeout(
-                            () => {
-                                resolve();
-                            }, 
-                            1000);
-                    });
+                    if(process.env.unittest !== 'true') {
+                        await new Promise<void>((resolve) => {
+                            setTimeout(
+                                () => {
+                                    resolve();
+                                }, 
+                                1000);
+                        });
+                    }
                 }
             } while (error != null && retryCount < 3);
             if(error) {

@@ -2,8 +2,8 @@ import * as AWS from 'aws-sdk';
 import { Handler, DynamoDBStreamEvent, DynamoDBRecord } from 'aws-lambda';
 import { StepData, WorkflowRegister, lambdaWrapperAsync } from '@moe-tech/orchestrator';
 
-let stepFunctions: AWS.StepFunctions;
-let workflowRegister: WorkflowRegister;
+let stepFunctions: AWS.StepFunctions = new AWS.StepFunctions();
+let workflowRegister: WorkflowRegister = new WorkflowRegister(process.env.WorkflowRegistry);
 
 export const handler: Handler = lambdaWrapperAsync(async function handler (event: DynamoDBStreamEvent) {
   if (!event || !event.Records) {
@@ -11,17 +11,8 @@ export const handler: Handler = lambdaWrapperAsync(async function handler (event
     return;
   }
 
-  if (!stepFunctions) {
-    stepFunctions = new AWS.StepFunctions();
-    workflowRegister = new WorkflowRegister(process.env.WorkflowRegistry);
-  }
-
   const promises = [];
-  event.Records.forEach(record => {
-    promises.push(processRecord(record));
-  });
-
-  await Promise.all(promises);
+  await Promise.all(event.Records.map(record => processRecord(record)));
 });
 
 async function processRecord (record: DynamoDBRecord) {

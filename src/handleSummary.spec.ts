@@ -2,38 +2,20 @@
  * Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
  * License: Public
  */
-import { updateActivityStatus, validateActivity, StatusSummary, setServices } from './handleSummary';
-import { MockDynamoDb } from '../__mock__/mockDynamoDb';
+import { MockDynamoDb, MockStepFunctions } from '@moe-tech/orchestrator/__mock__/aws';
 import { OrchestratorComponentState, OrchestratorActivityStatus } from '@moe-tech/orchestrator';
-import { OrchestratorPluginDal, OrchestratorStatusDal } from '../__mock__/libServices';
+import { MockOrchestratorPluginDal, MockOrchestratorStatusDal } from '@moe-tech/orchestrator/__mock__/dals';
+process.env.environment = 'unit-test';
+const dynamoDal = new MockDynamoDb();
+const stepFunctions = new MockStepFunctions();
+const pluginDal = new MockOrchestratorPluginDal();
+const statusDal = new MockOrchestratorStatusDal();
 
-class MockStepFunctions {
-    sendTaskSuccess = jest.fn();
-    sendTaskFailure = jest.fn();
-
-    reset () {
-      this.sendTaskFailure.mockReset();
-      this.sendTaskFailure.mockImplementation(() => {
-        return {
-          promise: async () => {}
-        };
-      });
-      this.sendTaskSuccess.mockReset();
-      this.sendTaskSuccess.mockImplementation(() => {
-        return {
-          promise: async () => {}
-        };
-      });
-    }
-}
 console.log = () => { };
 
+import { updateActivityStatus, validateActivity, StatusSummary, setServices } from './handleSummary';
+
 describe('updateActivityStatus', () => {
-  process.env.environment = 'unit-test';
-  const dynamoDal = new MockDynamoDb();
-  const stepFunctions = new MockStepFunctions();
-  const pluginDal = new OrchestratorPluginDal();
-  const statusDal = new OrchestratorStatusDal();
   beforeEach(() => {
     setServices(stepFunctions, dynamoDal, pluginDal, statusDal);
     stepFunctions.reset();
@@ -66,7 +48,7 @@ describe('updateActivityStatus', () => {
 
   test('Basic - no change to status', async () => {
     await updateActivityStatus(createBasicEvent());
-    expect(dynamoDal.updateInput).toBeNull();
+    expect(dynamoDal.update).toBeCalledTimes(0);
   });
 
   describe('deDupe', () => {
@@ -97,14 +79,14 @@ describe('updateActivityStatus', () => {
       status.M.state.S = OrchestratorComponentState.NotStarted;
       event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M = {};
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeNull();
+      expect(dynamoDal.update).toBeCalledTimes(0);
     });
 
     test('Basic - single item null', async () => {
       const event = createBasicEvent();
       event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M.test.NULL = true;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeNull();
+      expect(dynamoDal.update).toBeCalledTimes(0);
     });
 
     test('Basic - single item complete status change', async () => {
@@ -116,12 +98,12 @@ describe('updateActivityStatus', () => {
       const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
       mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#async.#status.#state = :Rateasyncstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain('#Rate.#async.#status.#state = :Rateasyncstate');
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Rateasyncstate'])
         .toBe(OrchestratorComponentState.Complete);
 
-      expect(dynamoDal.updateInput.ExpressionAttributeNames['#async']).toBe('async');
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeNames['#async']).toBe('async');
     });
 
     test('Basic - multiple items mixed state', async () => {
@@ -130,7 +112,7 @@ describe('updateActivityStatus', () => {
       mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
       mandatory.M.test.M.state.N = OrchestratorComponentState.Complete;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeNull();
+      expect(dynamoDal.update).toBeCalledTimes(0);
     });
 
     test('Basic - multiple items complete state', async () => {
@@ -143,9 +125,9 @@ describe('updateActivityStatus', () => {
       mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
       mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#async.#status.#state = :Rateasyncstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain('#Rate.#async.#status.#state = :Rateasyncstate');
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Rateasyncstate'])
         .toBe(OrchestratorComponentState.Complete);
     });
 
@@ -155,15 +137,15 @@ describe('updateActivityStatus', () => {
       mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
       mandatory.M.test.M.state.S = OrchestratorComponentState.Error;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#async.#status.#state = :Rateasyncstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Rateasyncstate'])
         .toBe(OrchestratorComponentState.Error);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#status.#state = :workflowstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':workflowstate'])
         .toBe(OrchestratorComponentState.Error);
     });
 
@@ -173,7 +155,7 @@ describe('updateActivityStatus', () => {
       status.M.state.S = OrchestratorComponentState.NotStarted;
       event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory.M = {}; // .M.state.S = OrchestratorComponentState.NotStarted;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeNull();
+      expect(dynamoDal.update).toBeCalledTimes(0);
     });
 
     test('Optional in progress', async () => {
@@ -190,20 +172,20 @@ describe('updateActivityStatus', () => {
       rate.M.status.M.state = OrchestratorComponentState.InProgress;
 
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#async.#status.#state = :Rateasyncstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Rateasyncstate'])
         .toBe(OrchestratorComponentState.MandatoryCompleted);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#status.#state = :Ratestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratestate'])
         .toBe(OrchestratorComponentState.MandatoryCompleted);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#status.#state = :workflowstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':workflowstate'])
         .toBe(OrchestratorComponentState.MandatoryCompleted);
     });
 
@@ -221,20 +203,20 @@ describe('updateActivityStatus', () => {
       rate.M.status.M.state = OrchestratorComponentState.InProgress;
 
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#async.#status.#state = :Rateasyncstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Rateasyncstate'])
         .toBe(OrchestratorComponentState.OptionalError);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#status.#state = :Ratestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratestate'])
         .toBe(OrchestratorComponentState.OptionalError);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#status.#state = :workflowstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':workflowstate'])
         .toBe(OrchestratorComponentState.OptionalError);
     });
 
@@ -252,20 +234,20 @@ describe('updateActivityStatus', () => {
       rate.M.status.M.state = OrchestratorComponentState.InProgress;
 
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#async.#status.#state = :Rateasyncstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateasyncstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Rateasyncstate'])
         .toBe(OrchestratorComponentState.Complete);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#status.#state = :Ratestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratestate'])
         .toBe(OrchestratorComponentState.Complete);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#status.#state = :workflowstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':workflowstate'])
         .toBe(OrchestratorComponentState.Complete);
     });
   });
@@ -275,7 +257,7 @@ describe('updateActivityStatus', () => {
       const event = createBasicEvent();
       event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory.M.test.NULL = true;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeNull();
+      expect(dynamoDal.update).toBeCalledTimes(0);
     });
 
     test('Basic - single item complete status change - pre', async () => {
@@ -283,11 +265,11 @@ describe('updateActivityStatus', () => {
       const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory;
       mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#pre.#status.#state = :Rateprestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain('#Rate.#pre.#status.#state = :Rateprestate');
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Rateprestate'])
         .toBe(OrchestratorComponentState.Complete);
-      expect(dynamoDal.updateInput.ExpressionAttributeNames['#pre']).toBe('pre');
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeNames['#pre']).toBe('pre');
     });
 
     test('Basic - multiple items mixed state - pre', async () => {
@@ -296,7 +278,7 @@ describe('updateActivityStatus', () => {
       mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
       mandatory.M.test.M.state.N = OrchestratorComponentState.Complete;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeNull();
+      expect(dynamoDal.update).toBeCalledTimes(0);
     });
 
     test('Basic - multiple items complete state - pre', async () => {
@@ -309,9 +291,9 @@ describe('updateActivityStatus', () => {
       mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
       mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#pre.#status.#state = :Rateprestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain('#Rate.#pre.#status.#state = :Rateprestate');
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Rateprestate'])
         .toBe(OrchestratorComponentState.Complete);
     });
 
@@ -329,15 +311,15 @@ describe('updateActivityStatus', () => {
       mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
       mandatory.M.test.M.state.S = OrchestratorComponentState.Error;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#pre.#status.#state = :Rateprestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Rateprestate'])
         .toBe(OrchestratorComponentState.Error);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#status.#state = :workflowstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':workflowstate'])
         .toBe(OrchestratorComponentState.Error);
     });
 
@@ -347,7 +329,7 @@ describe('updateActivityStatus', () => {
       status.M.state.S = OrchestratorComponentState.NotStarted;
       event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory.M = {}; // .M.state.S = OrchestratorComponentState.NotStarted;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeNull();
+      expect(dynamoDal.update).toBeCalledTimes(0);
     });
 
     test('Optional in progress - pre', async () => {
@@ -372,20 +354,20 @@ describe('updateActivityStatus', () => {
 
       await updateActivityStatus(event);
 
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#pre.#status.#state = :Rateprestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Rateprestate'])
         .toBe(OrchestratorComponentState.MandatoryCompleted);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#status.#state = :Ratestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratestate'])
         .toBe(OrchestratorComponentState.MandatoryCompleted);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#status.#state = :workflowstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':workflowstate'])
         .toBe(OrchestratorComponentState.MandatoryCompleted);
     });
 
@@ -410,20 +392,20 @@ describe('updateActivityStatus', () => {
       rate.M.status.M.state = OrchestratorComponentState.InProgress;
 
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#pre.#status.#state = :Rateprestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Rateprestate'])
         .toBe(OrchestratorComponentState.OptionalError);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#status.#state = :Ratestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratestate'])
         .toBe(OrchestratorComponentState.OptionalError);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#status.#state = :workflowstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':workflowstate'])
         .toBe(OrchestratorComponentState.OptionalError);
     });
 
@@ -455,20 +437,20 @@ describe('updateActivityStatus', () => {
       rate.M.pre.M.status.M.state = OrchestratorComponentState.InProgress;
 
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#pre.#status.#state = :Rateprestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Rateprestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Rateprestate'])
         .toBe(OrchestratorComponentState.Complete);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#status.#state = :Ratestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratestate'])
         .toBe(OrchestratorComponentState.Complete);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#status.#state = :workflowstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':workflowstate'])
         .toBe(OrchestratorComponentState.Complete);
     });
 
@@ -510,7 +492,7 @@ describe('updateActivityStatus', () => {
       const event = createBasicEvent();
       event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory.M.test.NULL = true;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeNull();
+      expect(dynamoDal.update).toBeCalledTimes(0);
     });
 
     test('Basic - single item complete status change - post', async () => {
@@ -518,12 +500,12 @@ describe('updateActivityStatus', () => {
       const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory;
       mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#post.#status.#state = :Ratepoststate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain('#Rate.#post.#status.#state = :Ratepoststate');
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratepoststate'])
         .toBe(OrchestratorComponentState.Complete);
 
-      expect(dynamoDal.updateInput.ExpressionAttributeNames['#post']).toBe('post');
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeNames['#post']).toBe('post');
     });
 
     test('Basic - multiple items mixed state - post', async () => {
@@ -532,7 +514,7 @@ describe('updateActivityStatus', () => {
       mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
       mandatory.M.test.M.state.N = OrchestratorComponentState.Complete;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeNull();
+      expect(dynamoDal.update).toBeCalledTimes(0);
     });
 
     test('Basic - multiple items complete state - post', async () => {
@@ -545,9 +527,9 @@ describe('updateActivityStatus', () => {
       mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
       mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain('#Rate.#post.#status.#state = :Ratepoststate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain('#Rate.#post.#status.#state = :Ratepoststate');
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratepoststate'])
         .toBe(OrchestratorComponentState.Complete);
     });
 
@@ -565,15 +547,15 @@ describe('updateActivityStatus', () => {
       mandatory.M.test2 = JSON.parse(JSON.stringify(mandatory.M.test));
       mandatory.M.test.M.state.S = OrchestratorComponentState.Error;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#post.#status.#state = :Ratepoststate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratepoststate'])
         .toBe(OrchestratorComponentState.Error);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#status.#state = :workflowstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':workflowstate'])
         .toBe(OrchestratorComponentState.Error);
     });
 
@@ -583,7 +565,7 @@ describe('updateActivityStatus', () => {
       status.M.state.S = OrchestratorComponentState.NotStarted;
       event.Records[0].dynamodb.NewImage.activities.M.Rate.M.post.M.mandatory.M = {}; // .M.state.S = OrchestratorComponentState.NotStarted;
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeNull();
+      expect(dynamoDal.update).toBeCalledTimes(0);
     });
 
     test('Optional in progress - post', async () => {
@@ -608,20 +590,20 @@ describe('updateActivityStatus', () => {
 
       await updateActivityStatus(event);
 
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#post.#status.#state = :Ratepoststate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratepoststate'])
         .toBe(OrchestratorComponentState.MandatoryCompleted);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#status.#state = :Ratestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratestate'])
         .toBe(OrchestratorComponentState.MandatoryCompleted);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#status.#state = :workflowstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':workflowstate'])
         .toBe(OrchestratorComponentState.MandatoryCompleted);
     });
 
@@ -646,20 +628,20 @@ describe('updateActivityStatus', () => {
       rate.M.status.M.state = OrchestratorComponentState.InProgress;
 
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#post.#status.#state = :Ratepoststate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratepoststate'])
         .toBe(OrchestratorComponentState.OptionalError);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#status.#state = :Ratestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratestate'])
         .toBe(OrchestratorComponentState.OptionalError);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#status.#state = :workflowstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':workflowstate'])
         .toBe(OrchestratorComponentState.OptionalError);
     });
 
@@ -691,20 +673,20 @@ describe('updateActivityStatus', () => {
       rate.M.post.M.status.M.state = OrchestratorComponentState.InProgress;
 
       await updateActivityStatus(event);
-      expect(dynamoDal.updateInput).toBeDefined();
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.update).toBeCalled();
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#post.#status.#state = :Ratepoststate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratepoststate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratepoststate'])
         .toBe(OrchestratorComponentState.Complete);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#Rate.#status.#state = :Ratestate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':Ratestate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':Ratestate'])
         .toBe(OrchestratorComponentState.Complete);
 
-      expect(dynamoDal.updateInput.UpdateExpression).toContain(
+      expect(dynamoDal.updateInputs[0].UpdateExpression).toContain(
         '#status.#state = :workflowstate');
-      expect(dynamoDal.updateInput.ExpressionAttributeValues[':workflowstate'])
+      expect(dynamoDal.updateInputs[0].ExpressionAttributeValues[':workflowstate'])
         .toBe(OrchestratorComponentState.Complete);
     });
   });
@@ -715,7 +697,7 @@ describe('updateActivityStatus', () => {
     delete rate.M.pre;
 
     await updateActivityStatus(event);
-    expect(dynamoDal.updateInput).toBeNull();
+    expect(dynamoDal.update).toBeCalledTimes(0);
   });
 
   test('No post', async () => {
@@ -724,7 +706,7 @@ describe('updateActivityStatus', () => {
     delete rate.M.post;
 
     await updateActivityStatus(event);
-    expect(dynamoDal.updateInput).toBeNull();
+    expect(dynamoDal.update).toBeCalledTimes(0);
   });
 
   test('No async', async () => {
@@ -733,14 +715,14 @@ describe('updateActivityStatus', () => {
     delete rate.M.async;
 
     await updateActivityStatus(event);
-    expect(dynamoDal.updateInput).toBeNull();
+    expect(dynamoDal.update).toBeCalledTimes(0);
   });
 
   test('No status', async () => {
     const event = createBasicEvent();
     delete event.Records[0].dynamodb.NewImage.activities.M.Rate.M.status;
     await updateActivityStatus(event);
-    expect(dynamoDal.updateInput).toBeNull();
+    expect(dynamoDal.update).toBeCalledTimes(0);
   });
 });
 

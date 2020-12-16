@@ -10,14 +10,14 @@ import { OrchestratorComponentState, OrchestratorStage, stepLambdaAsyncWrapper, 
 import { install } from 'source-map-support';
 import { StepFunctions } from 'aws-sdk';
 
-let statusDal: OrchestratorStatusDal = null;
-let pluginDal: OrchestratorPluginDal = null;
 
 install();
 
-let sns: SNSUtils;
-let stepfunctions = new StepFunctions();
-let activity: string = process.env.activity;
+const sns: SNSUtils = new SNSUtils(process.env.snsTopic);
+const stepfunctions = new StepFunctions();
+const activity: string = process.env.activity;
+const statusDal: OrchestratorStatusDal = new OrchestratorStatusDal(process.env.statusTable);
+const pluginDal: OrchestratorPluginDal = new OrchestratorPluginDal(process.env.pluginTable, activity);
 
 interface AsyncParameters {
     data: OrchestratorWorkflowStatus,
@@ -25,12 +25,6 @@ interface AsyncParameters {
 }
 
 export const fanOut = stepLambdaAsyncWrapper(async (asyncEvent: AsyncParameters) => {
-    if (!sns || !statusDal) {
-        sns = new SNSUtils(process.env.snsTopic);
-        statusDal = new OrchestratorStatusDal(process.env.statusTable);
-        pluginDal = new OrchestratorPluginDal(process.env.pluginTable, activity);
-    }
-    
     if(!asyncEvent || !asyncEvent.asyncToken || !asyncEvent.data) {
         throw new Error('Async event data not recieved');
     }

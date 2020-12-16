@@ -2,19 +2,23 @@ import {
   OrchestratorError, PluginInfo, OrchestratorComponentState,
   OrchestratorStage, OrchestratorPluginMessage
 } from '../types';
-import { MockOrchstratorStatusDal } from '../__mock__/dals';
+import { MockOrchestratorStatusDal } from '../__mock__/dals';
 import { SNSEvent } from 'aws-lambda';
 
 process.env.environment = 'unit-test';
 // console.log = () => {};
-const mockOrchstratorStatusDal = new MockOrchstratorStatusDal();
+const mockOrchstratorStatusDal = new MockOrchestratorStatusDal();
 
 import * as orchestratorUtils from './orchestratorUtils';
 
 describe('orchestratorWrapperSqs', () => {
+  beforeEach(() => {
+    mockOrchstratorStatusDal.reset();
+    process.env.debugInput = 'true';
+  });
+  
   test('valid', async () => {
     process.env.debugInput = 'false';
-    mockOrchstratorStatusDal.reset();
     const fn = jest.fn();
     const wrapper = orchestratorUtils.orchestratorWrapperSqs(getPluginInfo(), fn);
     await wrapper(getPluginMessageSqs());
@@ -25,20 +29,16 @@ describe('orchestratorWrapperSqs', () => {
   });
 
   test('debug on', async () => {
-    process.env.debugInput = 'true';
-    mockOrchstratorStatusDal.reset();
     const fn = jest.fn();
     const wrapper = orchestratorUtils.orchestratorWrapperSqs(getPluginInfo(), fn);
     await wrapper(getPluginMessageSqs());
 
-    expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
+    expect(mockOrchstratorStatusDal.updatePluginStatus).toBeCalledTimes(2);
     expect(mockOrchstratorStatusDal.updatePluginStatusInput[0].state).toBe(OrchestratorComponentState.InProgress);
     expect(mockOrchstratorStatusDal.updatePluginStatusInput[1].state).toBe(OrchestratorComponentState.Complete);
   });
 
   test('override mandatory for activity', async () => {
-    process.env.debugInput = 'true';
-    mockOrchstratorStatusDal.reset();
     const fn = jest.fn();
     const pluginInfo = getPluginInfo();
     pluginInfo.overrides = {
@@ -49,7 +49,7 @@ describe('orchestratorWrapperSqs', () => {
     const wrapper = orchestratorUtils.orchestratorWrapperSqs(pluginInfo, fn);
     await wrapper(getPluginMessageSqs());
 
-    expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
+    expect(mockOrchstratorStatusDal.updatePluginStatus).toBeCalledTimes(2);
     expect(mockOrchstratorStatusDal.updatePluginStatusInput[0].state).toBe(OrchestratorComponentState.InProgress);
     expect(mockOrchstratorStatusDal.updatePluginStatusInput[0].mandatory).toBe(false);
     expect(mockOrchstratorStatusDal.updatePluginStatusInput[1].state).toBe(OrchestratorComponentState.Complete);
@@ -57,24 +57,18 @@ describe('orchestratorWrapperSqs', () => {
   });
 
   test('Orchestrator Error', async () => {
-    process.env.debugInput = 'true';
-    mockOrchstratorStatusDal.reset();
-
     const wrapper = orchestratorUtils.orchestratorWrapperSqs(getPluginInfo(), () => {
       throw new OrchestratorError('This is an error');
     });
 
     await wrapper(getPluginMessageSqs());
 
-    expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
+    expect(mockOrchstratorStatusDal.updatePluginStatus).toBeCalledTimes(2);
     expect(mockOrchstratorStatusDal.updatePluginStatusInput[0].state).toBe(OrchestratorComponentState.InProgress);
     expect(mockOrchstratorStatusDal.updatePluginStatusInput[1].state).toBe(OrchestratorComponentState.Error);
   });
 
   test('Error', async () => {
-    process.env.debugInput = 'true';
-    mockOrchstratorStatusDal.reset();
-
     const wrapper = orchestratorUtils.orchestratorWrapperSqs(getPluginInfo(), () => {
       throw new Error('This is an error');
     });
@@ -88,14 +82,11 @@ describe('orchestratorWrapperSqs', () => {
 
     expect(error).toBe('This is an error');
 
-    expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(1);
+    expect(mockOrchstratorStatusDal.updatePluginStatus).toBeCalledTimes(1);
     expect(mockOrchstratorStatusDal.updatePluginStatusInput[0].state).toBe(OrchestratorComponentState.InProgress);
   });
 
   test('Invalid Message', async () => {
-    process.env.debugInput = 'true';
-    mockOrchstratorStatusDal.reset();
-
     const wrapper = orchestratorUtils.orchestratorWrapperSqs(getPluginInfo(), () => {
       throw new Error('This is an error');
     });
@@ -114,21 +105,24 @@ describe('orchestratorWrapperSqs', () => {
 });
 
 describe('orchestratorWrapperSns', () => {
+  beforeEach(() => {
+    mockOrchstratorStatusDal.reset();
+    process.env.debugInput = 'true';
+  });
+
   test('valid', async () => {
     process.env.debugInput = 'false';
-    mockOrchstratorStatusDal.reset();
     const fn = jest.fn();
     const wrapper = orchestratorUtils.orchestratorWrapperSns(getPluginInfo(), fn);
     await wrapper(getPluginMessageSns());
 
-    expect(mockOrchstratorStatusDal.updatePluginStatusInput.length).toBe(2);
+    expect(mockOrchstratorStatusDal.updatePluginStatus).toBeCalledTimes(2);
     expect(mockOrchstratorStatusDal.updatePluginStatusInput[0].state).toBe(OrchestratorComponentState.InProgress);
     expect(mockOrchstratorStatusDal.updatePluginStatusInput[1].state).toBe(OrchestratorComponentState.Complete);
   });
 
   test('registration', async () => {
     process.env.debugInput = 'false';
-    mockOrchstratorStatusDal.reset();
     const fn = jest.fn();
     const pluginInfo = getPluginInfo();
     const wrapper = orchestratorUtils.orchestratorWrapperSns(pluginInfo, fn);
@@ -141,7 +135,6 @@ describe('orchestratorWrapperSns', () => {
 
   test('already marked as complete', async () => {
     process.env.debugInput = 'false';
-    mockOrchstratorStatusDal.reset();
     const plugin = getPluginInfo();
     plugin.idempotent = true;
     const statusObj = {
@@ -191,7 +184,6 @@ describe('orchestratorWrapperSns', () => {
 
   test('already marked as complete - idempotent - no db', async () => {
     process.env.debugInput = 'false';
-    mockOrchstratorStatusDal.reset();
     const plugin = getPluginInfo();
     plugin.idempotent = true;
     const statusObj = {
@@ -242,7 +234,6 @@ describe('orchestratorWrapperSns', () => {
 
   test('already marked as complete - not idempotent - no db', async () => {
     process.env.debugInput = 'false';
-    mockOrchstratorStatusDal.reset();
     const plugin = getPluginInfo();
     plugin.idempotent = false;
     const statusObj = {
@@ -293,7 +284,6 @@ describe('orchestratorWrapperSns', () => {
 
   test('already marked as complete - not idempotent - not complete', async () => {
     process.env.debugInput = 'false';
-    mockOrchstratorStatusDal.reset();
     const plugin = getPluginInfo();
     plugin.idempotent = false;
     const statusObj = {
@@ -343,8 +333,6 @@ describe('orchestratorWrapperSns', () => {
   });
 
   test('debug on', async () => {
-    process.env.debugInput = 'true';
-    mockOrchstratorStatusDal.reset();
     const fn = jest.fn();
     const wrapper = orchestratorUtils.orchestratorWrapperSns(getPluginInfo(), fn);
     await wrapper(getPluginMessageSns());
@@ -355,8 +343,6 @@ describe('orchestratorWrapperSns', () => {
   });
 
   test('override mandatory for activity', async () => {
-    process.env.debugInput = 'true';
-    mockOrchstratorStatusDal.reset();
     const fn = jest.fn();
     const pluginInfo = getPluginInfo();
     pluginInfo.overrides = {
@@ -375,9 +361,6 @@ describe('orchestratorWrapperSns', () => {
   });
 
   test('Orchestrator Error', async () => {
-    process.env.debugInput = 'true';
-    mockOrchstratorStatusDal.reset();
-
     const wrapper = orchestratorUtils.orchestratorWrapperSns(getPluginInfo(), () => {
       throw new OrchestratorError('This is an error');
     });
@@ -390,9 +373,6 @@ describe('orchestratorWrapperSns', () => {
   });
 
   test('Error', async () => {
-    process.env.debugInput = 'true';
-    mockOrchstratorStatusDal.reset();
-
     const wrapper = orchestratorUtils.orchestratorWrapperSns(getPluginInfo(), () => {
       throw new Error('This is an error');
     });
@@ -412,8 +392,11 @@ describe('orchestratorWrapperSns', () => {
 });
 
 describe('getOrchestratorSqsPassthrough', () => {
-  test('standard', async () => {
+  beforeEach(() => {
     mockOrchstratorStatusDal.reset();
+    process.env.debugInput = 'true';
+  });
+  test('standard', async () => {
     let sqsParams = null;
     const sqsOverride = sqsMock(function t (p) { sqsParams = p; });
     orchestratorUtils.setSqsOverride(sqsOverride as any);
@@ -428,7 +411,6 @@ describe('getOrchestratorSqsPassthrough', () => {
   });
 
   test('fifo', async () => {
-    mockOrchstratorStatusDal.reset();
     let sqsParams = null;
     const sqsOverride = sqsMock(function t (p) { sqsParams = p; });
     orchestratorUtils.setSqsOverride(sqsOverride as any);

@@ -8,12 +8,6 @@ import { OrchestratorStage, OrchestratorSyncPlugin, CloudwatchEvent } from "../t
 import { Lambda } from 'aws-sdk';
 import { Stage } from "aws-sdk/clients/amplify";
 
-interface LambdaResult {
-    pluginName: string;
-    mandatory: boolean;
-    order: number;
-}
-
 export class PluginManager {
     public pluginDal: PluginManagementDal;
     private lambda: Lambda;

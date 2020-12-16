@@ -3,25 +3,24 @@
  * License: Public
  */
 
-import { PluginManager } from './pluginManager';
 import { CloudwatchEvent, OrchestratorStage } from '../types';
-import { MockPluginManagementDal } from '../__mock__/libServices';
+import { MockPluginManagementDal } from '../__mock__/dals';
 import { MockLambda } from '../__mock__/aws';
 
 const pluginDal = new MockPluginManagementDal();
 const lambda = new MockLambda();
 
-const snsArn = 'arn:aws:sns:us-west-2:025658654491:nucleus-plugin-management-dev-alert';
+const snsArn = 'arn:aws:sns:us-west-2:000000000000:nucleus-plugin-management-dev-alert';
 
+import { PluginManager } from './pluginManager';
 const pluginManager = new PluginManager('test', OrchestratorStage.PreProcessing, snsArn);
 
-(pluginManager as any).pluginDal = pluginDal as any;
-(pluginManager as any).lambda = lambda;
-
 describe('removePluginEvent', () => {
-    test('Null event', async () => {
+    beforeEach(() => {
         pluginDal.reset();
         lambda.reset();
+    });
+    test('Null event', async () => {
         let error = null;
         try {
             await pluginManager.removePluginEvent(null);
@@ -32,8 +31,6 @@ describe('removePluginEvent', () => {
     });
 
     test('Event missing topic arn', async () => {
-        pluginDal.reset();
-        lambda.reset();
         let error = null;
         const event = getUnsubscribeEvent();
         event.detail.requestParameters.subscriptionArn = '';
@@ -45,8 +42,6 @@ describe('removePluginEvent', () => {
         expect(error).toBe('No subscription arn supplied');
     });
     test('SNS arn does not match', async () => {
-        pluginDal.reset();
-        lambda.reset();
         lambda.invokeRetval = { order: 1 };
         const event = getUnsubscribeEvent();
         event.detail.requestParameters.subscriptionArn = snsArn + '-test:subscriptiondetails';
@@ -55,23 +50,22 @@ describe('removePluginEvent', () => {
         expect(pluginDal.removePluginInput.length).toBe(0);
     });
     test('Removing event to pre stage', async () => {
-        pluginDal.reset();
-        lambda.reset();
         lambda.invokeRetval = { order: 1 };
         const event = getUnsubscribeEvent();
         await pluginManager.removePluginEvent(event);
 
-        expect(pluginDal.removePluginInput.length).toBe(1);
-        expect(pluginDal.removePluginInput[0].subscriptionArn)
-.toBe('arn:aws:sns:us-west-2:025658654491:nucleus-plugin-management-dev-alert:c3019def-3714-403e-ba29-eb14079d5c69');
+        expect(pluginDal.removePlugin).toBeCalledTimes(1);
+        expect(pluginDal.removePlugin).toBeCalledWith(event.detail.requestParameters.subscriptionArn);
     });
 });
 
 describe('processCloudwatchEvent', () => {
-
-    test('Null event', async () => {
+    beforeEach(() => {
         pluginDal.reset();
         lambda.reset();
+    });
+
+    test('Null event', async () => {
         let error = null;
         try {
             await pluginManager.addPluginEvent(null);
@@ -82,8 +76,6 @@ describe('processCloudwatchEvent', () => {
     });
 
     test('Event missing topic arn', async () => {
-        pluginDal.reset();
-        lambda.reset();
         let error = null;
         const event = getSubscribeEvent();
         event.detail.requestParameters.topicArn = '';
@@ -95,8 +87,6 @@ describe('processCloudwatchEvent', () => {
         expect(error).toBe('Argument event topic not valid');
     });
     test('Event missing protocol', async () => {
-        pluginDal.reset();
-        lambda.reset();
         let error = null;
         const event = getSubscribeEvent();
         event.detail.requestParameters.protocol = '';
@@ -108,8 +98,6 @@ describe('processCloudwatchEvent', () => {
         expect(error).toBe('Argument event protocol not valid');
     });
     test('Event not lambda protocol', async () => {
-        pluginDal.reset();
-        lambda.reset();
         let error = null;
         const event = getSubscribeEvent();
         event.detail.requestParameters.protocol = 'email';
@@ -121,8 +109,6 @@ describe('processCloudwatchEvent', () => {
         expect(error).toBe('Argument event protocol not valid');
     });
     test('Event missing lambda arn', async () => {
-        pluginDal.reset();
-        lambda.reset();
         let error = null;
         const event = getSubscribeEvent();
         event.detail.requestParameters.endpoint = '';
@@ -134,8 +120,6 @@ describe('processCloudwatchEvent', () => {
         expect(error).toBe('Argument event lambda arn not valid');
     });
     test('Event bad lambda arn', async () => {
-        pluginDal.reset();
-        lambda.reset();
         let error = null;
         const event = getSubscribeEvent();
         event.detail.requestParameters.endpoint = 'arn:aws:bad:arn';
@@ -147,23 +131,19 @@ describe('processCloudwatchEvent', () => {
         expect(error).toBe('Argument event lambda arn malformed');
     });
     test('Adding event to pre stage', async () => {
-        pluginDal.reset();
-        lambda.reset();
         lambda.invokeRetval = { Payload: '{ "pluginName": "Test", "mandatory": true, "order": 1}' };
         const event = getSubscribeEvent();
         event.detail.requestParameters.topicArn += '-pre';
         pluginDal['stage'] = 'pre';
         await pluginManager.addPluginEvent(event);
 
-        expect(pluginDal.addPluginInput.length).toBe(1);
+        expect(pluginDal.addPlugin).toBeCalledTimes(1);
         expect(pluginDal.addPluginInput[0].functionName).toBe('nucleus-plugin-management-dev-test2');
         expect(pluginDal.addPluginInput[0].order).toBe(1);
         expect(lambda.invokeParams.length).toBe(1);
         expect(lambda.invokeParams[0].FunctionName).toBe('nucleus-plugin-management-dev-test2');
     });
     test('Adding event to pre stage no order', async () => {
-        pluginDal.reset();
-        lambda.reset();
         lambda.invokeRetval = { Payload: '{}'};
         const event = getSubscribeEvent();
         pluginDal['stage'] = 'pre';
@@ -178,8 +158,6 @@ describe('processCloudwatchEvent', () => {
     });
 
     test('Malformed payload', async () => {
-        pluginDal.reset();
-        lambda.reset();
         lambda.invokeRetval = { Payload: 'order: 1'};
         const event = getSubscribeEvent();
         pluginDal['stage'] = 'pre';
@@ -194,8 +172,6 @@ describe('processCloudwatchEvent', () => {
     });
 
     test('No payload', async () => {
-        pluginDal.reset();
-        lambda.reset();
         lambda.invokeRetval = { };
         pluginDal['stage'] = 'pre';
         const event = getSubscribeEvent();
@@ -210,8 +186,6 @@ describe('processCloudwatchEvent', () => {
     });
 
     test('Lambda failure', async () => {
-        pluginDal.reset();
-        lambda.reset();
         lambda.invokeRetval = { FunctionError: 'Test'};
         const event = getSubscribeEvent();
         let error = null;
@@ -234,7 +208,7 @@ function getUnsubscribeEvent() : CloudwatchEvent {
         "id": "c021ae83-21dc-4eb0-2ca4-c6c9e7e8c6a7",
         "detail-type": "AWS API Call via CloudTrail",
         "source": "aws.sns",
-        "account": "025658654491",
+        "account": "000000000000",
         "time": "2019-02-05T00:12:12Z",
         "region": "us-west-2",
         "resources": [],
@@ -243,8 +217,8 @@ function getUnsubscribeEvent() : CloudwatchEvent {
             "userIdentity": {
                 "type": "AssumedRole",
                 "principalId": "AROAIZOM6ZVJTAD37TQWO:nkeating@mutualofenumclaw.com",
-                "arn": "arn:aws:sts::025658654491:assumed-role/SandBoxAdmin/nkeating@mutualofenumclaw.com",
-                "accountId": "025658654491",
+                "arn": "arn:aws:sts::000000000000:assumed-role/SandBoxAdmin/nkeating@mutualofenumclaw.com",
+                "accountId": "000000000000",
                 "accessKeyId": "ASIAQL6K774NYWRIJN5H",
                 "sessionContext": {
                     "attributes": {
@@ -254,8 +228,8 @@ function getUnsubscribeEvent() : CloudwatchEvent {
                     "sessionIssuer": {
                         "type": "Role",
                         "principalId": "AROAIZOM6ZVJTAD37TQWO",
-                        "arn": "arn:aws:iam::025658654491:role/SandBoxAdmin",
-                        "accountId": "025658654491",
+                        "arn": "arn:aws:iam::000000000000:role/SandBoxAdmin",
+                        "accountId": "000000000000",
                         "userName": "SandBoxAdmin"
                     }
                 }
@@ -267,8 +241,8 @@ function getUnsubscribeEvent() : CloudwatchEvent {
             "sourceIPAddress": "50.206.106.129",
             "requestParameters": {
                 "subscriptionArn": 
-                        "arn:aws:sns:us-west-2:025658654491:nucleus-plugin-management" + 
-                        "-dev-alert:c3019def-3714-403e-ba29-eb14079d5c69"
+                        snsArn + 
+                        ":c3019def-3714-403e-ba29-eb14079d5c69"
             },
             "responseElements": null,
             "requestID": "49d924a6-4353-54f8-b698-70749448974c",
@@ -284,7 +258,7 @@ function getSubscribeEvent() : CloudwatchEvent {
         "id": "58274b74-e7de-1ea9-65d6-ea1289e4173d",
         "detail-type": "AWS API Call via CloudTrail",
         "source": "aws.sns",
-        "account": "025658654491",
+        "account": "000000000000",
         "time": "2019-02-04T17:02:56Z",
         "region": "us-west-2",
         "resources": [],
@@ -293,8 +267,8 @@ function getSubscribeEvent() : CloudwatchEvent {
             "userIdentity": {
                 "type": "IAMUser",
                 "principalId": "AIDAJTW3HGEWFOVWAVXL2",
-                "arn": "arn:aws:iam::025658654491:user/nkeating",
-                "accountId": "025658654491",
+                "arn": "arn:aws:iam::000000000000:user/nkeating",
+                "accountId": "000000000000",
                 "accessKeyId": "ASIAIENF7ODZIPDF7H7Q",
                 "userName": "nkeating",
                 "sessionContext": {
@@ -313,13 +287,13 @@ function getSubscribeEvent() : CloudwatchEvent {
             "userAgent": "cloudformation.amazonaws.com",
             "requestParameters": {
                 "returnSubscriptionArn": true,
-                "topicArn": "arn:aws:sns:us-west-2:025658654491:nucleus-plugin-management-dev-alert",
+                "topicArn": "arn:aws:sns:us-west-2:000000000000:nucleus-plugin-management-dev-alert",
                 "protocol": "lambda",
-                "endpoint": "arn:aws:lambda:us-west-2:025658654491:function:nucleus-plugin-management-dev-test2"
+                "endpoint": "arn:aws:lambda:us-west-2:000000000000:function:nucleus-plugin-management-dev-test2"
             },
             "responseElements": {
                 "subscriptionArn": 
-        "arn:aws:sns:us-west-2:025658654491:nucleus-plugin-management-dev-alert:149f669e-23c4-45a1-9640-c58da354e67c"
+        "arn:aws:sns:us-west-2:000000000000:nucleus-plugin-management-dev-alert:149f669e-23c4-45a1-9640-c58da354e67c"
             },
             "requestID": "ab372051-6dd7-5186-b338-74831f5763ad",
             "eventID": "c878eea2-3051-4a45-8349-9af6864306f9",

@@ -3,12 +3,12 @@
  * License: Public
  */
 
-import {SNSUtils} from './snsUtils';
 import { MockSNS } from '../__mock__/aws';
 
 const sns = new MockSNS();
+
+import {SNSUtils} from './snsUtils';
 const utils = new SNSUtils('Test');
-(utils as any).sns = sns;
 
 describe('getSubscriberCount', () => {
     test('Null list result', async () => {

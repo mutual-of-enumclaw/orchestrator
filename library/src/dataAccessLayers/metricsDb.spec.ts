@@ -1,9 +1,13 @@
-import { MetricsDb } from './metricsDb';
 import { MockDynamoDb } from '../__mock__/aws';
-
 const dynamoDb = new MockDynamoDb();
+
+import { MetricsDb } from './metricsDb';
 const metricsDb = new MetricsDb(dynamoDb as any);
+
 describe('putIssueFailure', () => {
+  beforeEach(() => {
+    dynamoDb.reset();
+  });
   test('Empty', async () => {
     const time = (new Date().getTime() + (1000 * 60 * 15)) / 1000;
     await metricsDb.putIssueFailure('', '');
@@ -22,7 +26,9 @@ describe('putIssueFailure', () => {
 });
 
 describe('getIssueFailures', () => {
-  metricsDb.dynamoDb = dynamoDb as any;
+  beforeEach(() => {
+    dynamoDb.reset();
+  });
 
   test('15', async () => {
     dynamoDb.scanReturn = {
