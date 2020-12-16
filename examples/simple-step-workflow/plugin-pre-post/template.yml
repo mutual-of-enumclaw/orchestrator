@@ -1,0 +1,40 @@
+Transform: AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Runtime: nodejs12.x
+    CodeUri: .
+    MemorySize: 128
+    Timeout: 30
+    Layers:
+      - Fn::ImportValue: !Sub "${OrchestratorStack}-layer"
+Parameters:
+  OrchestratorStack:
+    Type: String
+    Description: The name of the orchestrator stack
+
+  # OrchestratorLayerArn:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Description: /<EnvironmentName>/orchestrator/stacks/<StackWithoutDashes>/layer
+
+Resources:
+  prePostPlugin:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-prePostPlugin
+      Handler: plugin.plugin
+      Description: !Sub
+        - Stack ${AWS::StackName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: prePostPlugin
+      Events:
+        Topic1:
+          Type: SNS
+          Properties:
+            Topic:
+              Fn::ImportValue: !Sub ${OrchestratorStack}-Step2-pre-processing
+            Region: !Ref: AWS::Region
+        Topic2:
+          Type: SNS
+          Properties:
+            Topic:
+              Fn::ImportValue: !Sub ${OrchestratorStack}-Step2-post-processing
+            Region: !Ref: AWS::Region

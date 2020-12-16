@@ -136,6 +136,16 @@ Resources:
       RetentionPolicy: Retain
     Metadata:
       BuildMethod: nodejs12.x
+
+  LibraryParamStore:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: 
+        !Sub 
+          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/layer
+          - parmStack: !Join ['', !Split ['-', !Ref AWS::StackName]]
+      Value: !Ref Library
+      Type: String
   
   
   metrics:
@@ -149,6 +159,12 @@ Resources:
         StatusTableArn: !GetAtt StatusTable.Arn
         StatusTableStreamArn: !GetAtt StatusTable.StreamArn
         OrchestratorLayerArn: !Ref Library
+  
+  
+  
+  
+  
+  
   
   
   
@@ -282,3 +298,8 @@ Outputs:
       Value: !GetAtt initializeActivities.Arn
       Export:
         Name: !Sub "${AWS::StackName}-init-activites"
+
+    Layer:
+      Value: !Ref Layer
+      Export:
+        Name: !Sub "${AWS::StackName}-layer"

@@ -1,12 +1,12 @@
 {
-    "name": "orchestrator",
+    "name": "@moe-tech/orchestrator-core",
     "author": "Mutual of Enumclaw",
     "publisher": "Mutual of Enumclaw",
     "license": "LGPLv3",
-    "version": "1.0.97",
+    "version": "2.0.0",
     "description": "The core data and related processing for orchestrators",
-    "main": "dist/index.js",
     "scripts": {
+        "clean": "npx rimraf src/node_modules src/dist activity/src/node_modules activity/src/dist metrics/src/node_modules metrics/src/dist library/src/node_modules library/src/dist library/node_modules",
         "prebuild": "npm run installLibrary && npm run installHS && npm run installActivity && npm run installMetrics",
         "build": "tsc -d -p src",
         "test": "npx jest",
@@ -47,6 +47,7 @@
         "hard-source-webpack-plugin": "^0.13.1",
         "jest": "^25.5.4",
         "jest-junit": "^7.0.0",
+        "rimraf": "^3.0.2",
         "serverless-webpack": "^5.3.5",
         "source-map-support": "^0.5.13",
         "ts-jest": "^25.3.1",
