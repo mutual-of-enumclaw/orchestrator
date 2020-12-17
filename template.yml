@@ -7,10 +7,6 @@ Globals:
     Timeout: 30
     Layers:
       - !Ref Library
-    Environment:
-      Variables:
-        epsagonToken: !GetAtt TracingResource.EpsagonToken
-        epsagonAppNamePath: !GetAtt TracingResource.EpsagonAppName
 
 Resources:
   RootStackParamStore:
@@ -31,6 +27,10 @@ Resources:
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: updateStatus
       Handler: dist/handleSummary.updateActivityStatus
+      Environment:
+        Variables:
+          epsagonToken: !GetAtt TracingResource.EpsagonToken
+          epsagonAppNamePath: !GetAtt TracingResource.EpsagonAppName
       Policies:
         - Statement:
             - Effect: Allow
@@ -72,6 +72,10 @@ Resources:
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: initializeActivities
       Handler: dist/initializeActivities.initialize
+      Environment:
+        Variables:
+          epsagonToken: !GetAtt TracingResource.EpsagonToken
+          epsagonAppNamePath: !GetAtt TracingResource.EpsagonAppName
       Policies:
         - Statement:
             - Effect: Allow
@@ -195,6 +199,7 @@ Resources:
         StatusTableArn: !GetAtt StatusTable.Arn
         StatusTableStreamArn: !GetAtt StatusTable.StreamArn
         OrchestratorLayerArn: !Ref Library
+        TracingResourceArn: !GetAtt TracingIntegration.Arn
   
   
   

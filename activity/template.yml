@@ -7,6 +7,11 @@ Globals:
     Timeout: 30
     Layers:
       - !Ref OrchestratorLayerArn
+    Environment:
+      Variables:
+        epsagonToken: !GetAtt TracingResource.EpsagonToken
+        epsagonAppNamePath: !GetAtt TracingResource.EpsagonAppName
+        
 Parameters:
   ParentStackName:
     Type: String
@@ -31,8 +36,15 @@ Parameters:
   OrchestratorLayerArn:
     Type: String
     Default: arn:aws:lambda:us-west-2:000000000000:layer:not-a-real-layer:1
+  TracingIntegrationArn:
+    Type: String
 
 Resources:
+  TracingResource:
+    Type: Custom::TracingIntegration
+    Properties:
+      ServiceToken: !Ref TracingIntegrationArn
+
   parallelTopic:
     Type: AWS::SNS::Topic
     Properties:
