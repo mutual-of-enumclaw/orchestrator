@@ -3,6 +3,8 @@
     "version": "1.0.0",
     "devDependencies": {
         "@moe-tech/orchestrator": "file:../library/src",
+        "aws-lambda": "^1.0.6",
+        "aws-sdk": "^2.812.0",
         "epsagon": "^1.102.2"
     },
     "dependencies": {
