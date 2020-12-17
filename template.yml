@@ -158,6 +158,12 @@ Resources:
       Environment:
         Variables:
           layerArn: !Ref Library
+
+  LibraryLayerReferenceResource:
+    Type: !Sub Custom::${AWS::StackName}-layer
+    Properties:
+      ServiceToken: !GetAtt LibraryLayerReference.Arn
+      Region: !Ref AWS::Region
       
   metrics:
     Type: AWS::Serverless::Application
@@ -280,8 +286,3 @@ Outputs:
       Value: !Ref Library
       Export:
         Name: !Sub "${AWS::StackName}-layer"
-
-    LibraryLayerReference:
-      Value: !GetAtt LibraryLayerReference.Arn
-      Export:
-        Name: !Sub "${AWS::StackName}-layer-resource"
