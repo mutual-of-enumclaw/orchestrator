@@ -7,9 +7,10 @@
     "description": "The core data and related processing for orchestrators",
     "scripts": {
         "clean": "npx rimraf src/node_modules src/dist activity/src/node_modules activity/src/dist metrics/src/node_modules metrics/src/dist library/src/node_modules library/src/dist library/node_modules",
-        "prebuild": "npm run installLibrary && npm run installHS && npm run installActivity && npm run installMetrics",
+        "prebuild": "npm run installTypescript && npm run installLibrary && npm run installHS && npm run installActivity && npm run installMetrics",
         "build": "npx tsc -d -p src",
         "test": "npx jest",
+        "installTypescript": "npm i typescript@latest",
         "installHS": "npm ci --prefix src && npx tsc -d -p src",
         "installUtils": "npm ci --prefix orch-utils",
         "installActivity": "npm ci --prefix activity/src && npx tsc -d -p activity/src",
