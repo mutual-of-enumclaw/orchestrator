@@ -146,25 +146,20 @@ Resources:
           - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
       Value: !Ref Library
       Type: String
-  
-  LibraryLayerReference:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${AWS::StackName}-library-layer-ref
-      Handler: /src/dist/libraryLayerReference.resourceHandler
-      Description: !Sub
-        - Stack ${AWS::StackName} Function ${ResourceName}
-        - ResourceName: LibraryLayerReference
-      Environment:
-        Variables:
-          layerArn: !Ref Library
 
-  LibraryLayerReferenceResource:
-    Type: !Sub Custom::${AWS::StackName}-layer
+  pluginPolicy:
+    Type: AWS::IAM::Policy
     Properties:
-      ServiceToken: !GetAtt LibraryLayerReference.Arn
-      Region: !Ref AWS::Region
-      
+      PolicyName: !Sub ${AWS::StackName}-PluginPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:UpdateItem
+            Resource:
+              - !GetAtt StatusTable.Arn
+  
   metrics:
     Type: AWS::Serverless::Application
     Properties:
@@ -286,3 +281,8 @@ Outputs:
       Value: !Ref Library
       Export:
         Name: !Sub "${AWS::StackName}-layer"
+    
+    PluginPolicy:
+      Value: !Ref pluginPolicy
+      Export:
+        Name: !Sub "${AWS::StackName}-plugin-policy"
