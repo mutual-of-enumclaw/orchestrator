@@ -154,7 +154,7 @@ Resources:
   TracingIntegration:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-prePostPlugin
+      FunctionName: !Sub ${AWS::StackName}-tracing-integration
       Handler: dist/tracingIntegration.handler
       Description: !Sub
         - Stack ${AWS::StackName} Function ${ResourceName}
@@ -164,7 +164,7 @@ Resources:
           epsagonTokenPath: !Sub /${EnvironmentTagName}/epsagon/token
           epsagonAppNamePath: 
             !Sub 
-              - /${EnvironmentTagName}/epsagon/${parmStack}/appname
+              - /${EnvironmentTagName}/epsagon/stacks/${parmStack}/appname
               - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
       Policies:
         - Statement:
@@ -181,6 +181,7 @@ Resources:
 
   TracingResource:
     Type: Custom::TracingIntegration
+    DependsOn: !Ref TracingIntegration
     Properties:
       ServiceToken: !GetAtt TracingIntegration.Arn
 
