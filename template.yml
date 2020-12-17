@@ -195,7 +195,7 @@ Resources:
         StatusTableArn: !GetAtt StatusTable.Arn
         StatusTableStreamArn: !GetAtt StatusTable.StreamArn
         OrchestratorLayerArn: !Ref Library
-        TracingResourceArn: !GetAtt TracingIntegration.Arn
+        TracingIntegrationArn: !GetAtt TracingIntegration.Arn
   
   
   
