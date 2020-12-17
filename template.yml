@@ -160,42 +160,6 @@ Resources:
         StatusTableStreamArn: !GetAtt StatusTable.StreamArn
         OrchestratorLayerArn: !Ref Library
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   ##
   ## Start Activities Section
   ##
@@ -300,6 +264,6 @@ Outputs:
         Name: !Sub "${AWS::StackName}-init-activites"
 
     Layer:
-      Value: !Ref Layer
+      Value: !Ref Library
       Export:
         Name: !Sub "${AWS::StackName}-layer"
