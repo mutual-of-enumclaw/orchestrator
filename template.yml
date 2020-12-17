@@ -147,7 +147,18 @@ Resources:
       Value: !Ref Library
       Type: String
   
-  
+  LibraryLayerReference:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-library-layer-ref
+      Handler: /src/dist/libraryLayerReference.resourceHandler
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: LibraryLayerReference
+      Environment:
+        Variables:
+          layerArn: !Ref Library
+      
   metrics:
     Type: AWS::Serverless::Application
     Properties:
@@ -159,6 +170,8 @@ Resources:
         StatusTableArn: !GetAtt StatusTable.Arn
         StatusTableStreamArn: !GetAtt StatusTable.StreamArn
         OrchestratorLayerArn: !Ref Library
+  
+  
   
   ##
   ## Start Activities Section
@@ -267,3 +280,8 @@ Outputs:
       Value: !Ref Library
       Export:
         Name: !Sub "${AWS::StackName}-layer"
+
+    LibraryLayerReference:
+      Value: !GetAtt: LibraryLayerReference.Arn
+      Export:
+        Name: !Sub "${AWS::StackName}-layer-resource"
