@@ -115,7 +115,7 @@ async function loadActivities(args) {
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
         TracingIntegrationArn: !GetAtt TracingIntegration.Arn
-    `.slice(1)
+    `
     });
     
     let templateContent = fs.readFileSync(yamlFile).toString('utf-8');
@@ -125,7 +125,7 @@ async function loadActivities(args) {
             `
   ##
   ## Start Activities Section
-  ##`,
+  ##`.slice(1),
     ...activities,
     `
   ##
