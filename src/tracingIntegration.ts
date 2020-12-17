@@ -1,4 +1,4 @@
-import { send } from 'cfn-response';
+import { send } from 'cfn-response-promise';
 import { SSM } from 'aws-sdk';
 
 const ssm = new SSM();
@@ -27,5 +27,5 @@ export async function handler(event, context) {
         console.log(err);
     }
 
-    send(event, context, 'SUCCESS', data);
+    return await send(event, context, 'SUCCESS', data);
 }
