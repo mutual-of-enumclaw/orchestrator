@@ -146,19 +146,6 @@ Resources:
           - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
       Value: !Ref Library
       Type: String
-
-  pluginPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub ${AWS::StackName}-PluginPolicy
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Action:
-              - dynamodb:UpdateItem
-            Resource:
-              - !GetAtt StatusTable.Arn
   
   metrics:
     Type: AWS::Serverless::Application
@@ -281,8 +268,3 @@ Outputs:
       Value: !Ref Library
       Export:
         Name: !Sub "${AWS::StackName}-layer"
-    
-    PluginPolicy:
-      Value: !Ref pluginPolicy
-      Export:
-        Name: !Sub "${AWS::StackName}-plugin-policy"
