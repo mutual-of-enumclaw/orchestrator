@@ -162,7 +162,10 @@ Resources:
       Environment:
         Variables:
           epsagonTokenPath: !Sub /${EnvironmentTagName}/epsagon/token
-          epsagonAppNamePath: !Sub /${EnvironmentTagName}/epsagon/${parmStack}/appname
+          epsagonAppNamePath: 
+            !Sub 
+              - /${EnvironmentTagName}/epsagon/${parmStack}/appname
+              - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
       Policies:
         - Statement:
             - Effect: Allow
