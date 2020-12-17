@@ -282,6 +282,6 @@ Outputs:
         Name: !Sub "${AWS::StackName}-layer"
 
     LibraryLayerReference:
-      Value: !GetAtt: LibraryLayerReference.Arn
+      Value: !GetAtt LibraryLayerReference.Arn
       Export:
         Name: !Sub "${AWS::StackName}-layer-resource"
