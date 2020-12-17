@@ -3,24 +3,13 @@
  * License: Public
  */
 
-import { OrchestratorStage, lambdaWrapperAsync, PluginManager, CloudwatchEvent } from "@moe-tech/orchestrator";
+import { lambdaWrapperAsync, PluginManager, CloudwatchEvent } from "@moe-tech/orchestrator";
+import { getStage } from "./pluginAdd";
 
-let stage: OrchestratorStage;
-
-switch(process.env.stage) {
-    case 'pre':
-        stage = OrchestratorStage.PreProcessing;
-        break;
-    case 'post':
-        stage = OrchestratorStage.PostProcessing;
-        break;
-    case 'parallel':
-        stage = OrchestratorStage.BulkProcessing;
-        break;
-}
-
-const pluginRemoveManager = new PluginManager(process.env.activity, stage, process.env.snsArn);
 export const handler = lambdaWrapperAsync(async (event: CloudwatchEvent) => {
     console.log(JSON.stringify(event));
-    await pluginRemoveManager.removePluginEvent(event);
+    const stage = getStage(event);
+    const pluginManager = new PluginManager(process.env.activity, stage, process.env.snsArn);
+
+    await pluginManager.removePluginEvent(event);
 });

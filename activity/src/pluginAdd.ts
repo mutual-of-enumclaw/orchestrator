@@ -8,22 +8,25 @@ import { install } from 'source-map-support';
 
 install();
 
-let stage: OrchestratorStage;
 
-switch(process.env.stage) {
-    case 'pre':
-        stage = OrchestratorStage.PreProcessing;
-        break;
-    case 'post':
-        stage = OrchestratorStage.PostProcessing;
-        break;
-    case 'parallel':
-        stage = OrchestratorStage.BulkProcessing;
-        break;
-}
-
-const pluginManager = new PluginManager(process.env.activity, stage, process.env.snsArn);
 export const handler = lambdaWrapperAsync(async (event: CloudwatchEvent) => {
     console.log(JSON.stringify(event));
+    let stage = getStage(event);
+
+    const pluginManager = new PluginManager(process.env.activity, stage, process.env.snsArn);
+
     await pluginManager.addPluginEvent(event);
 });
+
+export function getStage(event: CloudwatchEvent): OrchestratorStage {
+    if(event.detail.requestParameters.topicArn === process.env.preArn) {
+        return OrchestratorStage.PreProcessing;
+    }
+    if (event.detail.requestParameters.topicArn === process.env.postArn) {
+        return OrchestratorStage.PostProcessing;
+    }
+    if (event.detail.requestParameters.topicArn === process.env.parallelArn) {
+        return OrchestratorStage.BulkProcessing;
+    }
+    return undefined as any;
+}

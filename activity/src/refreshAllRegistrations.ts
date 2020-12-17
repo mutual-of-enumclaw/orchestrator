@@ -8,21 +8,6 @@ import { SNS } from 'aws-sdk';
 
 install();
 
-let stage: OrchestratorStage;
-
-switch(process.env.stage) {
-    case 'pre':
-        stage = OrchestratorStage.PreProcessing;
-        break;
-    case 'post':
-        stage = OrchestratorStage.PostProcessing;
-        break;
-    case 'parallel':
-        stage = OrchestratorStage.BulkProcessing;
-        break;
-}
-
-const pluginManager = new PluginManager(process.env.activity, stage, process.env.snsArn);
 const sns = new SNS();
 export const handler = lambdaWrapperAsync(async () => {
     await Promise.all([
@@ -34,6 +19,8 @@ export const handler = lambdaWrapperAsync(async () => {
 
 async function updateSubscriptions(topicArn: string, stage: string) {
     let nextToken;
+    const pluginManager = new PluginManager(process.env.activity, stage as any, process.env.snsArn);
+
     do {
         const subscriptions = await sns.listSubscriptionsByTopic({
             TopicArn: topicArn,
