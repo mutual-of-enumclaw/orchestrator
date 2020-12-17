@@ -15,7 +15,7 @@ Resources:
       Name: 
         !Sub 
           - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/base
-          - parmStack: !Join ['', !Split ['-', !Ref AWS::StackName]]
+          - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
       Value: !Ref AWS::StackName
       Type: String
 
@@ -143,7 +143,7 @@ Resources:
       Name: 
         !Sub 
           - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/layer
-          - parmStack: !Join ['', !Split ['-', !Ref AWS::StackName]]
+          - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
       Value: !Ref Library
       Type: String
   
