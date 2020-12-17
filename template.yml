@@ -179,7 +179,7 @@ Resources:
   TracingResource:
     Type: Custom::TracingIntegration
     Properties:
-      ServiceToken: !GetAtt: TracingIntegration
+      ServiceToken: !GetAtt TracingIntegration.Arn
 
   metrics:
     Type: AWS::Serverless::Application
