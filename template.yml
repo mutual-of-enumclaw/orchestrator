@@ -181,7 +181,6 @@ Resources:
 
   TracingResource:
     Type: Custom::TracingIntegration
-    DependsOn: !Ref TracingIntegration
     Properties:
       ServiceToken: !GetAtt TracingIntegration.Arn
 
