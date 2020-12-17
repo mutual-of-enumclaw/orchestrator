@@ -29,6 +29,8 @@ Resources:
       Handler: dist/handleSummary.updateActivityStatus
       Environment:
         Variables:
+          pluginTable: !Ref PluginTable
+          statusTable: !Ref StatusTable
           epsagonToken: !GetAtt TracingResource.EpsagonToken
           epsagonAppNamePath: !GetAtt TracingResource.EpsagonAppName
       Policies:
@@ -56,10 +58,6 @@ Resources:
             Stream: !GetAtt StatusTable.StreamArn
             StartingPosition: TRIM_HORIZON
             BatchSize: 1
-      Environment:
-        Variables:
-          pluginTable: !Ref PluginTable
-          statusTable: !Ref StatusTable
     Metadata:
       RuntimeOption: typescript
 
@@ -76,6 +74,7 @@ Resources:
         Variables:
           epsagonToken: !GetAtt TracingResource.EpsagonToken
           epsagonAppNamePath: !GetAtt TracingResource.EpsagonAppName
+          statusTable: !Ref StatusTable
       Policies:
         - Statement:
             - Effect: Allow
@@ -83,9 +82,6 @@ Resources:
                 - dynamodb:PutItem
                 - dynamodb:GetItem
               Resource: !GetAtt StatusTable.Arn
-      Environment:
-        Variables:
-          statusTable: !Ref StatusTable
     Metadata:
       RuntimeOption: typescript
 
