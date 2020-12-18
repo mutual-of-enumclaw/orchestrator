@@ -4,7 +4,7 @@
  */
 import { DynamoDB } from 'aws-sdk';
 import { OrchestratorComponentState, OrchestratorStage, OrchestratorWorkflowStatus } from '../types';
-import { OrchestratorConfig } from '@moe-tech/orchestrator';
+import { OrchestratorConfig } from '../types';
 
 const config: OrchestratorConfig = process.env.OrchestratorConfig? JSON.parse(process.env.OrchestratorConfig) : undefined;
 if(!config) {
