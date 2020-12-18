@@ -3,7 +3,7 @@
  * License: Public
  */
 import 'ts-jest';
-import { lambdaWrapperAsync, lambdaWrapper, stepLambdaAsyncWrapper } from './epsagonUtils';
+import { lambdaWrapperAsync, lambdaWrapper, stepLambdaAsyncWrapper } from './tracingUtils';
 
 const initialFunction = () => { throw new Error('Method called when unexpected'); };
 console.log = () => {};

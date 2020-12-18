@@ -9,8 +9,10 @@ const mockDb = new MockDynamoDb();
 
 import { OrchestratorStatusDal } from './orchestratorStatusDal';
 
+process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'Test' });
+
 describe('getStatusObject', () => {
-  const dal = new OrchestratorStatusDal('Test');
+  const dal = new OrchestratorStatusDal();
 
   beforeEach(() => {
     mockDb.reset();
@@ -43,7 +45,7 @@ describe('getStatusObject', () => {
 });
 
 describe('updateStageStatus', () => {
-  const dal = new OrchestratorStatusDal('Test');
+  const dal = new OrchestratorStatusDal();
   beforeEach(() => {
     mockDb.reset();
   });

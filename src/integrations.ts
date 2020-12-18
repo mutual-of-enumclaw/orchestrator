@@ -1,13 +1,13 @@
 import { send } from 'cfn-response-promise';
 import { SSM } from 'aws-sdk';
+import { OrchestratorConfig } from '@moe-tech/orchestrator';
 
 const ssm = new SSM();
 
 export async function handler(event, context) {
     console.log(JSON.stringify(event));
-    const data = {
-        EpsagonToken: '',
-        EpsagonAppName: ''
+    const data: OrchestratorConfig = {
+        statusTable: process.env.statusTable
     };
 
     try {
@@ -20,12 +20,17 @@ export async function handler(event, context) {
 
         const epsagonAppName = params.Parameters.find(x => x.Name === process.env.epsagonAppNamePath);
         const epsagonToken = params.Parameters.find(x => x.Name === process.env.epsagonAppNamePath);
-
-        data.EpsagonAppName = epsagonAppName?.Value || '';
-        data.EpsagonToken = epsagonToken?.Value || '';
+        const metadataOnly = params.Parameters.find(x => x.Name === process.env.epsagonMetadataPath);
+        if(epsagonToken && epsagonAppName) {
+            data.epsagon = {
+                appName: epsagonAppName.Value,
+                token: epsagonToken.Value,
+                metadataOnly: metadataOnly?.Value === 'true'
+            };
+        }
     } catch (err) {
         console.log(err);
     }
 
-    return await send(event, context, 'SUCCESS', { "traceConfig": JSON.stringify(data)} );
+    return await send(event, context, 'SUCCESS', { StatusArn: process.env.StatusTableArn, Config: JSON.stringify(data)} );
 }

@@ -120,7 +120,7 @@ async function ProcessMessage (message: OrchestratorPluginMessage, pluginInfo: P
     return 'Error: Invalid message, orchistrator wrapper ignoring it';
   }
 
-  const oasd = (oasdOverride) || new OrchestratorStatusDal(process.env.orchestratorStatusTable);
+  const oasd = (oasdOverride) || new OrchestratorStatusDal();
   let mandatory = pluginInfo.default.mandatory;
   const override = (pluginInfo.overrides) ? pluginInfo.overrides[message.activity] : null;
   if (override && override.mandatory !== undefined) {
@@ -193,7 +193,7 @@ export function getOrchestratorSqsPassthrough (pluginInfo: PluginInfo, sqsUrl: s
 
 async function orchestratorSqsEnqueueRecord (record: SNSEventRecord, pluginInfo: PluginInfo, sqsUrl) {
   const message = JSON.parse(record.Sns.Message) as OrchestratorPluginMessage;
-  const oasd = (oasdOverride) || new OrchestratorStatusDal(process.env.orchestratorStatusTable);
+  const oasd = (oasdOverride) || new OrchestratorStatusDal();
   if (!sqs) { sqs = new SQS(); }
 
   const mandatory = pluginInfo.default.mandatory;

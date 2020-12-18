@@ -4,11 +4,15 @@
  */
 import { DynamoDB } from 'aws-sdk';
 import { OrchestratorComponentState, OrchestratorStage, OrchestratorWorkflowStatus } from '../types';
+import { OrchestratorConfig } from '@moe-tech/orchestrator';
+
+const config: OrchestratorConfig = process.env.OrchestratorConfig? JSON.parse(process.env.OrchestratorConfig) : undefined;
+if(!config) {
+  throw new Error('OrchestratorConfig not set');
+}
 
 export class OrchestratorStatusDal {
     private dal: AWS.DynamoDB.DocumentClient = new DynamoDB.DocumentClient();
-    constructor (private statusTable: string) {
-    }
 
     public async getStatusObject (uid: string,
       workflow: string,
@@ -20,7 +24,7 @@ export class OrchestratorStatusDal {
         throw new Error('No activity specified');
       }
       const result = await this.dal.get({
-        TableName: this.statusTable,
+        TableName: config.statusTable,
         Key: { uid, workflow },
         ConsistentRead: consistentRead
       }).promise();
@@ -50,7 +54,7 @@ export class OrchestratorStatusDal {
       console.log('message: ', JSON.stringify(message));
 
       const params = {
-        TableName: this.statusTable,
+        TableName: config.statusTable,
         Key: { uid, workflow },
         UpdateExpression: 'set #activities.#activity.#stage.#type.#pluginName = :status',
         ExpressionAttributeNames: {
@@ -72,7 +76,7 @@ export class OrchestratorStatusDal {
       uid: string, workflow: string, activity: string, stage: OrchestratorStage,
       state: OrchestratorComponentState, message: string, updateTime: Date = new Date(), token: string = '') {
       const params = {
-        TableName: this.statusTable,
+        TableName: config.statusTable,
         Key: { uid, workflow },
         UpdateExpression: 'set #activities.#activity.#stage.#status.#state = :state' +
                 ', #activities.#activity.#stage.#status.#message = :message' +
@@ -106,7 +110,7 @@ export class OrchestratorStatusDal {
       // collide with later update
       //
       await this.dal.get({
-        TableName: this.statusTable,
+        TableName: config.statusTable,
         Key: { uid, workflow },
         ConsistentRead: true
       }).promise();

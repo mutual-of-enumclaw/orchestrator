@@ -1,4 +1,4 @@
-export * from './epsagonUtils';
+export * from './tracingUtils';
 export * from './orchestratorUtils';
 export * from './pluginRegistrationTimeout';
 export * from './pluginManagementDal';
