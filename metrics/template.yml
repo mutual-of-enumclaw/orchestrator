@@ -9,7 +9,7 @@ Globals:
       - !Ref OrchestratorLayerArn
     Environment:
       Variables:
-        OrchestratorConfig: !GetAtt TracingResource.Config
+        OrchestratorConfig: !GetAtt OrchestratorResource.Config
 
 Parameters:
   StatusTableName:
