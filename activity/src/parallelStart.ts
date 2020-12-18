@@ -16,7 +16,7 @@ install();
 const sns: SNSUtils = new SNSUtils(process.env.snsTopic);
 const stepfunctions = new StepFunctions();
 const activity: string = process.env.activity;
-const statusDal: OrchestratorStatusDal = new OrchestratorStatusDal(process.env.statusTable);
+const statusDal: OrchestratorStatusDal = new OrchestratorStatusDal();
 const pluginDal: OrchestratorPluginDal = new OrchestratorPluginDal(process.env.pluginTable, activity);
 
 interface AsyncParameters {

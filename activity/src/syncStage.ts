@@ -11,7 +11,7 @@ import * as AWS from 'aws-sdk';
 
 
 const activity: string = process.env.activity;
-const statusDal: OrchestratorStatusDal = new OrchestratorStatusDal(process.env.statusTable);
+const statusDal: OrchestratorStatusDal = new OrchestratorStatusDal();
 const pluginDal: OrchestratorPluginDal = new OrchestratorPluginDal(process.env.pluginTable, activity);
 const stage = (process.env.stage === 'pre') ? OrchestratorStage.PreProcessing : OrchestratorStage.PostProcessing;
 const lambda = new AWS.Lambda();
