@@ -13,11 +13,10 @@ const statusDal = new MockOrchestratorStatusDal();
 
 console.log = () => { };
 
-import { updateActivityStatus, validateActivity, StatusSummary, setServices } from './handleSummary';
+import { updateActivityStatus, validateActivity, StatusSummary } from './handleSummary';
 
 describe('updateActivityStatus', () => {
   beforeEach(() => {
-    setServices(stepFunctions, dynamoDal, pluginDal, statusDal);
     stepFunctions.reset();
     dynamoDal.reset();
     pluginDal.reset();

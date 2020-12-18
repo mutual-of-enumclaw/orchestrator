@@ -69,15 +69,6 @@ export class StatusSummary {
 
 let dynamoDal: AWS.DynamoDB.DocumentClient = new AWS.DynamoDB.DocumentClient();
 let stepfunctions = new AWS.StepFunctions();
-let pluginDalMock: OrchestratorPluginDal;
-let statusDalMock: OrchestratorStatusDal;
-
-export function setServices (step: any, dynamo: any, pluginMock: any, statusMock: any) {
-  dynamoDal = dynamo;
-  stepfunctions = step;
-  pluginDalMock = pluginMock;
-  statusDalMock = statusMock;
-}
 
 export const updateActivityStatus = lambdaWrapperAsync(async (event: DynamoDBStreamEvent) => {
   console.log(JSON.stringify(event));
@@ -286,7 +277,7 @@ export async function validateStage (
         let sendStatusEvent = true;
         if (activityStatus[stage].status.startTime) {
           const startTime = new Date(activityStatus[stage].status.startTime);
-          const pluginDal = pluginDalMock || new OrchestratorPluginDal(process.env.pluginTable, activity);
+          const pluginDal = new OrchestratorPluginDal(process.env.pluginTable, activity);
           const plugins = (await pluginDal.getPlugins(stage as OrchestratorStage)).filter(x => {
             if (x.mandatory) {
               return false;
@@ -309,7 +300,7 @@ export async function validateStage (
                 waitTime);
             });
 
-            const statusDal = statusDalMock || new OrchestratorStatusDal(process.env.statusTable);
+            const statusDal = new OrchestratorStatusDal();
             const newStatus = await statusDal.getStatusObject(overall.uid, overall.workflow, true);
 
             if (Object.keys(activityStatus[stage].mandatory).length !==
