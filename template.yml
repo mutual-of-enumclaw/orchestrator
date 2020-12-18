@@ -31,8 +31,7 @@ Resources:
         Variables:
           pluginTable: !Ref PluginTable
           statusTable: !Ref StatusTable
-          epsagonToken: !GetAtt TracingResource.EpsagonToken
-          epsagonAppNamePath: !GetAtt TracingResource.EpsagonAppName
+          traceConfig: !GetAtt OrchestratorResource.Config
       Policies:
         - Statement:
             - Effect: Allow
@@ -72,8 +71,7 @@ Resources:
       Handler: dist/initializeActivities.initialize
       Environment:
         Variables:
-          epsagonToken: !GetAtt TracingResource.EpsagonToken
-          epsagonAppNamePath: !GetAtt TracingResource.EpsagonAppName
+          OrchestratorConfig: !GetAtt OrchestratorResource.Config
           statusTable: !Ref StatusTable
       Policies:
         - Statement:
@@ -151,11 +149,11 @@ Resources:
       Value: !Ref Library
       Type: String
   
-  TracingIntegration:
+  OrchestratorIntegration:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-tracing-integration
-      Handler: dist/tracingIntegration.handler
+      FunctionName: !Sub ${AWS::StackName}-integrations
+      Handler: dist/integration.handler
       Description: !Sub
         - Stack ${AWS::StackName} Function ${ResourceName}
         - ResourceName: prePostPlugin
@@ -166,6 +164,9 @@ Resources:
             !Sub 
               - /${EnvironmentTagName}/epsagon/stacks/${parmStack}/appname
               - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+          statusTable: !Ref StatusTable
+          statusTableArn: !GetAtt StatusTable.Arn
+
       Policies:
         - Statement:
             - Effect: Allow
@@ -179,10 +180,10 @@ Resources:
                     - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/epsagon/token
                     - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
 
-  TracingResource:
-    Type: Custom::TracingIntegration
+  OrchestratorResource:
+    Type: Custom::OrchestratorIntegration
     Properties:
-      ServiceToken: !GetAtt TracingIntegration.Arn
+      ServiceToken: !GetAtt OrchestratorIntegration.Arn
 
   metrics:
     Type: AWS::Serverless::Application
@@ -195,9 +196,7 @@ Resources:
         StatusTableArn: !GetAtt StatusTable.Arn
         StatusTableStreamArn: !GetAtt StatusTable.StreamArn
         OrchestratorLayerArn: !Ref Library
-        TracingIntegrationArn: !GetAtt TracingIntegration.Arn
-  
-  
+        IntegrationArn: !GetAtt OrchestratorIntegration.Arn
   
   ##
   ## Start Activities Section

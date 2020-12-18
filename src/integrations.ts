@@ -27,5 +27,5 @@ export async function handler(event, context) {
         console.log(err);
     }
 
-    return await send(event, context, 'SUCCESS', data);
+    return await send(event, context, 'SUCCESS', { "traceConfig": JSON.stringify(data)} );
 }

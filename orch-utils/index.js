@@ -114,7 +114,7 @@ async function loadActivities(args) {
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
-        TracingIntegrationArn: !GetAtt TracingIntegration.Arn
+        IntegrationArn: !GetAtt OrchestratorIntegration.Arn
     `
     });
     

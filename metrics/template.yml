@@ -9,8 +9,7 @@ Globals:
       - !Ref OrchestratorLayerArn
     Environment:
       Variables:
-        epsagonToken: !GetAtt TracingResource.EpsagonToken
-        epsagonAppNamePath: !GetAtt TracingResource.EpsagonAppName
+        OrchestratorConfig: !GetAtt TracingResource.Config
 
 Parameters:
   StatusTableName:
@@ -28,14 +27,14 @@ Parameters:
   OrchestratorLayerArn:
     Type: String
     Default: arn:aws:lambda:us-west-2:000000000000:layer:not-a-real-layer:1
-  TracingIntegrationArn:
+  IntegrationArn:
     Type: String
 
 Resources:
-  TracingResource:
+  OrchestratorResource:
     Type: Custom::TracingIntegration
     Properties:
-      ServiceToken: !Ref TracingIntegrationArn
+      ServiceToken: !Ref IntegrationArn
 
   snsTopicFailure:
     Type: AWS::SNS::Topic
