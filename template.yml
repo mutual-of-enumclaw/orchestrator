@@ -159,6 +159,8 @@ Resources:
         - ResourceName: prePostPlugin
       Environment:
         Variables:
+          environment:
+            Ref: EnvironmentTagName
           epsagonTokenPath: !Sub /${EnvironmentTagName}/epsagon/token
           epsagonAppNamePath: 
             !Sub 
@@ -188,7 +190,7 @@ Resources:
     Type: Custom::OrchestratorIntegration
     Properties:
       ServiceToken: !GetAtt OrchestratorIntegration.Arn
-      InvokeAgain: "1"
+      InvokeAgain: "2"
 
   metrics:
     Type: AWS::Serverless::Application
