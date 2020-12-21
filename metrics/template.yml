@@ -9,7 +9,7 @@ Globals:
       - !Ref OrchestratorLayerArn
     Environment:
       Variables:
-        OrchestratorConfig: !GetAtt OrchestratorResource.Config
+        OrchestratorConfig: !Ref OrchestratorConfig
 
 Parameters:
   StatusTableName:
@@ -29,14 +29,11 @@ Parameters:
     Default: arn:aws:lambda:us-west-2:000000000000:layer:not-a-real-layer:1
   IntegrationArn:
     Type: String
+  OrchestratorConfig:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config
 
 Resources:
-  OrchestratorResource:
-    Type: Custom::TracingIntegration
-    Properties:
-      ServiceToken: !Ref IntegrationArn
-      ForceChange: force
-
   snsTopicFailure:
     Type: AWS::SNS::Topic
     Properties:

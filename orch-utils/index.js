@@ -103,6 +103,7 @@ async function loadActivities(args) {
         return `
   activity${name}:
     Type: AWS::Serverless::Application
+    DependsOn: OrchestratorResource
     Properties:
       Location: activity/template.yml
       Parameters:
@@ -114,7 +115,10 @@ async function loadActivities(args) {
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
-        IntegrationArn: !GetAtt OrchestratorIntegration.Arn
+        OrchestratorConfig: 
+          !Sub 
+            - /\${EnvironmentTagName}/orchestrator/stacks/\${parmStack}/config
+            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
     `
     });
     
