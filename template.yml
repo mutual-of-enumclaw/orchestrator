@@ -159,8 +159,8 @@ Resources:
         - ResourceName: prePostPlugin
       Environment:
         Variables:
-          environment:
-            Ref: EnvironmentTagName
+          environment: !Ref EnvironmentTagName
+          stack: !Ref StackTagName
           epsagonTokenPath: !Sub /${EnvironmentTagName}/epsagon/token
           epsagonAppNamePath: 
             !Sub 
@@ -174,7 +174,7 @@ Resources:
             - Effect: Allow
               Action:
                 - ssm:GetParameters
-                - ssm:PutParameters
+                - ssm:PutParameter
               Resource:
                 - !Sub 
                     - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/epsagon/stacks/${parmStack}/appname

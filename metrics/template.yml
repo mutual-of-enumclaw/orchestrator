@@ -27,8 +27,6 @@ Parameters:
   OrchestratorLayerArn:
     Type: String
     Default: arn:aws:lambda:us-west-2:000000000000:layer:not-a-real-layer:1
-  IntegrationArn:
-    Type: String
   OrchestratorConfig:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config

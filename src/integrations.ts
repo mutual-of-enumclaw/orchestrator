@@ -33,7 +33,7 @@ export async function handler(event, context) {
     }
 
     await ssm.putParameter({
-        Name: `/${process.env.environment}/orchestrator/stacks/${process.env.stack}/config`,
+        Name: `/${process.env.environment}/orchestrator/stacks/${process.env.stack.replace(/\-/g, '')}/config`,
         Value: JSON.stringify(data),
         Type: 'String'
     }).promise();
