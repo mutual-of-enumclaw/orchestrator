@@ -172,9 +172,13 @@ Resources:
             - Effect: Allow
               Action:
                 - ssm:GetParameters
+                - ssm:PutParameters
               Resource:
                 - !Sub 
                     - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/epsagon/stacks/${parmStack}/appname
+                    - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+                - !Sub 
+                    - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
                     - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
                 - !Sub 
                     - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/epsagon/token
