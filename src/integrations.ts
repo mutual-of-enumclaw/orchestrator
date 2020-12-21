@@ -5,6 +5,7 @@ import { OrchestratorConfig } from '@moe-tech/orchestrator';
 const ssm = new SSM();
 
 export async function handler(event, context) {
+    console.log(JSON.stringify(event));
     const data: OrchestratorConfig = {
         statusTable: process.env.statusTable
     };
@@ -36,4 +37,5 @@ export async function handler(event, context) {
         Value: JSON.stringify(data),
         Type: 'String'
     });
+    return await send(event, context, 'SUCCESS', { StatusArn: process.env.StatusTableArn, Config: JSON.stringify(data)} );
 }
