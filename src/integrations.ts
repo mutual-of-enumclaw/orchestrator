@@ -32,10 +32,10 @@ export async function handler(event, context) {
         console.log(err);
     }
 
-    ssm.putParameter({
+    await ssm.putParameter({
         Name: `/${process.env.environment}/orchestrator/stacks/${process.env.stack}/config`,
         Value: JSON.stringify(data),
         Type: 'String'
-    });
+    }).promise();
     return await send(event, context, 'SUCCESS', { StatusArn: process.env.StatusTableArn, Config: JSON.stringify(data)} );
 }

@@ -184,6 +184,7 @@ Resources:
     Type: Custom::OrchestratorIntegration
     Properties:
       ServiceToken: !GetAtt OrchestratorIntegration.Arn
+      InvokeAgain: "1"
 
   metrics:
     Type: AWS::Serverless::Application
