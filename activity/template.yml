@@ -43,7 +43,8 @@ Resources:
     Type: Custom::TracingIntegration
     Properties:
       ServiceToken: !Ref IntegrationArn
-
+      temp: 'change to force update'
+      
   parallelTopic:
     Type: AWS::SNS::Topic
     Properties:
