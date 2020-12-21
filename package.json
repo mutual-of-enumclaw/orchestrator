@@ -22,6 +22,7 @@
         "lint:fix": "npm run lint --fix",
         "refreshVSToken": "vsts-npm-auth -config .npmrc",
         "activities": "node orch-utils/index.js activities",
+        "predeploy": "sam build",
         "deploy": "sam deploy --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND",
         "buildPublish": "npm run build && npm publish",
         "deployNk": "npm run deploy -- --stack-name nk-orch --s3-bucket moe-deployment-snd --s3-prefix sam/nk-orch --parameter-overrides StackTagName=nk-orch EnvironmentTagName=snd"

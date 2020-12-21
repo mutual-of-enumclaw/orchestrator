@@ -209,12 +209,13 @@ Resources:
             - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
             - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
   
-  ##
+          ##
   ## Start Activities Section
   ##
 
   activityStep1:
     Type: AWS::Serverless::Application
+    DependsOn: OrchestratorResource
     Properties:
       Location: activity/template.yml
       Parameters:
@@ -226,10 +227,15 @@ Resources:
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
+        OrchestratorConfig: 
+          !Sub 
+            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
     
 
   activityStep2:
     Type: AWS::Serverless::Application
+    DependsOn: OrchestratorResource
     Properties:
       Location: activity/template.yml
       Parameters:
@@ -241,10 +247,15 @@ Resources:
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
+        OrchestratorConfig: 
+          !Sub 
+            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
     
 
   activityStep3:
     Type: AWS::Serverless::Application
+    DependsOn: OrchestratorResource
     Properties:
       Location: activity/template.yml
       Parameters:
@@ -256,6 +267,10 @@ Resources:
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
+        OrchestratorConfig: 
+          !Sub 
+            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
     
 
   ##
