@@ -1,7 +1,9 @@
 const orchestrator = require('@moe-tech/orchestrator');
 
+
 function plugin(workflowData) {
     console.log('It worked: ' + process.env.stage);
+    console.log(process.env.OrchestratorConfig);
     console.log(JSON.stringify(workflowData));
 }
 

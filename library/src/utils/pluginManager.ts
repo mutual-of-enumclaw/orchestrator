@@ -16,10 +16,10 @@ export class PluginManager {
 
     public async removePluginEvent(event: CloudwatchEvent) {
         this.evaluateCloudwatchEvent(event);
-        if(!event.detail.requestParameters.subscriptionArn) {
+        if(!event.detail.responseElements.subscriptionArn) {
             throw new Error('No subscription arn supplied');
         }
-        const subscriptionArn = event.detail.requestParameters.subscriptionArn;
+        const subscriptionArn = event.detail.responseElements.subscriptionArn;
         if(!subscriptionArn.startsWith(this.snsArn + ':')) {
             console.log('The subscription does not apply to this sns topic');
             return;

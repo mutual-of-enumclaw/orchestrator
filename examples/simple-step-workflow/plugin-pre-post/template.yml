@@ -7,8 +7,7 @@ Globals:
     Timeout: 30
     Environment:
       Variables:
-        orchestratorStatusTable:
-          Fn::ImportValue: !Sub ${OrchestratorStack}-status-name
+        OrchestratorConfig: !Ref OrchestratorConfig
     Layers:
       - !Ref OrchestratorLayerArn
 
@@ -18,12 +17,16 @@ Parameters:
     Description: The name of the orchestrator stack
   OrchestratorLayerArn:
     Type: String
+    Default: arn:aws:lambda:us-west-2:000000000000:layer:orch-snd-library:36
+  OrchestratorConfig:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config
 
 Resources:
-  prePostPlugin:
+  prePlugin:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-prePostPlugin
+      FunctionName: !Sub ${AWS::StackName}-prePlugin
       Handler: plugin.plugin
       Description: !Sub
         - Stack ${AWS::StackName} Function ${ResourceName}
@@ -35,6 +38,7 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
+                - dynamodb:GetItem
                 - dynamodb:UpdateItem
               Resource:
                 - Fn::ImportValue: !Sub ${OrchestratorStack}-status-arn
@@ -46,28 +50,29 @@ Resources:
               Fn::ImportValue: !Sub ${OrchestratorStack}-Step2-pre-processing
             Region: !Ref AWS::Region
         
-  prePostPlugin:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${AWS::StackName}-prePostPlugin
-      Handler: plugin.plugin
-      Description: !Sub
-        - Stack ${AWS::StackName} Function ${ResourceName}
-        - ResourceName: prePostPlugin
-      Environment:
-        Variables:
-          stage: post-Activity
-      Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:UpdateItem
-              Resource:
-                - Fn::ImportValue: !Sub ${OrchestratorStack}-status-arn
-      Events:
-        Topic2:
-          Type: SNS
-          Properties:
-            Topic:
-              Fn::ImportValue: !Sub ${OrchestratorStack}-Step2-post-processing
-            Region: !Ref AWS::Region
+  # postPlugin:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: !Sub ${AWS::StackName}-postPlugin
+  #     Handler: plugin.plugin
+  #     Description: !Sub
+  #       - Stack ${AWS::StackName} Function ${ResourceName}
+  #       - ResourceName: prePostPlugin
+  #     Environment:
+  #       Variables:
+  #         stage: post-Activity
+  #     Policies:
+  #       - Statement:
+  #           - Effect: Allow
+  #             Action:
+  #               - dynamodb:GetItem
+  #               - dynamodb:UpdateItem
+  #             Resource:
+  #               - Fn::ImportValue: !Sub ${OrchestratorStack}-status-arn
+  #     Events:
+  #       Topic2:
+  #         Type: SNS
+  #         Properties:
+  #           Topic:
+  #             Fn::ImportValue: !Sub ${OrchestratorStack}-Step2-post-processing
+  #           Region: !Ref AWS::Region

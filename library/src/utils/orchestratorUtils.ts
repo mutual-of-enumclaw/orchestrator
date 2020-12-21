@@ -6,7 +6,7 @@ import {
 import {
   OrchestratorStatusDal
 } from '../dataAccessLayers/orchestratorStatusDal';
-import { lambdaWrapperAsync, registerObservableError, setLabel } from './epsagonUtils';
+import { lambdaWrapperAsync, registerObservableError, setLabel } from './tracingUtils';
 import { SNSEvent, SNSEventRecord } from 'aws-lambda';
 import { SQS } from 'aws-sdk';
 

@@ -5,7 +5,7 @@
     "scripts": {
         "build": "echo test > test.txt"
     },
-    "dependencies": {
-        "@moe-tech/orchestrator": "^1.0.44"
+    "devDependencies": {
+        "@moe-tech/orchestrator": "file:../../../library/src"
     }
 }
