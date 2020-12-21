@@ -35,6 +35,7 @@ Resources:
     Type: Custom::TracingIntegration
     Properties:
       ServiceToken: !Ref IntegrationArn
+      ForceChange: force
 
   snsTopicFailure:
     Type: AWS::SNS::Topic

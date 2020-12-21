@@ -19,7 +19,7 @@ export async function handler(event, context) {
         }).promise();
 
         const epsagonAppName = params.Parameters.find(x => x.Name === process.env.epsagonAppNamePath);
-        const epsagonToken = params.Parameters.find(x => x.Name === process.env.epsagonAppNamePath);
+        const epsagonToken = params.Parameters.find(x => x.Name === process.env.epsagonTokenPath);
         const metadataOnly = params.Parameters.find(x => x.Name === process.env.epsagonMetadataPath);
         if(epsagonToken && epsagonAppName) {
             data.epsagon = {
