@@ -5,8 +5,7 @@ import {
 import { MockOrchestratorStatusDal } from '../__mock__/dals';
 import { SNSEvent } from 'aws-lambda';
 
-process.env.environment = 'unit-test';
-// console.log = () => {};
+process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'StatusTable' });
 const mockOrchstratorStatusDal = new MockOrchestratorStatusDal();
 
 import * as orchestratorUtils from './orchestratorUtils';

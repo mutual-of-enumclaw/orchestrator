@@ -10,9 +10,11 @@ import { Stage } from "aws-sdk/clients/amplify";
 
 export class PluginManager {
     public pluginDal: PluginManagementDal;
-    private lambda: Lambda;
+    private lambda: Lambda = new Lambda();
 
-    constructor(private activity: string, private stage: OrchestratorStage, private snsArns: string[]) {}
+    constructor(private activity: string, private stage: OrchestratorStage, private snsArns: string[]) {
+        this.pluginDal = new PluginManagementDal(process.env.pluginTable, this.activity, this.stage);
+    }
 
     public async removePluginEvent(event: CloudwatchEvent) {
         this.evaluateCloudwatchEvent(event);
@@ -118,10 +120,6 @@ export class PluginManager {
     public evaluateCloudwatchEvent(event: CloudwatchEvent) {
         if(!event || !event.detail || !event.detail.requestParameters) {
             throw new Error('Argument event not valid');
-        }
-        if(!this.pluginDal) {
-            this.pluginDal = new PluginManagementDal(process.env.pluginTable, this.activity, this.stage);
-            this.lambda = new Lambda();
         }
     }
 }

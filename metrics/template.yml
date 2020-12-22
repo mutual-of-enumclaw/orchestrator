@@ -58,7 +58,7 @@ Resources:
   s3Workflows:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${StackTagName}-workflow-registry
+      BucketName: !Sub ${StackTagName}-workflow-registry-${AWS::AccountId}-${AWS::Region}
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true

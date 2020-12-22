@@ -9,6 +9,7 @@ import { MockOrchestratorStatusDal, MockOrchestratorPluginDal } from '@moe-tech/
 import { MockStepFunctions } from '@moe-tech/orchestrator/__mock__/aws';
 import { StepFunctions } from 'aws-sdk';
 
+process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'TestStatusTable' });
 process.env.snsTopic = 'testTopic';
 process.env.statusTable = 'TestStatusTable';
 process.env.pluginTable = 'TestPluginTable';
@@ -22,7 +23,6 @@ const stepfunctions = new MockStepFunctions(StepFunctions);
 import { fanOut } from './parallelStart';
 
 describe('fanOut', () => {
-    process.env.environment = 'unit-test';
 
     beforeEach(() => {
         pluginDal.reset();

@@ -8,14 +8,15 @@ import { MockLambda } from '@moe-tech/orchestrator/__mock__/aws';
 import { OrchestratorComponentState, OrchestratorStatusDal, OrchestratorPluginDal } from '@moe-tech/orchestrator';
 import { Lambda } from 'aws-sdk';
 
+process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'TestStatusTable' });
+
 const dal = new MockOrchestratorStatusDal(OrchestratorStatusDal);
 const pluginDal = new MockOrchestratorPluginDal(OrchestratorPluginDal);
 const mockLambda = new MockLambda(Lambda);
-process.env.statusTable = 'TestStatusTable';
 process.env.pluginTable = 'TestPluginTable';
 process.env.activity = 'test';
 process.env.unittest = 'true';
-
+process.env.stage = 'pre';
 
 import { start } from './syncStage';
 

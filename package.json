@@ -9,6 +9,7 @@
         "clean": "npx rimraf src/node_modules src/dist activity/src/node_modules activity/src/dist metrics/src/node_modules metrics/src/dist library/src/node_modules library/src/dist library/node_modules",
         "prebuild": "npm run installLibrary && npm run installHS && npm run installActivity && npm run installMetrics",
         "build": "tsc -d -p src",
+        "pretest": "tsc -d -p library/src",
         "test": "npx jest",
         "installTypescript": "npm i typescript@latest -g",
         "installHS": "npm ci --prefix src && tsc -d -p src",

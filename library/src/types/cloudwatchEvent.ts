@@ -33,6 +33,7 @@ export interface CloudwatchEventDetails {
 
 export interface CloudwatchResponseElements {
     subscriptionArn: string;
+    functionName: string;
 }
 
 export interface CloudwatchRequestParameters {

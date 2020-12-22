@@ -4,39 +4,37 @@
  */
 import * as epsagon from 'epsagon';
 import { Context } from 'aws-lambda';
-import { OrchestratorConfig } from '../types';
+import { getConfig } from './config';
 
-const config: OrchestratorConfig = process.env.OrchestratorConfig? JSON.parse(process.env.OrchestratorConfig) : {};
-
-if (config.epsagon) {
+if (getConfig().epsagon) {
   epsagon.init({
-    token: config.epsagon.token,
-    appName: config.epsagon.appName,
-    metadataOnly: config.epsagon.metadataOnly
+    token: getConfig().epsagon.token,
+    appName: getConfig().epsagon.appName,
+    metadataOnly: getConfig().epsagon.metadataOnly
   });
 }
 
 export function registerObservableError (err) {
-  if (config.epsagon) {
+  if (getConfig().epsagon) {
     epsagon.setError(err);
   }
 }
 
 export function setLabel (name: string, value: string) {
-  if (config.epsagon) {
+  if (getConfig().epsagon) {
     epsagon.label(name, value);
   }
 }
 
 export const lambdaWrapper = (method) => {
-  if (!config.epsagon) {
+  if (!getConfig().epsagon) {
     return method;
   }
   return epsagon.lambdaWrapper(method);
 };
 
 export const lambdaWrapperAsync = (method) => {
-  if (!config.epsagon) {
+  if (!getConfig().epsagon) {
     console.log('Using no epsagon wrapper');
     return method;
   }
@@ -52,7 +50,7 @@ export const lambdaWrapperAsync = (method) => {
 };
 
 export const stepLambdaAsyncWrapper = (method) => {
-  if (!config.epsagon) {
+  if (!getConfig().epsagon) {
     console.log('Using no epsagon wrapper');
     return method;
   }
@@ -68,7 +66,7 @@ export const stepLambdaAsyncWrapper = (method) => {
 };
 
 export function setError (error: Error) {
-  if (!config.epsagon) {
+  if (!getConfig().epsagon) {
     return;
   }
   epsagon.setError(error);

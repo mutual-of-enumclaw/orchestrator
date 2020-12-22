@@ -1,9 +1,11 @@
 import * as reportMetrics from './reportMetrics';
 import { MockMetricsDb, MockMetricReporting, MockWorkflowRegister } from '@moe-tech/orchestrator/__mock__/dals';
+import { MetricsDb, MetricsReporting, WorkflowRegister } from '@moe-tech/orchestrator';
 
-const metricsReporting = new MockMetricReporting();
-const metricsDb = new MockMetricsDb();
-const register = new MockWorkflowRegister();
+process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'StatusTable' });
+const metricsReporting = new MockMetricReporting(MetricsReporting);
+const metricsDb = new MockMetricsDb(MetricsDb);
+const register = new MockWorkflowRegister(WorkflowRegister);
 
 describe('handler', () => {
   process.env.environment = 'unit-test';

@@ -2,6 +2,7 @@ import { MockDynamoDb } from '@moe-tech/orchestrator/__mock__/aws';
 import { OrchestratorComponentState, OrchestratorSyncStatus } from '@moe-tech/orchestrator';
 import { DynamoDB } from 'aws-sdk';
 
+process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'TestStatusTable' });
 console.log = () => {};
 const dynamodb = new MockDynamoDb(DynamoDB.DocumentClient);
 process.env.statusTable = "TestStatusTable";

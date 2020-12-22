@@ -1,8 +1,10 @@
 import { MockSNS } from '@moe-tech/orchestrator/__mock__/aws';
 import { MockMetricsDb } from '@moe-tech/orchestrator/__mock__/dals';
 import { SNS } from 'aws-sdk';
-import { MetricsDb } from '@moe-tech/orchestrator';
 
+process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'StatusTable' });
+
+import { MetricsDb } from '@moe-tech/orchestrator';
 const mock = new MockSNS(SNS);
 const metricDb = new MockMetricsDb(MetricsDb);
 

@@ -3,15 +3,20 @@
  * License: Public
  */
 
+process.env.parallelArn = 'arn:aws:sns:1:us-west-2:snsTopicParallel';
+process.env.preArn = 'arn:aws:sns:1:us-west-2:snsTopicPre';
+process.env.postArn = 'arn:aws:sns:1:us-west-2:snsTopicPost';
+
 import { CloudwatchEvent, OrchestratorStage } from '../types';
 import { MockPluginManagementDal } from '../__mock__/dals';
 import { MockLambda } from '../__mock__/aws';
 
+process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'StatusTable' });
 const pluginDal = new MockPluginManagementDal();
 const lambda = new MockLambda();
 
 const snsArn = 'arn:aws:sns:us-west-2:000000000000:nucleus-plugin-management-dev-alert';
-
+ 
 import { PluginManager } from './pluginManager';
 const pluginManager = new PluginManager('test', OrchestratorStage.PreProcessing, [snsArn]);
 
@@ -33,7 +38,7 @@ describe('removePluginEvent', () => {
     test('Event missing topic arn', async () => {
         let error = null;
         const event = getUnsubscribeEvent();
-        event.detail.requestParameters.subscriptionArn = '';
+        event.detail.responseElements.subscriptionArn = '';
         try {
             await pluginManager.removePluginEvent(event);
         } catch (err) {
@@ -44,10 +49,10 @@ describe('removePluginEvent', () => {
     test('SNS arn does not match', async () => {
         lambda.invokeRetval = { order: 1 };
         const event = getUnsubscribeEvent();
-        event.detail.requestParameters.subscriptionArn = snsArn + '-test:subscriptiondetails';
+        event.detail.responseElements.subscriptionArn = snsArn + '-test:subscriptiondetails';
         await pluginManager.removePluginEvent(event);
 
-        expect(pluginDal.removePluginInput.length).toBe(0);
+        expect(pluginDal.removePlugin).toBeCalledTimes(0);
     });
     test('Removing event to pre stage', async () => {
         lambda.invokeRetval = { order: 1 };
@@ -55,7 +60,7 @@ describe('removePluginEvent', () => {
         await pluginManager.removePluginEvent(event);
 
         expect(pluginDal.removePlugin).toBeCalledTimes(1);
-        expect(pluginDal.removePlugin).toBeCalledWith(event.detail.requestParameters.subscriptionArn);
+        expect(pluginDal.removePlugin).toBeCalledWith(event.detail.responseElements.subscriptionArn);
     });
 });
 
@@ -240,11 +245,13 @@ function getUnsubscribeEvent() : CloudwatchEvent {
             "awsRegion": "us-west-2",
             "sourceIPAddress": "50.206.106.129",
             "requestParameters": {
+                
+            },
+            "responseElements": {
                 "subscriptionArn": 
                         snsArn + 
                         ":c3019def-3714-403e-ba29-eb14079d5c69"
             },
-            "responseElements": null,
             "requestID": "49d924a6-4353-54f8-b698-70749448974c",
             "eventID": "1338bf78-9583-4f79-ad29-82b689b50d32",
             "eventType": "AwsApiCall"

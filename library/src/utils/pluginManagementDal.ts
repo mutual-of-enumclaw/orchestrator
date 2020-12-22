@@ -4,6 +4,16 @@
  */
 
 import * as AWS from 'aws-sdk';
+import { OrchestratorSyncPlugin } from '../types';
+
+export interface PluginStorageDefinition {
+    orchestratorId: string;
+    subscriptionArn: string;
+    functionName: string;
+    pluginName: string;
+    mandatory: boolean;
+    order: number;
+}
 
 export class PluginManagementDal {
     private dal: AWS.DynamoDB.DocumentClient;
@@ -12,7 +22,7 @@ export class PluginManagementDal {
     }
 
     
-    public async getPlugin(functionName: string) {
+    public async getPlugin(functionName: string): Promise<PluginStorageDefinition> {
         const result = await this.dal.query({
             TableName: this.pluginTable,
             KeyConditionExpression: 'orchestratorId = :orchId',
@@ -27,7 +37,7 @@ export class PluginManagementDal {
             return null;
         }
 
-        return result.Items[0];
+        return result.Items[0] as PluginStorageDefinition;
     }
 
     public async addPlugin(subscriptionArn: string, 

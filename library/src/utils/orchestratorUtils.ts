@@ -1,6 +1,6 @@
 import {
   OrchestratorComponentState,
-  OrchestratorPluginMessage, PluginInfo, OrchestratorWorkflowStatus
+  OrchestratorPluginMessage, PluginInfo, OrchestratorWorkflowStatus, OrchestratorConfig
 } from '../types';
 
 import {

@@ -10,7 +10,6 @@ import { OrchestratorComponentState, OrchestratorStage, stepLambdaAsyncWrapper, 
 import { install } from 'source-map-support';
 import { StepFunctions } from 'aws-sdk';
 
-
 install();
 
 const sns: SNSUtils = new SNSUtils(process.env.snsTopic);

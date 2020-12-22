@@ -3,13 +3,14 @@
  * License: Public
  */
 import { MockDynamoDb, MockStepFunctions } from '@moe-tech/orchestrator/__mock__/aws';
-import { OrchestratorComponentState, OrchestratorActivityStatus } from '@moe-tech/orchestrator';
+import { OrchestratorComponentState, OrchestratorActivityStatus, OrchestratorPluginDal, OrchestratorStatusDal } from '@moe-tech/orchestrator';
 import { MockOrchestratorPluginDal, MockOrchestratorStatusDal } from '@moe-tech/orchestrator/__mock__/dals';
+import { DynamoDB, StepFunctions } from 'aws-sdk';
 process.env.environment = 'unit-test';
-const dynamoDal = new MockDynamoDb();
-const stepFunctions = new MockStepFunctions();
-const pluginDal = new MockOrchestratorPluginDal();
-const statusDal = new MockOrchestratorStatusDal();
+const dynamoDal = new MockDynamoDb(DynamoDB.DocumentClient);
+const stepFunctions = new MockStepFunctions(StepFunctions);
+const pluginDal = new MockOrchestratorPluginDal(OrchestratorPluginDal);
+const statusDal = new MockOrchestratorStatusDal(OrchestratorStatusDal);
 
 console.log = () => { };
 

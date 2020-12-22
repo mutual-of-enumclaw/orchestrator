@@ -33,8 +33,11 @@ export class MockMetricReporting {
     public reportFailuresInput: Array<any> = [];
     public reportFailures = jest.fn();
 
-    constructor() {
-        MetricsReporting.prototype.reportFailures = this.reportFailures;
+    constructor(reportingClass = undefined) {
+      if(!reportingClass) {
+        reportingClass = MetricsReporting;
+      }
+      reportingClass.prototype.reportFailures = this.reportFailures;
     }
 
     public reset () {

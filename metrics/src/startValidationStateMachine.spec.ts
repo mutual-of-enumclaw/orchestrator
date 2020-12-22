@@ -4,6 +4,7 @@ import { MockStepFunctions } from '@moe-tech/orchestrator/__mock__/aws';
 import { WorkflowRegister } from '@moe-tech/orchestrator';
 import { StepFunctions } from 'aws-sdk';
 
+process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'StatusTable' });
 process.env.WorkflowRegistry = "workflowRegistry";
 const mockRegister = new MockWorkflowRegister(WorkflowRegister);
 const mockStepFunction = new MockStepFunctions(StepFunctions);

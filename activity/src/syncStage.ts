@@ -7,14 +7,13 @@ import { stepLambdaAsyncWrapper, OrchestratorWorkflowStatus,
     OrchestratorStatusDal, OrchestratorStage, OrchestratorComponentState, 
     OrchestratorPluginDal, OrchestratorStatus, OrchestratorSyncPlugin } 
     from '@moe-tech/orchestrator';
-import * as AWS from 'aws-sdk';
-
+import { Lambda } from 'aws-sdk';
 
 const activity: string = process.env.activity;
 const statusDal: OrchestratorStatusDal = new OrchestratorStatusDal();
 const pluginDal: OrchestratorPluginDal = new OrchestratorPluginDal(process.env.pluginTable, activity);
 const stage = (process.env.stage === 'pre') ? OrchestratorStage.PreProcessing : OrchestratorStage.PostProcessing;
-const lambda = new AWS.Lambda();
+const lambda = new Lambda();
 
 function getPluginStatus(overallStatus: OrchestratorWorkflowStatus, 
                          plugin: OrchestratorSyncPlugin) : OrchestratorStatus {
