@@ -13,7 +13,7 @@ const lambda = new MockLambda();
 const snsArn = 'arn:aws:sns:us-west-2:000000000000:nucleus-plugin-management-dev-alert';
 
 import { PluginManager } from './pluginManager';
-const pluginManager = new PluginManager('test', OrchestratorStage.PreProcessing, snsArn);
+const pluginManager = new PluginManager('test', OrchestratorStage.PreProcessing, [snsArn]);
 
 describe('removePluginEvent', () => {
     beforeEach(() => {

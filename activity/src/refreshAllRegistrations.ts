@@ -19,7 +19,7 @@ export const handler = lambdaWrapperAsync(async () => {
 
 async function updateSubscriptions(topicArn: string, stage: string) {
     let nextToken;
-    const pluginManager = new PluginManager(process.env.activity, stage as any, process.env.snsArn);
+    const pluginManager = new PluginManager(process.env.activity, stage as any, [process.env.snsArn]);
 
     do {
         const subscriptions = await sns.listSubscriptionsByTopic({

@@ -12,7 +12,7 @@ export class PluginManager {
     public pluginDal: PluginManagementDal;
     private lambda: Lambda;
 
-    constructor(private activity: string, private stage: OrchestratorStage, private snsArn: string) {}
+    constructor(private activity: string, private stage: OrchestratorStage, private snsArns: string[]) {}
 
     public async removePluginEvent(event: CloudwatchEvent) {
         this.evaluateCloudwatchEvent(event);
@@ -20,7 +20,8 @@ export class PluginManager {
             throw new Error('No subscription arn supplied');
         }
         const subscriptionArn = event.detail.responseElements.subscriptionArn;
-        if(!subscriptionArn.startsWith(this.snsArn + ':')) {
+        const snsArn = this.snsArns.find(x => subscriptionArn.startsWith(x + ':'));
+        if(!snsArn) {
             console.log('The subscription does not apply to this sns topic');
             return;
         }

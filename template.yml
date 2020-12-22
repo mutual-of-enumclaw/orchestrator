@@ -209,7 +209,7 @@ Resources:
             - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
             - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
   
-          ##
+                    ##
   ## Start Activities Section
   ##
 
