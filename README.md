@@ -16,7 +16,7 @@ package | version
     - [Deploying with Stackery](#Deploying-with-Stackery)
 - [Overview of Orchestrator Terminology](#Overview-of-Orchestrator-Terminology)
 - [Integrations](#Integrations)
-- [Example Implementation](./examples)
+- [Example Implementation](./examples/simple-step-workflow)
 
 <br/>
 
