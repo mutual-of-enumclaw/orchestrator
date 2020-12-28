@@ -301,7 +301,8 @@ Resources:
     Type: Custom::OrchestratorIntegration
     Properties:
       ServiceToken: !GetAtt OrchestratorIntegration.Arn
-      InvokeAgain: "2"
+      InvokeAgain:
+        Ref: ForceConfigUpdate
 
   metrics:
     Type: AWS::Serverless::Application
@@ -395,6 +396,10 @@ Parameters:
   EnvironmentTagName:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
+  ForceConfigUpdate:
+    Type: String
+    Description: This is used to force an update of the config if no other changes are made
+    Default: 1
 
 Outputs:
     DynamoDbPluginTableName:
