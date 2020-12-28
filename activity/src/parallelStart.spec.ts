@@ -23,7 +23,8 @@ const stepfunctions = new MockStepFunctions(StepFunctions);
 import { fanOut } from './parallelStart';
 
 describe('fanOut', () => {
-
+    beforeAll(() => {
+    });
     beforeEach(() => {
         pluginDal.reset();
         stepfunctions.reset();

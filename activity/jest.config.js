@@ -10,9 +10,6 @@ module.exports = {
     coverageReporters: ['cobertura', 'text', 'text-summary'],
     verbose: true,
     roots: [
-        'src/',
-        'library/src',
-        'metrics/src',
-        'activity/src'
+        'src/'
     ]
 };

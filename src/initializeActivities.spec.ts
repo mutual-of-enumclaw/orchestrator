@@ -10,6 +10,9 @@ process.env.statusTable = "TestStatusTable";
 import { initialize, resetErrorStatusInSection, getActivity } from './initializeActivities';
 
 describe('initialize', () => {
+  beforeAll(() => {
+    global.gc && global.gc()
+  });
   beforeEach(() => {
     dynamodb.reset();
   });

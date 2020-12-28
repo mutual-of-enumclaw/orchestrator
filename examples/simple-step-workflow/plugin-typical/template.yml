@@ -1,0 +1,58 @@
+Transform: AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Runtime: nodejs12.x
+    CodeUri: "."
+    MemorySize: 128
+    Timeout: 30
+    Environment:
+      Variables:
+        OrchestratorConfig: !Ref OrchestratorConfig
+    Layers:
+      - !Ref OrchestratorLayerArn
+
+Parameters:
+  OrchestratorStack:
+    Type: String
+    Description: The name of the orchestrator stack
+  OrchestratorLayerArn:
+    Type: String
+    Default: arn:aws:lambda:us-west-2:000000000000:layer:orch-snd-library:36
+  OrchestratorConfig:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config
+
+Resources:
+  parallelPlugin:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-parallelPlugin
+      Handler: plugin.plugin
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: prePostPlugin
+      Environment:
+        Variables:
+          stage: pre-Activity
+      Policies:
+        ##
+        ## Orchestrator access to update status
+        ##
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource:
+                - Fn::ImportValue: !Sub ${OrchestratorStack}-status-arn
+      Events:
+        ##
+        ## Subscribe to Step 2 parallel processing
+        ##
+        Topic1:
+          Type: SNS
+          Properties:
+            Topic:
+              Fn::ImportValue: !Sub ${OrchestratorStack}-Step2-parallel-processing
+            Region: !Ref AWS::Region
+       

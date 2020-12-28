@@ -5,8 +5,6 @@
 import { DynamoDB } from 'aws-sdk';
 import { getConfig } from '../utils/config';
 import { OrchestratorComponentState, OrchestratorStage, OrchestratorWorkflowStatus } from '../types';
-import { OrchestratorConfig } from '../types';
-
 
 export class OrchestratorStatusDal {
     private dal: AWS.DynamoDB.DocumentClient = new DynamoDB.DocumentClient();

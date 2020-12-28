@@ -167,6 +167,7 @@ Resources:
           pluginTable: !Ref PluginTableName
     Metadata:
       RuntimeOption: typescript
+      
   pluginAdd:
     Type: AWS::Serverless::Function
     Properties:
@@ -221,108 +222,7 @@ Resources:
             StackeryName: ActivityTopicSubscribe
     Metadata:
       RuntimeOption: typescript
-  pluginRemove:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${ParentStackName}-${Name}-pluginRemove
-      Description: !Sub
-        - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: pluginRemove
-      Handler: dist/pluginRemove.handler
-      Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:Query
-                - dynamodb:PutItem
-                - dynamodb:DeleteItem
-              Resource:
-                - !Ref PluginTableArn
-            - Effect: Allow
-              Action:
-                - lambda:InvokeFunction
-                - sns:ListSubscriptionsByTopic
-              Resource: '*'
-      Environment:
-        Variables:
-          activity: !Ref Name
-          preArn: !Ref preTopic
-          postArn: !Ref postTopic
-          parallelArn: !Ref parallelTopic
-          pluginTable: !Ref PluginTableName
-      Events:
-        EventRule:
-          Type: EventBridgeRule
-          Properties:
-            Pattern:
-              source:
-                - aws.sns
-              detail-type:
-                - AWS API Call via CloudTrail
-              detail:
-                eventSource:
-                  - sns.amazonaws.com
-                eventName:
-                  - Subscribe
-                requestParameters:
-                  topicArn:
-                    - !Ref parallelTopic
-                    - !Ref preTopic
-                    - !Ref postTopic
-                  protocol:
-                    - lambda
-          Metadata:
-            StackeryName: ActivityTopicUnSubscribe
-    Metadata:
-      RuntimeOption: typescript
-  pluginUpdate:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${ParentStackName}-${Name}-pluginUpdate
-      Description: !Sub
-        - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: pluginUpdate
-      Handler: dist/pluginUpdate.handler
-      MemorySize: 3008
-      Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:Query
-                - dynamodb:PutItem
-                - dynamodb:DeleteItem
-              Resource:
-                - !Ref PluginTableArn
-            - Effect: Allow
-              Action:
-                - lambda:InvokeFunction
-                - sns:ListSubscriptionsByTopic
-              Resource: '*'
-      Environment:
-        Variables:
-          activity: !Ref Name
-          preArn: !Ref preTopic
-          postArn: !Ref postTopic
-          parallelArn: !Ref parallelTopic
-          pluginTable: !Ref PluginTableName
-      Events:
-        EventRule:
-          Type: EventBridgeRule
-          Properties:
-            Pattern:
-              source:
-                - aws.lambda
-              detail-type:
-                - AWS API Call via CloudTrail
-              detail:
-                eventSource:
-                  - lambda.amazonaws.com
-                eventName:
-                  - UpdateFunctionCode20150331v2
-          Metadata:
-            StackeryName: ActivityFunctionUpdated
-    Metadata:
-      RuntimeOption: typescript
+  
   refreshAllRegistrations:
     Type: AWS::Serverless::Function
     Properties:

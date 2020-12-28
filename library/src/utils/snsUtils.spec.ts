@@ -3,9 +3,10 @@
  * License: Public
  */
 
+import { SNS } from 'aws-sdk';
 import { MockSNS } from '../__mock__/aws';
 
-const sns = new MockSNS();
+const sns = new MockSNS(SNS);
 
 import {SNSUtils} from './snsUtils';
 const utils = new SNSUtils('Test');

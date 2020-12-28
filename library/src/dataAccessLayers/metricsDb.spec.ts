@@ -1,5 +1,6 @@
+import { DynamoDB } from 'aws-sdk';
 import { MockDynamoDb } from '../__mock__/aws';
-const dynamoDb = new MockDynamoDb();
+const dynamoDb = new MockDynamoDb(DynamoDB.DocumentClient);
 
 import { MetricsDb } from './metricsDb';
 const metricsDb = new MetricsDb(dynamoDb as any);

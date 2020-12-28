@@ -1,5 +1,3 @@
-import { CloudWatch, DynamoDB, Lambda, S3, SNS, StepFunctions } from 'aws-sdk';
-
 export class MockS3 {
   public listObjectsV2 = jest.fn();
   public listObjectsResults = null;
@@ -7,9 +5,9 @@ export class MockS3 {
   public putObject = jest.fn();
   public putObjectInput: any[] = [];
 
-  constructor() {
-    S3.prototype.listObjectsV2 = this.listObjectsV2;
-    S3.prototype.putObject = this.putObject;
+  constructor(S3Class) {
+    S3Class.prototype.listObjectsV2 = this.listObjectsV2;
+    S3Class.prototype.putObject = this.putObject;
   }
 
   reset() {
@@ -52,10 +50,7 @@ export class MockDynamoDb {
   public update = jest.fn();
   public delete = jest.fn();
 
-  constructor(dynamoClass = null) {
-    if(!dynamoClass) {
-      dynamoClass = DynamoDB.DocumentClient;
-    }
+  constructor(dynamoClass) {
     dynamoClass.prototype.get = this.get;
     dynamoClass.prototype.put = this.put;
     dynamoClass.prototype.query = this.query;
@@ -160,10 +155,7 @@ export class MockLambda {
   public invokeParams = [];
   public invoke = jest.fn();
 
-  constructor(lambdaClass = null) {
-    if(!lambdaClass) {
-      lambdaClass = Lambda;
-    }
+  constructor(lambdaClass) {
     lambdaClass.prototype.invoke = this.invoke;
   }
 
@@ -195,12 +187,9 @@ export class MockSNS {
   public publish = jest.fn();
   public listSubscriptionsByTopic = jest.fn();
 
-  constructor(snsClass = null) {
-    if(!snsClass) {
-      snsClass = SNS;
-    }
-      snsClass.prototype.publish = this.publish;
-      snsClass.prototype.listSubscriptionsByTopic = this.listSubscriptionsByTopic;
+  constructor(snsClass) {
+    snsClass.prototype.publish = this.publish;
+    snsClass.prototype.listSubscriptionsByTopic = this.listSubscriptionsByTopic;
   }
 
   reset () {
@@ -245,10 +234,7 @@ export class MockStepFunctions {
   sendTaskFailure = jest.fn();
 
 
-  constructor(stepFunctionClass = null) {
-    if(!stepFunctionClass) {
-      stepFunctionClass = StepFunctions;
-    }
+  constructor(stepFunctionClass) {
     stepFunctionClass.prototype.sendTaskSuccess = this.sendTaskSuccess;
     stepFunctionClass.prototype.startExecution = this.startExecution;
     stepFunctionClass.prototype.sendTaskFailure = this.sendTaskFailure;
@@ -284,8 +270,8 @@ export class MockCloudwatch {
 
   public putMetricData = jest.fn();
 
-  constructor() {
-    CloudWatch.prototype.putMetricData = this.putMetricData;
+  constructor(CloudWatchClass) {
+    CloudWatchClass.prototype.putMetricData = this.putMetricData;
   }
 
   reset() {

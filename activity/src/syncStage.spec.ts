@@ -5,7 +5,7 @@
 
 import { MockOrchestratorPluginDal, MockOrchestratorStatusDal } from '@moe-tech/orchestrator/__mock__/dals';
 import { MockLambda } from '@moe-tech/orchestrator/__mock__/aws';
-import { OrchestratorComponentState, OrchestratorStatusDal, OrchestratorPluginDal } from '@moe-tech/orchestrator';
+import { OrchestratorStatusDal, OrchestratorPluginDal, OrchestratorComponentState } from '@moe-tech/orchestrator';
 import { Lambda } from 'aws-sdk';
 
 process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'TestStatusTable' });
@@ -20,13 +20,13 @@ process.env.stage = 'pre';
 
 import { start } from './syncStage';
 
-
-describe('start test', () => {
+describe('start', () => {
     beforeEach(() => {
         dal.reset();
         mockLambda.reset();
         pluginDal.reset();
     });
+
     test('Null input', async () => {
         let error = null;
         try {

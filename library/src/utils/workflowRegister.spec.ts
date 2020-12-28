@@ -1,7 +1,8 @@
+import { S3 } from 'aws-sdk';
 import { MockS3 } from '../__mock__/aws';
 
 const bucketName = 'test';
-const s3 = new MockS3();
+const s3 = new MockS3(S3);
 
 import { WorkflowRegister } from './workflowRegister';
 const register = new WorkflowRegister(bucketName);

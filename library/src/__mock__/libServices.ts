@@ -1,7 +1,4 @@
-import { PluginManagementDal, SNSUtils } from '../utils';
-import { OrchestratorStage, OrchestratorComponentState, OrchestratorSyncPlugin } from '../types';
-import { OrchestratorPluginDal } from '../dataAccessLayers/orchestratorPluginDal';
-import { OrchestratorStatusDal } from '../dataAccessLayers/orchestratorStatusDal';
+import { SNSUtils } from '../utils';
 
 export class MockSNSUtils {
     public subscriberCount: number;

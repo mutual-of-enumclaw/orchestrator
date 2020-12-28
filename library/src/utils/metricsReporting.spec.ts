@@ -1,6 +1,7 @@
+import { CloudWatch } from 'aws-sdk';
 import { MockCloudwatch } from '../__mock__/aws';
 
-const cloudwatch = new MockCloudwatch();
+const cloudwatch = new MockCloudwatch(CloudWatch);
 
 import { MetricsReporting } from './metricsReporting';
 const reporting = new MetricsReporting();

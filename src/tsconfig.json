@@ -17,7 +17,7 @@
         "forceConsistentCasingInFileNames": true
     },
     "include": [
-        "./**/*",
+        "./**/*", "../activity/src/refreshAllRegistrations.ts",
     ],
     "exclude": [
         "dist",

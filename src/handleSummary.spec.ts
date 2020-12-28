@@ -17,6 +17,9 @@ console.log = () => { };
 import { updateActivityStatus, validateActivity, StatusSummary } from './handleSummary';
 
 describe('updateActivityStatus', () => {
+  beforeAll(() => {
+      global.gc && global.gc()
+  });
   beforeEach(() => {
     stepFunctions.reset();
     dynamoDal.reset();

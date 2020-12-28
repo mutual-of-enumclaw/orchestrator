@@ -11,7 +11,7 @@ module.exports.plugin = orchestrator.orchestratorWrapperSns(
     {
         pluginName: 'Step 1 - ' + process.env.stage,
         default: {
-            mandatory: false
+            mandatory: true
         }
     },
     plugin);

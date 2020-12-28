@@ -17,7 +17,7 @@
         "forceConsistentCasingInFileNames": true
     },
     "include": [
-        "./**/*",
+        "./**/*", "../../src/pluginUpdate.ts", "../../src/pluginUpdate.spec.ts", "../../src/pluginRemove.ts", "../../src/pluginRemove.spec.ts", "../../src/plugins/refreshAllRegistrations.ts",
     ],
     "exclude": [
         "./dist",

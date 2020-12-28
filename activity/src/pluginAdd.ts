@@ -3,11 +3,11 @@
  * License: Public
  */
 
-import { lambdaWrapperAsync, OrchestratorStage, CloudwatchEvent, PluginManager } from '@moe-tech/orchestrator';
+import { lambdaWrapperAsync, OrchestratorStage, CloudwatchEvent, PluginManagementDal } from '@moe-tech/orchestrator';
 import { install } from 'source-map-support';
 
 install();
-const arns = [process.env.parallelArn, process.env.postArn, process.env.preArn];
+const pluginDal = new PluginManagementDal(process.env.pluginTable);
 
 export const handler = lambdaWrapperAsync(async (event: CloudwatchEvent) => {
     console.log(JSON.stringify(event));
@@ -16,9 +16,29 @@ export const handler = lambdaWrapperAsync(async (event: CloudwatchEvent) => {
     }
     let stage = getStage(event);
 
-    const pluginManager = new PluginManager(process.env.activity, stage, arns);
+    if(!event.detail.requestParameters?.topicArn) {
+        throw new Error('Argument event topic not valid');
+    }
+    if(!event.detail.requestParameters?.protocol) {
+        throw new Error('Argument event protocol not valid');
+    }
+    if(!event.detail.requestParameters?.protocol || event.detail.requestParameters?.protocol !== 'lambda') {
+        throw new Error('Argument event protocol not valid');
+    }
+    if(!event.detail.requestParameters?.endpoint) {
+        throw new Error('Argument event lambda arn not valid');
+    }
 
-    await pluginManager.addPluginEvent(event);
+    console.log('Getting lambda name');
+    const lambdaArnParts = event.detail.requestParameters.endpoint.split(':');
+    if(lambdaArnParts.length < 7) {
+        throw new Error('Argument event lambda arn malformed');
+    }
+    const lambdaName = lambdaArnParts[6];
+    console.log('Lambda Name: ' + lambdaName);
+
+    const config = await pluginDal.getPluginConfig({ orchestratorId: `${process.env.activity}|${stage}`, functionName: lambdaName, subscriptionArn: event.detail.responseElements.subscriptionArn } as any);
+    await pluginDal.addPlugin(process.env.activity, stage, config.subscriptionArn, config);
 });
 
 export function getStage(event: CloudwatchEvent): OrchestratorStage {

@@ -1,8 +1,6 @@
-import { OrchestratorStatusDal } from '../dataAccessLayers/orchestratorStatusDal';
 import { OrchestratorComponentState, OrchestratorStage } from '../types';
-import { MetricsDb } from '../dataAccessLayers/metricsDb';
-import { MetricsReporting, PluginManagementDal, WorkflowRegister } from '../utils';
-import { OrchestratorPluginDal } from '../dataAccessLayers/orchestratorPluginDal';
+import { MetricsReporting, WorkflowRegister } from '../utils';
+import { OrchestratorPluginDal, OrchestratorStatusDal } from '../dataAccessLayers';
 
 export class MockMetricsDb {
     public putIssueFailureCallCount: number = 0;
@@ -11,12 +9,9 @@ export class MockMetricsDb {
     public putIssueFailure = jest.fn();
     public getIssueFailures = jest.fn();
 
-    constructor(metricsClass) {
-      if(!metricsClass) {
-        metricsClass = MetricsDb;
-      }
-      metricsClass.prototype.putIssueFailure = this.putIssueFailure;
-      metricsClass.prototype.getIssueFailures = this.getIssueFailures;
+    constructor(MetricsDbClass) {
+      MetricsDbClass.prototype.putIssueFailure = this.putIssueFailure;
+      MetricsDbClass.prototype.getIssueFailures = this.getIssueFailures;
     }
     public reset () {
       this.putIssueFailure.mockReset();
@@ -170,10 +165,16 @@ export class MockPluginManagementDal {
 
   public removePlugin = jest.fn();
   public addPlugin = jest.fn();
+  public getPluginBySubscription = jest.fn();
+  public getPluginConfig = jest.fn();
+  public getPluginByFunction = jest.fn();
 
-  constructor() {
-    PluginManagementDal.prototype.addPlugin = this.addPlugin;
-    PluginManagementDal.prototype.removePlugin = this.removePlugin;
+  constructor(PluginManagementDalClass) {
+    PluginManagementDalClass.prototype.addPlugin = this.addPlugin;
+    PluginManagementDalClass.prototype.removePlugin = this.removePlugin;
+    PluginManagementDalClass.prototype.getPluginBySubscription = this.getPluginBySubscription;
+    PluginManagementDalClass.prototype.getPluginConfig = this.getPluginConfig;
+    PluginManagementDalClass.prototype.getPluginByFunction = this.getPluginByFunction;
   }
 
   public reset () {
@@ -194,5 +195,8 @@ export class MockPluginManagementDal {
         subscriptionArn
       });
     });
+    this.getPluginBySubscription.mockReset();
+    this.getPluginConfig.mockReset();
+    this.getPluginByFunction.mockReset();
   }
 }

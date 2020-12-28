@@ -12,9 +12,9 @@ import { StepFunctions } from 'aws-sdk';
 
 install();
 
-const sns: SNSUtils = new SNSUtils(process.env.snsTopic);
 const stepfunctions = new StepFunctions();
 const activity: string = process.env.activity;
+const sns: SNSUtils = new SNSUtils(process.env.snsTopic);
 const statusDal: OrchestratorStatusDal = new OrchestratorStatusDal();
 const pluginDal: OrchestratorPluginDal = new OrchestratorPluginDal(process.env.pluginTable, activity);
 

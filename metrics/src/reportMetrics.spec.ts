@@ -1,6 +1,6 @@
 import * as reportMetrics from './reportMetrics';
 import { MockMetricsDb, MockMetricReporting, MockWorkflowRegister } from '@moe-tech/orchestrator/__mock__/dals';
-import { MetricsDb, MetricsReporting, WorkflowRegister } from '@moe-tech/orchestrator';
+import { MetricsReporting, WorkflowRegister, MetricsDb } from '@moe-tech/orchestrator';
 
 process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'StatusTable' });
 const metricsReporting = new MockMetricReporting(MetricsReporting);
