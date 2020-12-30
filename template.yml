@@ -27,7 +27,7 @@ Resources:
       Description: !Sub
         - Stack ${AWS::StackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginUpdate
-      Handler: dist/pluginUpdate.handler
+      Handler: dist/plugins/pluginUpdate.handler
       MemorySize: 3008
       Policies:
         - Statement:
@@ -72,7 +72,7 @@ Resources:
       Description: !Sub
         - Stack ${AWS::StackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginRemove
-      Handler: dist/pluginRemove.handler
+      Handler: dist/plugins/pluginRemove.handler
       Policies:
         - Statement:
             - Effect: Allow
@@ -311,7 +311,7 @@ Resources:
             - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
             - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
   
-                                                                        ##
+                                                                                  ##
   ## Start Activities Section
   ##
 
