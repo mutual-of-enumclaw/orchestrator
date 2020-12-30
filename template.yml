@@ -25,7 +25,7 @@ Resources:
     Properties:
       FunctionName: !Sub ${AWS::StackName}-pluginUpdate
       Description: !Sub
-        - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - Stack ${AWS::StackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginUpdate
       Handler: dist/pluginUpdate.handler
       MemorySize: 3008
@@ -37,7 +37,7 @@ Resources:
                 - dynamodb:PutItem
                 - dynamodb:DeleteItem
               Resource:
-                - !Ref PluginTableArn
+                - !GetAtt PluginTable.Arn
             - Effect: Allow
               Action:
                 - lambda:InvokeFunction
@@ -45,11 +45,7 @@ Resources:
               Resource: '*'
       Environment:
         Variables:
-          activity: !Ref Name
-          preArn: !Ref preTopic
-          postArn: !Ref postTopic
-          parallelArn: !Ref parallelTopic
-          pluginTable: !Ref PluginTableName
+          pluginTable: !Ref PluginTable
       Events:
         EventRule:
           Type: EventBridgeRule
@@ -74,18 +70,18 @@ Resources:
     Properties:
       FunctionName: !Sub ${AWS::StackName}-pluginRemove
       Description: !Sub
-        - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - Stack ${AWS::StackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginRemove
       Handler: dist/pluginRemove.handler
       Policies:
         - Statement:
             - Effect: Allow
               Action:
-                - dynamodb:Query
+                - dynamodb:Scan
                 - dynamodb:PutItem
                 - dynamodb:DeleteItem
               Resource:
-                - !Ref PluginTableArn
+                - !GetAtt PluginTable.Arn
             - Effect: Allow
               Action:
                 - lambda:InvokeFunction
@@ -93,11 +89,7 @@ Resources:
               Resource: '*'
       Environment:
         Variables:
-          activity: !Ref Name
-          preArn: !Ref preTopic
-          postArn: !Ref postTopic
-          parallelArn: !Ref parallelTopic
-          pluginTable: !Ref PluginTableName
+          pluginTable: !Ref PluginTable
       Events:
         EventRule:
           Type: EventBridgeRule
@@ -196,10 +188,8 @@ Resources:
                 KeyType: HASH
               - AttributeName: subscriptionArn
                 KeyType: RANGE
-          - IndexName: SubscriptionIndex
-            KeySchema:
-              - AttributeName: subscriptionArn
-                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
         AttributeDefinitions:
           - AttributeName: orchestratorId
             AttributeType: S
@@ -321,7 +311,7 @@ Resources:
             - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
             - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
   
-                                    ##
+                                                                        ##
   ## Start Activities Section
   ##
 
@@ -399,7 +389,7 @@ Parameters:
   ForceConfigUpdate:
     Type: String
     Description: This is used to force an update of the config if no other changes are made
-    Default: 1
+    Default: "1"
 
 Outputs:
     DynamoDbPluginTableName:

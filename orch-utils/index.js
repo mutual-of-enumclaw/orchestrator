@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 const fs = require('fs');
-const glob = require('glob');
 const { SSM } = require('aws-sdk');
 
 async function processCliCommand() {
     console.log(process.argv);
     const args = {};
-    for(let i = 3; i < process.argv.length; i++) {
+    for(let i = 2; i < process.argv.length; i++) {
         if(process.argv[i].startsWith('--')) {
             if(process.argv.length <= i + 1 || process.argv[i + 1].startsWith('--') ) {
                 args[process.argv[i]] = true;
@@ -15,68 +14,14 @@ async function processCliCommand() {
             }
         }
     }
-    switch(process.argv[2]) {
-        case 'activities':
-            console.log('Creating orchestrator activities');
-            await loadActivities(args);
-            break;
-        case 'clean':
-            await clean(args)
-            break;
-    }
-}
-
-async function clean(args) {
-    fs.rmdirSync('library/dist', { recursive: true });
-    let files = new glob.sync('**/*.js', {
-        ignore: [
-            'orch-utils/**',
-            '**/node_modules/**',
-            'source-map-install.js',
-            'webpack.config.js',
-            'examples/**',
-            'jest.config.js'
-        ]
-    });
-    console.log(files);
-    files.forEach(x => {
-        fs.unlinkSync(x);
-    });
-
-    files = new glob.sync('**/*.d.ts', {
-        ignore: [
-            'orch-utils/**',
-            '**/node_modules/**',
-            'source-map-install.js',
-            'webpack.config.js',
-            'examples/**',
-            'jest.config.js'
-        ]
-    });
-    console.log(files);
-    files.forEach(x => {
-        fs.unlinkSync(x);
-    });
-
-    files = new glob.sync('**/*.js.map', {
-        ignore: [
-            'orch-utils/**',
-            '**/node_modules/**',
-            'source-map-install.js',
-            'webpack.config.js',
-            'examples/**',
-            'jest.config.js'
-        ]
-    });
-    console.log(files);
-    files.forEach(x => {
-        fs.unlinkSync(x);
-    });
+    
+    await loadActivities(args);
 }
 
 async function loadActivities(args) {
 
     const yamlFile = './template.yml';
+    console.log(args);
     let ssmName = args['--ssm-name'];
     if(!ssmName && args['--stackery-json']) {
         const stackery = JSON.parse(process.env.STACKERY_DEPLOY_INFO);

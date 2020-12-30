@@ -60,13 +60,23 @@ Deploying the orchestrator can be done in two ways.  First is using AWS SAM to d
 
 ### Deploying with AWS SAM
 The following shows how to deploy the orchestrator leveraging only AWS SAM.  Since we're using AWS SAM only, we're leveraging scripts in the npm package to automate some aspects but this can also be deployed without the SAM scripts, only using the 'activities' script.
+
+**Build the sources with dependencies:**
+```!bash
+npm run build
+```
+**Construct the activities configured in parameter store**
 ```!bash
 npm run activities -- activities --ssm-name <path to your activities key>
+```
+**Deploy the orchestrator stack**
+```!bash
 npm run deploy -- --stack-name <Stack Name> --s3-bucket <Existing Deployment Bucket> --s3-prefix <S3 Prefix> --parameter-overrides StackTagName=<Stack Name w/o Environment> EnvironmentTagName=<Environment Name>
 ```
 
 ### Deploying with Stackery
 Stackery allows us to fully automate deployment of the SAM template leveraging the "stackery.deployspec.yaml" file to define the steps in the deployment.  Since stackery can be used as a deployment pipeline as well, this simplifies the process of managing the deployment.
+
 ```!bash
 stackery deploy --env-name <Environment Name> --stack-name <Stack Name w/o Environemnt> --strategy local
 ```

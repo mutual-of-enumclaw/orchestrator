@@ -24,9 +24,8 @@ export class PluginManagementDal {
     }
 
     public async getPluginBySubscription(subscriptionArn: string): Promise<PluginStorageDefinition> {
-        const results = await dynamodb.query({
+        const results = await dynamodb.scan({
             TableName: process.env.pluginTable,
-            IndexName: 'SubscriptionIndex',
             FilterExpression: '#subscriptionArn = :subscriptionArn',
             ExpressionAttributeNames: {
                 '#subscriptionArn': 'subscriptionArn'

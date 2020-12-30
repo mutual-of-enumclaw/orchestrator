@@ -26,7 +26,7 @@
         "lint": "npx eslint **/*.ts --ignore-pattern **/*.d.ts",
         "lint:fix": "npm run lint --fix",
         "refreshVSToken": "vsts-npm-auth -config .npmrc",
-        "activities": "node orch-utils/index.js activities",
+        "activities": "node orch-utils/index.js",
         "predeploy": "sam build",
         "deploy": "sam deploy --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND",
         "buildPublish": "npm run build && npm publish",

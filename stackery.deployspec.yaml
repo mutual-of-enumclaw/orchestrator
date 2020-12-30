@@ -2,7 +2,7 @@ stages:
  setup:
    - npm run installTypescript
    - npm run installUtils
-   - npm run activities -- activities --stackery-json
+   - npm run activities -- --stackery-json
    - npm run build
    - stackery deploy-stage setup
  build:
