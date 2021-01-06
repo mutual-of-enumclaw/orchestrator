@@ -151,7 +151,7 @@ Resources:
       RuntimeOption: typescript
 
 
-  initializeActivities:
+  initializeActivitiesLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${AWS::StackName}-initializeActivities
@@ -311,7 +311,7 @@ Resources:
             - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
             - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
   
-                                                                                  ##
+  ##
   ## Start Activities Section
   ##
 
@@ -429,7 +429,7 @@ Outputs:
         Name: !Sub "${AWS::StackName}-status-stream-arn"
 
     InitailizeActivities:
-      Value: !GetAtt initializeActivities.Arn
+      Value: !GetAtt initializeActivitiesLambdaFunction.Arn
       Export:
         Name: !Sub "${AWS::StackName}-init-activites"
 
