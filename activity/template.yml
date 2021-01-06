@@ -226,7 +226,7 @@ Resources:
   refreshAllRegistrations:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-refreshAllRegistrations
+      FunctionName: !Sub ${ParentStackName}-${Name}-refreshAllRegistrations
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: refreshAllRegistrations
