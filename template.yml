@@ -23,7 +23,7 @@ Resources:
   pluginUpdate:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-pluginUpdate
+      FunctionName: !Sub ${AWS::StackName}-pluginUpdate-V2
       Description: !Sub
         - Stack ${AWS::StackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginUpdate
@@ -68,7 +68,7 @@ Resources:
   pluginRemove:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-pluginRemove
+      FunctionName: !Sub ${AWS::StackName}-pluginRemove-V2
       Description: !Sub
         - Stack ${AWS::StackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginRemove
@@ -112,7 +112,7 @@ Resources:
   updateStatus:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-updateStatus
+      FunctionName: !Sub ${AWS::StackName}-updateStatus-V2
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: updateStatus
@@ -151,10 +151,10 @@ Resources:
       RuntimeOption: typescript
 
 
-  initializeActivitiesLambdaFunction:
+  initializeActivities:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-initializeActivities
+      FunctionName: !Sub ${AWS::StackName}-initializeActivities-V2
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: initializeActivities
@@ -429,7 +429,7 @@ Outputs:
         Name: !Sub "${AWS::StackName}-status-stream-arn"
 
     InitailizeActivities:
-      Value: !GetAtt initializeActivitiesLambdaFunction.Arn
+      Value: !GetAtt initializeActivities.Arn
       Export:
         Name: !Sub "${AWS::StackName}-init-activites"
 
