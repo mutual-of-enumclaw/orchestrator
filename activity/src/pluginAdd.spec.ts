@@ -2,8 +2,8 @@
  * Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
  * License: Public
  */
-process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'StatusTable' });
 import { handler } from './pluginAdd';
+process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'StatusTable' });
 
 describe('processCloudwatchEvent', () => {
     test('Handler', async () => {

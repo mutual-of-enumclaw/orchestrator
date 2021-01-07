@@ -61,7 +61,7 @@ typings/
 .next
 .serverless
 
-/junit.xml
+junit.xml
 
 .webpack
 .stackery/

@@ -8,6 +8,8 @@ import { MockLambda } from '@moe-tech/orchestrator/__mock__/aws';
 import { OrchestratorStatusDal, OrchestratorPluginDal, OrchestratorComponentState } from '@moe-tech/orchestrator';
 import { Lambda } from 'aws-sdk';
 
+import { start } from './syncStage';
+
 process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'TestStatusTable' });
 
 const dal = new MockOrchestratorStatusDal(OrchestratorStatusDal);
@@ -17,8 +19,6 @@ process.env.pluginTable = 'TestPluginTable';
 process.env.activity = 'test';
 process.env.unittest = 'true';
 process.env.stage = 'pre';
-
-import { start } from './syncStage';
 
 describe('start', () => {
     beforeEach(() => {
@@ -67,7 +67,7 @@ describe('start', () => {
             }
         };
         pluginDal.getPluginsResults = [
-            { pluginName: 'test'} as any
+            { pluginName: 'test' } as any
         ];
         const event = getDefaultEvent();
         let error = null;
@@ -161,10 +161,16 @@ describe('start', () => {
     });
 });
 
-function getDefaultEvent() {
+function getDefaultEvent () {
     return {
-        uid: 'uid', company: 'company', lineOfBusiness: 'lob', riskState: 'state',
-        effectiveDate: 1, policies: [{ id: 'test' }], workflow: 'test', metadata: {
+        uid: 'uid',
+        company: 'company',
+        lineOfBusiness: 'lob',
+        riskState: 'state',
+        effectiveDate: 1,
+        policies: [{ id: 'test' }],
+        workflow: 'test',
+        metadata: {
             workflow: 'issue'
         }
     };

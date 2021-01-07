@@ -20,6 +20,8 @@
         "no-unused-vars": 0,
         "no-useless-constructor": 0,
         "array-callback-return": 0,
-        "semi": [2, "always"]
+        "indent": ["error", 4],
+        "semi": "off",
+        "no-use-before-define": "off"
     }
 }

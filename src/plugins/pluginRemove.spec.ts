@@ -2,17 +2,17 @@
  * Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
  * License: Public
  */
+import { PluginManagementDal } from '@moe-tech/orchestrator';
+import { MockPluginManagementDal } from '@moe-tech/orchestrator/__mock__/dals';
+import { handler } from './pluginRemove';
 process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'StatusTable' });
 process.env.parallelArn = 'arn:aws:sns:1:us-west-2:snsTopicParallel';
 process.env.preArn = 'arn:aws:sns:1:us-west-2:snsTopicPre';
 process.env.postArn = 'arn:aws:sns:1:us-west-2:snsTopicPost';
-import { PluginManagementDal } from '@moe-tech/orchestrator';
-import { MockPluginManagementDal } from '@moe-tech/orchestrator/__mock__/dals';
 
 const pluginManager = new MockPluginManagementDal(PluginManagementDal);
 
 console.log = () => {};
-import { handler } from './pluginRemove';
 
 describe('processCloudwatchEvent', () => {
     beforeEach(() => {

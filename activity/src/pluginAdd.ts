@@ -11,27 +11,27 @@ const pluginDal = new PluginManagementDal(process.env.pluginTable);
 
 export const handler = lambdaWrapperAsync(async (event: CloudwatchEvent) => {
     console.log(JSON.stringify(event));
-    if(!event) {
+    if (!event) {
         throw new Error('Argument event not valid');
     }
-    let stage = getStage(event);
+    const stage = getStage(event);
 
-    if(!event.detail.requestParameters?.topicArn) {
+    if (!event.detail.requestParameters?.topicArn) {
         throw new Error('Argument event topic not valid');
     }
-    if(!event.detail.requestParameters?.protocol) {
+    if (!event.detail.requestParameters?.protocol) {
         throw new Error('Argument event protocol not valid');
     }
-    if(!event.detail.requestParameters?.protocol || event.detail.requestParameters?.protocol !== 'lambda') {
+    if (!event.detail.requestParameters?.protocol || event.detail.requestParameters?.protocol !== 'lambda') {
         throw new Error('Argument event protocol not valid');
     }
-    if(!event.detail.requestParameters?.endpoint) {
+    if (!event.detail.requestParameters?.endpoint) {
         throw new Error('Argument event lambda arn not valid');
     }
 
     console.log('Getting lambda name');
     const lambdaArnParts = event.detail.requestParameters.endpoint.split(':');
-    if(lambdaArnParts.length < 7) {
+    if (lambdaArnParts.length < 7) {
         throw new Error('Argument event lambda arn malformed');
     }
     const lambdaName = lambdaArnParts[6];
@@ -41,8 +41,8 @@ export const handler = lambdaWrapperAsync(async (event: CloudwatchEvent) => {
     await pluginDal.addPlugin(process.env.activity, stage, config.subscriptionArn, config);
 });
 
-export function getStage(event: CloudwatchEvent): OrchestratorStage {
-    if(event.detail.requestParameters.topicArn === process.env.preArn) {
+export function getStage (event: CloudwatchEvent): OrchestratorStage {
+    if (event.detail.requestParameters.topicArn === process.env.preArn) {
         return OrchestratorStage.PreProcessing;
     }
     if (event.detail.requestParameters.topicArn === process.env.postArn) {

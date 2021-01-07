@@ -16,8 +16,8 @@ Parameters:
     Type: String
     Description: The name of the orchestrator stack
   OrchestratorLayerArn:
-    Type: String
-    Default: arn:aws:lambda:us-west-2:000000000000:layer:orch-snd-library:36
+    Type: AWS::SSM::Parameter<string>
+    Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/layer
   OrchestratorConfig:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config

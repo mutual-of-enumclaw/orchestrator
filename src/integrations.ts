@@ -4,7 +4,7 @@ import { OrchestratorConfig } from '@moe-tech/orchestrator';
 
 const ssm = new SSM();
 
-export async function handler(event, context) {
+export async function handler (event, context) {
     console.log(JSON.stringify(event));
     const data: OrchestratorConfig = {
         statusTable: process.env.statusTable
@@ -13,7 +13,7 @@ export async function handler(event, context) {
     try {
         const params = await ssm.getParameters({
             Names: [
-                process.env.epsagonTokenPath, 
+                process.env.epsagonTokenPath,
                 process.env.epsagonAppNamePath
             ]
         }).promise();
@@ -21,7 +21,7 @@ export async function handler(event, context) {
         const epsagonAppName = params.Parameters.find(x => x.Name === process.env.epsagonAppNamePath);
         const epsagonToken = params.Parameters.find(x => x.Name === process.env.epsagonTokenPath);
         const metadataOnly = params.Parameters.find(x => x.Name === process.env.epsagonMetadataPath);
-        if(epsagonToken && epsagonAppName) {
+        if (epsagonToken && epsagonAppName) {
             data.epsagon = {
                 appName: epsagonAppName.Value,
                 token: epsagonToken.Value,
@@ -33,10 +33,10 @@ export async function handler(event, context) {
     }
 
     await ssm.putParameter({
-        Name: `/${process.env.environment}/orchestrator/stacks/${process.env.stack.replace(/\-/g, '')}/config`,
+        Name: `/${process.env.environment}/orchestrator/stacks/${process.env.stack.replace(/-/g, '')}/config`,
         Value: JSON.stringify(data),
         Type: 'String',
         Overwrite: true
     }).promise();
-    return await send(event, context, 'SUCCESS', { StatusArn: process.env.StatusTableArn, Config: JSON.stringify(data)} );
+    return await send(event, context, 'SUCCESS', { StatusArn: process.env.StatusTableArn, Config: JSON.stringify(data) });
 }

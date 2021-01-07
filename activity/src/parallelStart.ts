@@ -3,9 +3,11 @@
  * License: Public
  */
 
-import { OrchestratorComponentState, OrchestratorStage, stepLambdaAsyncWrapper, OrchestratorStatusDal, 
+import {
+    OrchestratorComponentState, OrchestratorStage, stepLambdaAsyncWrapper, OrchestratorStatusDal,
     OrchestratorWorkflowStatus, getPluginRegisterTimeout, OrchestratorActivityStatus, OrchestratorPluginDal,
-    SNSUtils }
+    SNSUtils
+}
     from '@moe-tech/orchestrator';
 import { install } from 'source-map-support';
 import { StepFunctions } from 'aws-sdk';
@@ -24,7 +26,7 @@ interface AsyncParameters {
 }
 
 export const fanOut = stepLambdaAsyncWrapper(async (asyncEvent: AsyncParameters) => {
-    if(!asyncEvent || !asyncEvent.asyncToken || !asyncEvent.data) {
+    if (!asyncEvent || !asyncEvent.asyncToken || !asyncEvent.data) {
         throw new Error('Async event data not recieved');
     }
 
@@ -35,7 +37,7 @@ export const fanOut = stepLambdaAsyncWrapper(async (asyncEvent: AsyncParameters)
     if (!event.uid) {
         throw new Error(`Event data unexpected (uid: '${event.uid}')`);
     }
-    
+
     console.log('Retrieving registered plugins');
     const plugins = await pluginDal.getPlugins(OrchestratorStage.BulkProcessing);
 
@@ -68,7 +70,7 @@ export const fanOut = stepLambdaAsyncWrapper(async (asyncEvent: AsyncParameters)
     statusObject[activity] = overallStatus.activities[activity];
 
     await Promise.all(plugins.filter(x => x.mandatory).map((x) => {
-        if(event.activities &&
+        if (event.activities &&
             event.activities[activity] &&
             event.activities[activity].async.mandatory[x.pluginName]) {
             // Handle case where plugin is already registered
@@ -76,7 +78,7 @@ export const fanOut = stepLambdaAsyncWrapper(async (asyncEvent: AsyncParameters)
         }
         return statusDal.updatePluginStatus(
             event.uid, event.workflow,
-            activity, OrchestratorStage.BulkProcessing, true, x.pluginName, 
+            activity, OrchestratorStage.BulkProcessing, true, x.pluginName,
             OrchestratorComponentState.NotStarted, ' ');
     }));
 
@@ -100,27 +102,27 @@ export const fanOut = stepLambdaAsyncWrapper(async (asyncEvent: AsyncParameters)
         stage: OrchestratorStage.BulkProcessing,
         ...globalMetadata
     });
-    if(message.length * 2 > 256000) {
+    if (message.length * 2 > 256000) {
         statusObject[activity].async.mandatory = {};
         statusObject[activity].async.optional = {};
-        if(statusObject[activity].async.status) {
+        if (statusObject[activity].async.status) {
             delete statusObject[activity].async.status.message;
             delete statusObject[activity].async.status.token;
         }
         statusObject[activity].pre.mandatory = {};
         statusObject[activity].pre.optional = {};
-        if(statusObject[activity].pre.status) {
+        if (statusObject[activity].pre.status) {
             delete statusObject[activity].async.status.message;
             delete statusObject[activity].async.status.token;
         }
         statusObject[activity].post.mandatory = {};
         statusObject[activity].post.optional = {};
-        if(statusObject[activity].post.status) {
+        if (statusObject[activity].post.status) {
             delete statusObject[activity].async.status.message;
             delete statusObject[activity].async.status.token;
         }
-        
-        if(statusObject[activity].status) {
+
+        if (statusObject[activity].status) {
             delete statusObject[activity].status.token;
             delete statusObject[activity].status.message;
         }
@@ -139,31 +141,31 @@ export const fanOut = stepLambdaAsyncWrapper(async (asyncEvent: AsyncParameters)
     console.log(`publishWithMetadata result: ${JSON.stringify(result)}`);
 
     const timeout = getPluginRegisterTimeout(overallStatus, activity, plugins);
-    if(timeout !== 0) {
+    if (timeout !== 0) {
         await new Promise<void>((resolve) => {
             setTimeout(
                 () => {
                     resolve();
-                }, 
+                },
                 timeout);
-        });   
+        });
     }
-    
+
     const updatedStatus = await statusDal.getStatusObject(event.uid, event.workflow, true);
 
-    if(Object.keys(updatedStatus.activities[activity].async.mandatory).length === 0) {
+    if (Object.keys(updatedStatus.activities[activity].async.mandatory).length === 0) {
         console.log('No plugins registered, performing update to move task forward');
         await statusDal.updateStageStatus(
             event.uid, event.workflow, activity, OrchestratorStage.BulkProcessing,
             OrchestratorComponentState.Complete, ' ', startTime, ' ');
-        
+
         try {
             await stepfunctions.sendTaskSuccess({
                 output: JSON.stringify(OrchestratorComponentState.Complete),
                 taskToken: asyncEvent.asyncToken
             }).promise();
         } catch (err) {
-            if(err.message !== "Task Timed Out: 'Provided task does not exist anymore'") {
+            if (err.message !== "Task Timed Out: 'Provided task does not exist anymore'") {
                 throw err;
             }
         }

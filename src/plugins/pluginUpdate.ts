@@ -1,4 +1,4 @@
-/*!
+/**
  * Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
  * License: Public
  */
@@ -12,8 +12,8 @@ const pluginDal = new PluginManagementDal(process.env.pluginTable);
 export const handler = lambdaWrapperAsync(async (event: CloudwatchEvent) => {
     console.log(JSON.stringify(event));
 
-    const functionName = event.detail.responseElements['functionName'];
-    if(!functionName) {
+    const functionName = event.detail.responseElements.functionName;
+    if (!functionName) {
         return;
     }
 
@@ -24,7 +24,7 @@ export const handler = lambdaWrapperAsync(async (event: CloudwatchEvent) => {
     }));
 });
 
-async function update(item: PluginStorageDefinition) {
+async function update (item: PluginStorageDefinition) {
     console.log('Getting plugin config');
     const result = await pluginDal.getPluginConfig(item);
 

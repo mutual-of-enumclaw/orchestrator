@@ -6,9 +6,9 @@
 import { SNS } from 'aws-sdk';
 import { MockSNS } from '../__mock__/aws';
 
-const sns = new MockSNS(SNS);
+import { SNSUtils } from './snsUtils';
 
-import {SNSUtils} from './snsUtils';
+const sns = new MockSNS(SNS);
 const utils = new SNSUtils('Test');
 
 describe('getSubscriberCount', () => {
@@ -18,7 +18,7 @@ describe('getSubscriberCount', () => {
         let error = null;
         try {
             await utils.getSubscriberCount();
-        } catch(err) {
+        } catch (err) {
             error = err.message;
         }
 
@@ -30,7 +30,7 @@ describe('getSubscriberCount', () => {
         let error = null;
         try {
             await utils.getSubscriberCount();
-        } catch(err) {
+        } catch (err) {
             error = err;
         }
 
@@ -56,12 +56,11 @@ describe('getSubscriberCount', () => {
     });
     test('5 subscription', async () => {
         sns.reset();
-        sns.listResponse = [{},{},{},{},{}];
+        sns.listResponse = [{}, {}, {}, {}, {}];
         const result = await utils.getSubscriberCount();
         expect(result).toBe(5);
     });
 });
-
 
 describe('publishWithMetadata', () => {
     test('Empty Message', async () => {
@@ -86,7 +85,7 @@ describe('publishWithMetadata', () => {
 
     test('Basic Test w/ attributes', async () => {
         sns.reset();
-        await utils.publishWithMetadata('test', { test: 1, test2: "2", test3: null});
+        await utils.publishWithMetadata('test', { test: 1, test2: '2', test3: null });
         expect(sns.publishInput.Message).toBe('test');
         expect(sns.publishInput.MessageAttributes.test.DataType).toBe('Number');
         expect(sns.publishInput.MessageAttributes.test.StringValue).toBe('1');
@@ -97,22 +96,22 @@ describe('publishWithMetadata', () => {
 
     test('Object Test w/ attributes null', async () => {
         sns.reset();
-        await utils.publishWithMetadata({test: 1}, null);
-        expect(sns.publishInput.Message).toBe(JSON.stringify({test: 1}));
+        await utils.publishWithMetadata({ test: 1 }, null);
+        expect(sns.publishInput.Message).toBe(JSON.stringify({ test: 1 }));
         expect(sns.publishInput.MessageAttributes).toBeDefined();
     });
 
     test('Object Test w/ attributes empty', async () => {
         sns.reset();
-        await utils.publishWithMetadata({test: 2}, {});
-        expect(sns.publishInput.Message).toBe(JSON.stringify({test: 2}));
+        await utils.publishWithMetadata({ test: 2 }, {});
+        expect(sns.publishInput.Message).toBe(JSON.stringify({ test: 2 }));
         expect(sns.publishInput.MessageAttributes).toBeDefined();
     });
 
     test('Object Test w/ attributes', async () => {
         sns.reset();
-        await utils.publishWithMetadata({test: 3}, { test: 1, test2: "2", test3: null});
-        expect(sns.publishInput.Message).toBe(JSON.stringify({test: 3}));
+        await utils.publishWithMetadata({ test: 3 }, { test: 1, test2: '2', test3: null });
+        expect(sns.publishInput.Message).toBe(JSON.stringify({ test: 3 }));
         expect(sns.publishInput.MessageAttributes.test.DataType).toBe('Number');
         expect(sns.publishInput.MessageAttributes.test.StringValue).toBe('1');
         expect(sns.publishInput.MessageAttributes.test2.DataType).toBe('String');

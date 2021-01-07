@@ -9,6 +9,8 @@ import { MockOrchestratorStatusDal, MockOrchestratorPluginDal } from '@moe-tech/
 import { MockStepFunctions } from '@moe-tech/orchestrator/__mock__/aws';
 import { StepFunctions } from 'aws-sdk';
 
+import { fanOut } from './parallelStart';
+
 process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'TestStatusTable' });
 process.env.snsTopic = 'testTopic';
 process.env.statusTable = 'TestStatusTable';
@@ -20,8 +22,6 @@ const dal = new MockOrchestratorStatusDal(OrchestratorStatusDal);
 const pluginDal = new MockOrchestratorPluginDal(OrchestratorPluginDal);
 const stepfunctions = new MockStepFunctions(StepFunctions);
 
-import { fanOut } from './parallelStart';
-
 describe('fanOut', () => {
     beforeAll(() => {
     });
@@ -31,11 +31,11 @@ describe('fanOut', () => {
         sns.reset();
         dal.reset();
     });
-    
+
     test('Null Event', async () => {
         let error = null;
         try {
-            await fanOut({ data: null, asyncToken: 'token'});
+            await fanOut({ data: null, asyncToken: 'token' });
         } catch (err) {
             error = err.message;
         }
@@ -46,7 +46,7 @@ describe('fanOut', () => {
     test('No uid', async () => {
         let error = null;
         try {
-            await fanOut({ data: {}, asyncToken: 'token'});
+            await fanOut({ data: {}, asyncToken: 'token' });
         } catch (err) {
             error = err.message;
         }
@@ -74,7 +74,7 @@ describe('fanOut', () => {
                     },
                     pluginRegisterTimeout: 10
                 }
-            },
+            }
         };
         pluginDal.getPluginsResults = [{}];
         const result = await fanOut(getDefaultEvent());
@@ -108,11 +108,17 @@ describe('fanOut', () => {
     });
 });
 
-function getDefaultEvent() {
+function getDefaultEvent () {
     return {
         data: {
-            uid: 'uid', workflow: 'issue', company: 'company', lineOfBusiness: 'lob', riskState: 'state',
-            effectiveDate: 1, policies: [{ id: 'test' }], metadata: {
+            uid: 'uid',
+            workflow: 'issue',
+            company: 'company',
+            lineOfBusiness: 'lob',
+            riskState: 'state',
+            effectiveDate: 1,
+            policies: [{ id: 'test' }],
+            metadata: {
                 workflow: 'issue'
             }
         },
