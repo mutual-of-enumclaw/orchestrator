@@ -10,7 +10,7 @@ import {
     OrchestratorStatusDal, OrchestratorPluginDal,
     lambdaWrapperAsync, setError
 } from '@moe-tech/orchestrator';
-import * as AWS from 'aws-sdk';
+import { DynamoDB, StepFunctions } from 'aws-sdk';
 
 export class StatusSummary {
     public error: boolean;
@@ -66,8 +66,8 @@ export class StatusSummary {
     }
 }
 
-const dynamoDal: AWS.DynamoDB.DocumentClient = new AWS.DynamoDB.DocumentClient();
-const stepfunctions = new AWS.StepFunctions();
+const dynamoDal: DynamoDB.DocumentClient = new DynamoDB.DocumentClient();
+const stepfunctions = new StepFunctions();
 
 export const updateActivityStatus = lambdaWrapperAsync(async (event: DynamoDBStreamEvent) => {
     console.log(JSON.stringify(event));
@@ -103,7 +103,7 @@ function setFieldName (name: string, fieldNames: any) {
 async function processRecord (record: DynamoDBRecord) {
     const streamDate = new Date(new Date('1/1/1970').getTime() + (record.dynamodb.ApproximateCreationDateTime * 1000));
     console.log(`Stream time: ${streamDate.toString()}`);
-    const statusObj = AWS.DynamoDB.Converter.unmarshall(record.dynamodb.NewImage) as OrchestratorWorkflowStatus;
+    const statusObj = DynamoDB.Converter.unmarshall(record.dynamodb.NewImage) as OrchestratorWorkflowStatus;
     const updates = [];
     const attributes = {};
     const fieldNames = {};

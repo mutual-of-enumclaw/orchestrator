@@ -3,12 +3,12 @@ import { MockSNS } from '@moe-tech/orchestrator/__mock__/aws';
 import { MockMetricsDb } from '@moe-tech/orchestrator/__mock__/dals';
 import { SNS } from 'aws-sdk';
 
-import * as alertSupportTeam from './alertSupportTeam';
-
 process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'StatusTable' });
 
 const mock = new MockSNS(SNS);
 const metricDb = new MockMetricsDb(MetricsDb);
+
+import * as alertSupportTeam from './alertSupportTeam';
 
 describe('handler', () => {
     beforeEach(() => {

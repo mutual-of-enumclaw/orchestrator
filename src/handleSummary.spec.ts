@@ -7,12 +7,13 @@ import { OrchestratorComponentState, OrchestratorActivityStatus, OrchestratorPlu
 import { MockOrchestratorPluginDal, MockOrchestratorStatusDal } from '@moe-tech/orchestrator/__mock__/dals';
 import { DynamoDB, StepFunctions } from 'aws-sdk';
 
-import { updateActivityStatus, validateActivity, StatusSummary } from './handleSummary';
 process.env.environment = 'unit-test';
 const dynamoDal = new MockDynamoDb(DynamoDB.DocumentClient);
 const stepFunctions = new MockStepFunctions(StepFunctions);
 const pluginDal = new MockOrchestratorPluginDal(OrchestratorPluginDal);
 const statusDal = new MockOrchestratorStatusDal(OrchestratorStatusDal);
+
+import { updateActivityStatus, validateActivity, StatusSummary } from './handleSummary';
 
 console.log = () => { };
 
@@ -256,6 +257,13 @@ describe('updateActivityStatus', () => {
     });
 
     describe('pre', () => {
+        
+        beforeEach(() => {
+            stepFunctions.reset();
+            dynamoDal.reset();
+            pluginDal.reset();
+            statusDal.reset();
+        });
         test('Basic - single item null - pre', async () => {
             const event = createBasicEvent();
             event.Records[0].dynamodb.NewImage.activities.M.Rate.M.pre.M.mandatory.M.test.NULL = true;
