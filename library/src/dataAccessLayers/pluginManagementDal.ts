@@ -125,10 +125,10 @@ export class PluginManagementDal {
         let result: OrchestratorSyncPlugin;
         try {
             result = (body) ? JSON.parse(body) : {};
-            if (result.default && result.default.mandatory !== undefined) {
-                result.mandatory = result.default.mandatory;
-                result.pluginRegisterTimeout = result.default.pluginRegisterTimeout;
-                delete result.default;
+            if (result['default'] && result['default'].mandatory !== undefined) {
+                result.mandatory = result['default'].mandatory;
+                result.pluginRegisterTimeout = result['default'].pluginRegisterTimeout;
+                delete result['default'];
             }
             if (result.mandatory === undefined) {
                 result.mandatory = true;
