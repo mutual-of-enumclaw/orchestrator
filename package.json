@@ -34,7 +34,6 @@
     },
     "devDependencies": {
         "@moe-tech/orch-utils": "file:orch-utils",
-        "@moe-tech/orchestrator": "file:./library",
         "@types/aws-lambda": "^8.10.64",
         "@types/jest": "^23.3.9",
         "@types/node": "^10.17.49",
