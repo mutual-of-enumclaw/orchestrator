@@ -61,8 +61,16 @@ typings/
 .next
 .serverless
 
-/dist
-/junit.xml
+junit.xml
 
 .webpack
 .stackery/
+
+deployHooks
+
+.aws-sam
+
+dist
+**/src/**/*.js
+**/src/**/*.js.map
+**/src/**/*.d.ts

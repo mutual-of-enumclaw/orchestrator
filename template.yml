@@ -1,0 +1,439 @@
+Transform: AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Runtime: nodejs12.x
+    CodeUri: src
+    MemorySize: 128
+    Timeout: 30
+    Layers:
+      - !Ref Library
+
+Resources:
+  RootStackParamStore:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: 
+        !Sub 
+          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/base
+          - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+      Value: !Ref AWS::StackName
+      Type: String
+
+  
+  pluginUpdate:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-pluginUpdate-V2
+      Description: !Sub
+        - Stack ${AWS::StackName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: pluginUpdate
+      Handler: dist/plugins/pluginUpdate.handler
+      MemorySize: 3008
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+              Resource:
+                - !GetAtt PluginTable.Arn
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+                - sns:ListSubscriptionsByTopic
+              Resource: '*'
+      Environment:
+        Variables:
+          pluginTable: !Ref PluginTable
+      Events:
+        EventRule:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+                - aws.lambda
+              detail-type:
+                - AWS API Call via CloudTrail
+              detail:
+                eventSource:
+                  - lambda.amazonaws.com
+                eventName:
+                  - UpdateFunctionCode20150331v2
+          Metadata:
+            StackeryName: ActivityFunctionUpdated
+    Metadata:
+      RuntimeOption: typescript
+
+  pluginRemove:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-pluginRemove-V2
+      Description: !Sub
+        - Stack ${AWS::StackName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: pluginRemove
+      Handler: dist/plugins/pluginRemove.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+              Resource:
+                - !GetAtt PluginTable.Arn
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+                - sns:ListSubscriptionsByTopic
+              Resource: '*'
+      Environment:
+        Variables:
+          pluginTable: !Ref PluginTable
+      Events:
+        EventRule:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+                - aws.sns
+              detail-type:
+                - AWS API Call via CloudTrail
+              detail:
+                eventSource:
+                  - sns.amazonaws.com
+                eventName:
+                  - Unsubscribe
+          Metadata:
+            StackeryName: ActivityTopicUnSubscribe
+    Metadata:
+      RuntimeOption: typescript
+
+  updateStatus:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-updateStatus-V2
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: updateStatus
+      Handler: dist/handleSummary.updateActivityStatus
+      Environment:
+        Variables:
+          pluginTable: !Ref PluginTable
+          statusTable: !Ref StatusTable
+          traceConfig: !GetAtt OrchestratorResource.Config
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+                - dynamodb:GetItem
+              Resource:
+                - !GetAtt StatusTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+              Resource:
+                - !GetAtt PluginTable.Arn
+            - Effect: Allow
+              Action:
+                - states:SendTaskSuccess
+                - states:SendTaskFailure
+              Resource: '*'
+      Events:
+        StatusTable:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt StatusTable.StreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 1
+    Metadata:
+      RuntimeOption: typescript
+
+
+  initializeActivities:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-initializeActivities-V2
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: initializeActivities
+      Handler: dist/initializeActivities.initialize
+      Environment:
+        Variables:
+          OrchestratorConfig: !GetAtt OrchestratorResource.Config
+          statusTable: !Ref StatusTable
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+              Resource: !GetAtt StatusTable.Arn
+    Metadata:
+      RuntimeOption: typescript
+
+  PluginTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        KeySchema:
+          - AttributeName: orchestratorId
+            KeyType: HASH
+          - AttributeName: subscriptionArn
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: FunctionIndex
+            KeySchema:
+              - AttributeName: functionName
+                KeyType: HASH
+              - AttributeName: subscriptionArn
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        AttributeDefinitions:
+          - AttributeName: orchestratorId
+            AttributeType: S
+          - AttributeName: functionName
+            AttributeType: S
+          - AttributeName: subscriptionArn
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        TableName: !Sub ${AWS::StackName}-plugin
+        Tags:
+          - Key: Role
+            Value: Configuration
+          - Key: NPI
+            Value: "true"
+
+  StatusTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        KeySchema:
+          - AttributeName: uid
+            KeyType: HASH
+          - AttributeName: workflow
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: uid
+            AttributeType: S
+          - AttributeName: workflow
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        TableName: !Sub ${AWS::StackName}-status
+        Tags:
+          - Key: Role
+            Value: Status
+          - Key: NPI
+            Value: "true"
+
+  Library:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub ${AWS::StackName}-library
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Layer ${ResourceName}
+        - ResourceName: library
+      ContentUri: library
+      RetentionPolicy: Retain
+    Metadata:
+      BuildMethod: nodejs12.x
+
+  LibraryParamStore:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: 
+        !Sub 
+          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/layer
+          - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+      Value: !Ref Library
+      Type: String
+  
+  OrchestratorIntegration:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-integrations
+      Handler: dist/integrations.handler
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: prePostPlugin
+      Environment:
+        Variables:
+          environment: !Ref EnvironmentTagName
+          stack: !Ref StackTagName
+          epsagonTokenPath: !Sub /${EnvironmentTagName}/epsagon/token
+          epsagonAppNamePath: 
+            !Sub 
+              - /${EnvironmentTagName}/epsagon/stacks/${parmStack}/appname
+              - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+          statusTable: !Ref StatusTable
+          statusTableArn: !GetAtt StatusTable.Arn
+          temp: 'change to force update'
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameters
+                - ssm:PutParameter
+              Resource:
+                - !Sub 
+                    - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/epsagon/stacks/${parmStack}/appname
+                    - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+                - !Sub 
+                    - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+                    - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+                - !Sub 
+                    - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/epsagon/token
+                    - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+
+  OrchestratorResource:
+    Type: Custom::OrchestratorIntegration
+    Properties:
+      ServiceToken: !GetAtt OrchestratorIntegration.Arn
+      InvokeAgain:
+        Ref: ForceConfigUpdate
+
+  metrics:
+    Type: AWS::Serverless::Application
+    DependsOn: OrchestratorResource
+    Properties:
+      Location: metrics/template.yml
+      Parameters:
+        StackTagName: !Sub ${AWS::StackName}-metrics
+        EnvironmentTagName: !Ref EnvironmentTagName
+        StatusTableName: !Ref StatusTable
+        StatusTableArn: !GetAtt StatusTable.Arn
+        StatusTableStreamArn: !GetAtt StatusTable.StreamArn
+        OrchestratorLayerArn: !Ref Library
+        OrchestratorConfig: 
+          !Sub 
+            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+  
+  ##
+  ## Start Activities Section
+  ##
+
+  activityStep1:
+    Type: AWS::Serverless::Application
+    DependsOn: OrchestratorResource
+    Properties:
+      Location: activity/template.yml
+      Parameters:
+        ParentStackName: !Ref AWS::StackName
+        Name: "Step1"
+        EnvironmentTagName: !Ref EnvironmentTagName
+        StatusTableName: !Ref StatusTable
+        StatusTableArn: !GetAtt StatusTable.Arn
+        PluginTableName: !Ref PluginTable
+        PluginTableArn: !GetAtt PluginTable.Arn
+        OrchestratorLayerArn: !Ref Library
+        OrchestratorConfig: 
+          !Sub 
+            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+    
+
+  activityStep2:
+    Type: AWS::Serverless::Application
+    DependsOn: OrchestratorResource
+    Properties:
+      Location: activity/template.yml
+      Parameters:
+        ParentStackName: !Ref AWS::StackName
+        Name: "Step2"
+        EnvironmentTagName: !Ref EnvironmentTagName
+        StatusTableName: !Ref StatusTable
+        StatusTableArn: !GetAtt StatusTable.Arn
+        PluginTableName: !Ref PluginTable
+        PluginTableArn: !GetAtt PluginTable.Arn
+        OrchestratorLayerArn: !Ref Library
+        OrchestratorConfig: 
+          !Sub 
+            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+    
+
+  activityStep3:
+    Type: AWS::Serverless::Application
+    DependsOn: OrchestratorResource
+    Properties:
+      Location: activity/template.yml
+      Parameters:
+        ParentStackName: !Ref AWS::StackName
+        Name: "Step3"
+        EnvironmentTagName: !Ref EnvironmentTagName
+        StatusTableName: !Ref StatusTable
+        StatusTableArn: !GetAtt StatusTable.Arn
+        PluginTableName: !Ref PluginTable
+        PluginTableArn: !GetAtt PluginTable.Arn
+        OrchestratorLayerArn: !Ref Library
+        OrchestratorConfig: 
+          !Sub 
+            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+    
+
+  ##
+  ## End Activities Section
+  ##
+
+Parameters:
+  StackTagName:
+    Type: String
+    Description: Stack Name (injected by Stackery at deployment time)
+  EnvironmentTagName:
+    Type: String
+    Description: Environment Name (injected by Stackery at deployment time)
+  ForceConfigUpdate:
+    Type: String
+    Description: This is used to force an update of the config if no other changes are made
+    Default: "1"
+
+Outputs:
+    DynamoDbPluginTableName:
+      Value: 
+        Ref: PluginTable
+      Export:
+        Name: !Sub "${AWS::StackName}-plugin-name"
+
+    DynamoDbPluginTableArn:
+      Value: 
+        Fn::GetAtt: 
+          - PluginTable
+          - Arn
+      Export:
+        Name: !Sub "${AWS::StackName}-plugin-arn"
+
+    DynamoDbStatusTableName:
+      Value: 
+        Ref: StatusTable
+      Export:
+        Name: !Sub "${AWS::StackName}-status-name"
+
+    DynamoDbStatusTableArn:
+      Value: 
+        Fn::GetAtt: 
+          - StatusTable
+          - Arn
+      Export:
+        Name: !Sub "${AWS::StackName}-status-arn"
+
+    DynamoDbStatusTableStreamArn:
+      Value:
+        Fn::GetAtt:
+          - StatusTable
+          - StreamArn
+      Export:
+        Name: !Sub "${AWS::StackName}-status-stream-arn"
+
+    InitailizeActivities:
+      Value: !GetAtt initializeActivities.Arn
+      Export:
+        Name: !Sub "${AWS::StackName}-init-activites"
+
+    Layer:
+      Value: !Ref Library
+      Export:
+        Name: !Sub "${AWS::StackName}-layer"

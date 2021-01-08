@@ -1,0 +1,376 @@
+Transform: AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Runtime: nodejs12.x
+    CodeUri: src
+    MemorySize: 128
+    Timeout: 30
+    Layers:
+      - !Ref OrchestratorLayerArn
+    Environment:
+      Variables:
+        OrchestratorConfig: !Ref OrchestratorConfig
+
+Parameters:
+  ParentStackName:
+    Type: String
+    Description: The root name to export from
+  Name:
+    Type: String
+    Description: The name of the activity
+  EnvironmentTagName:
+    Type: String
+    Description: Environment Name (injected by Stackery at deployment time)
+  StatusTableName:
+    Type: String
+  StatusTableArn:
+    Type: String
+  PluginTableName:
+    Type: String
+  PluginTableArn:
+    Type: String
+  StackTagName:
+    Type: String
+    Description: Stack Name (injected by Stackery at deployment time)
+  OrchestratorLayerArn:
+    Type: String
+    Default: arn:aws:lambda:us-west-2:000000000000:layer:not-a-real-layer:1
+  OrchestratorConfig:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config
+
+Resources:
+  parallelTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Sub ${ParentStackName}-${Name}-parallel
+      TopicName: !Sub ${ParentStackName}-${Name}-parallel
+  preTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Sub ${ParentStackName}-${Name}-pre
+      TopicName: !Sub ${ParentStackName}-${Name}-pre
+  postTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Sub ${ParentStackName}-${Name}-post+
+      TopicName: !Sub ${ParentStackName}-${Name}-post
+  parallelStart:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ParentStackName}-${Name}-parallelStart
+      Description: !Sub
+        - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: parallelStart
+      Handler: dist/parallelStart.fanOut
+      MemorySize: 3008
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+                - sns:Publish
+                - sns:ListSubscriptionsByTopic
+                - dynamodb:GetItem
+              Resource:
+                - !Ref StatusTableArn
+                - !Ref parallelTopic
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+              Resource:
+                - !Ref PluginTableArn
+            - Effect: Allow
+              Action:
+                - states:SendTaskSuccess
+              Resource: '*'
+      Environment:
+        Variables:
+          snsTopic: !Ref parallelTopic
+          statusTable: !Ref StatusTableName
+          pluginTable: !Ref PluginTableName
+          activity: !Ref Name
+    Metadata:
+      RuntimeOption: typescript
+  sncPreProc:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ParentStackName}-${Name}-pre-proc
+      Description: !Sub
+        - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: sncPreProc
+      Handler: dist/syncStage.start
+      Timeout: 900
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource:
+                - !Ref StatusTableArn
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+              Resource:
+                - !Ref PluginTableArn
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+                - sns:ListSubscriptionsByTopic
+              Resource:
+                - '*'
+      Environment:
+        Variables:
+          activity: !Ref Name
+          stage: pre
+          statusTable: !Ref StatusTableName
+          pluginTable: !Ref PluginTableName
+    Metadata:
+      RuntimeOption: typescript
+  sncPostProc:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ParentStackName}-${Name}-post-proc
+      Description: !Sub
+        - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: syncStage
+      Handler: dist/syncStage.start
+      Timeout: 900
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource:
+                - !Ref StatusTableArn
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+              Resource:
+                - !Ref PluginTableArn
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+                - sns:ListSubscriptionsByTopic
+              Resource: '*'
+      Environment:
+        Variables:
+          activity: !Ref Name
+          stage: post
+          statusTable: !Ref StatusTableName
+          pluginTable: !Ref PluginTableName
+    Metadata:
+      RuntimeOption: typescript
+      
+  pluginAdd:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ParentStackName}-${Name}-pluginAdd
+      Description: !Sub
+        - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: pluginAdd
+      Handler: dist/pluginAdd.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:PutItem
+                - dynamodb:DeleteItem
+              Resource:
+                - !Ref PluginTableArn
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+                - sns:ListSubscriptionsByTopic
+              Resource: '*'
+      Environment:
+        Variables:
+          activity: !Ref Name
+          preArn: !Ref preTopic
+          postArn: !Ref postTopic
+          parallelArn: !Ref parallelTopic
+          pluginTable: !Ref PluginTableName
+      Events:
+        EventRule:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+                - aws.sns
+              detail-type:
+                - AWS API Call via CloudTrail
+              detail:
+                eventSource:
+                  - sns.amazonaws.com
+                eventName:
+                  - Subscribe
+                requestParameters:
+                  topicArn:
+                    - !Ref preTopic
+                    - !Ref postTopic
+                    - !Ref parallelTopic
+                  protocol:
+                    - lambda
+          Metadata:
+            StackeryName: ActivityTopicSubscribe
+    Metadata:
+      RuntimeOption: typescript
+  
+  refreshAllRegistrations:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ParentStackName}-${Name}-refreshReg
+      Description: !Sub
+        - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: refreshAllRegistrations
+      Handler: dist/refreshAllRegistrations.handler
+      Timeout: 900
+      Policies:
+        - AWSXrayWriteOnlyAccess
+    Metadata:
+      RuntimeOption: typescript
+  activityWorkflowRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - states.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                  - dynamodb:UpdateItem
+                Resource:
+                  - !GetAtt sncPreProc.Arn
+                  - !GetAtt sncPostProc.Arn
+                  - !GetAtt parallelStart.Arn
+                  - !Ref StatusTableArn
+
+  activityWorkflow:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${ParentStackName}-${Name}
+      RoleArn: !GetAtt activityWorkflowRole.Arn
+      DefinitionString: !Sub |-
+        {
+          "StartAt": "ActivitySetStatusDB",
+          "States": {
+            "ActivitySetStatusDB": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::dynamodb:updateItem",
+                "Parameters": {
+                    "TableName": "${StatusTableName}",
+                    "Key": {
+                        "uid": {
+                            "S.$": "$.uid"
+                        },
+                        "workflow": {
+                            "S.$": "$.workflow"
+                        }
+                    },
+                    "UpdateExpression": "set #activities.#activity.#status.#state = :state",
+                    "ExpressionAttributeNames": {
+                        "#activities": "activities",
+                        "#activity": "${Name}",
+                        "#status": "status",
+                        "#state": "state"
+                    },
+                    "ExpressionAttributeValues": {
+                        ":state": {
+                            "S": "In Progress"
+                        }
+                    }
+                },
+                "ResultPath": "$.ignore",
+                "Next": "PreProcessing"
+            },
+            "PreProcessing": {
+              "Type": "Task",
+              "Resource": "${sncPreProc.Arn}",
+              "Retry": [ {
+                  "ErrorEquals": ["States.Timeout"],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+              } ],
+              "ResultPath": "$.ignore",
+              "Next": "ParallelFanOut"
+            },
+            "ParallelFanOut": {
+              "Type": "Task",
+              "Resource":"arn:aws:states:::lambda:invoke.waitForTaskToken",
+              "Parameters":{
+                  "FunctionName": "${parallelStart}",
+                  "Payload": {
+                      "data.$": "$",
+                      "asyncToken.$": "$$.Task.Token"
+                  }
+              },
+              "Retry": [ {
+                  "ErrorEquals": ["States.Timeout"],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+              } ],
+              "ResultPath": "$.activities.${Name}.async.status.state",
+              "Next": "PostProcessing"
+            },
+            "PostProcessing": {
+              "Type": "Task",
+              "Resource": "${sncPostProc.Arn}",
+              "ResultPath": "$.ignore",
+              "Next": "Complete",
+              "Retry": [ {
+                  "ErrorEquals": ["States.Timeout"],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+              } ]
+            },
+            "Complete": {
+              "Type": "Succeed"
+            }
+          }
+        }
+
+Outputs:
+  preProcessing:
+    Value:
+      Ref: preTopic
+    Export:
+      Name: !Sub "${ParentStackName}-${Name}-pre-processing"
+
+  parallelProcessing:
+    Value:
+      Ref: parallelTopic
+    Export:
+      Name: !Sub "${ParentStackName}-${Name}-parallel-processing"
+
+  postProcessing:
+    Value:
+      Ref: postTopic
+    Export:
+      Name: !Sub "${ParentStackName}-${Name}-post-processing"
+
+  activityWorkflowArn:
+    Value:
+      Ref: activityWorkflow
+    Export:
+      Name: !Sub "${ParentStackName}-${Name}-workflow"

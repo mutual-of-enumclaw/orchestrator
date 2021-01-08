@@ -1,27 +1,27 @@
-/*!
- * Copyright 2017-2017 Mutual of Enumclaw. All Rights Reserved.
- * License: Public
- */
 const path = require('path');
 const slsw = require('serverless-webpack');
-var HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
+const nodeExternals = require('webpack-node-externals');
+// var HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
+const AwsSamPlugin = require("aws-sam-webpack-plugin");
+
+const awsSamPlugin = new AwsSamPlugin();
 
 module.exports = {
-    mode: slsw.lib.webpack.isLocal ? 'development' : 'production',
-    entry: slsw.lib.entries,
+    mode: process.env.NODE_ENV || "production",
+    entry: () => awsSamPlugin.entry(),
     devtool: 'source-map',
-    externals: ["aws-sdk", "epsagon"],
+    externals: ['aws-sdk', 'epsagon'],
     resolve: {
         extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     },
     output: {
         libraryTarget: 'commonjs',
-        path: path.join(__dirname, '.webpack'),
-        filename: '[name].js',
+        path: path.resolve('.'),
+        filename: (chunkData) => awsSamPlugin.filename(chunkData),
     },
     target: 'node',
     plugins: [
-        new HardSourceWebpackPlugin()
+        awsSamPlugin
     ],
     module: {
         rules: [

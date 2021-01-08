@@ -1,0 +1,28 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+        "baseUrl": ".",
+        "outDir": "dist",
+        "sourceMap": true,
+        "declaration": true,
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "target": "es6",
+        "typeRoots": [
+            "node_modules/@types"
+        ],
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true
+    },
+    "include": [
+        "./**/*", "../../src/pluginUpdate.ts", "../../src/pluginUpdate.spec.ts", "../../src/pluginRemove.ts", "../../src/pluginRemove.spec.ts", "../../src/plugins/refreshAllRegistrations.ts",
+    ],
+    "exclude": [
+        "./dist",
+        "./node_modules",
+        "node_modules",
+        "**/*.spec.ts"
+    ]
+}

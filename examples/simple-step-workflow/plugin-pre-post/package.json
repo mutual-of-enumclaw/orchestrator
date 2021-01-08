@@ -1,6 +1,11 @@
 {
     "license": "MIT",
-    "dependencies": {
-        "@moe-tech/orchestrator": "^1.0.44"
+    "name": "@moe-tech/orch-example-pre-post",
+    "version": "1.0.0",
+    "scripts": {
+        "build": "echo test > test.txt"
+    },
+    "devDependencies": {
+        "@moe-tech/orchestrator": "file:../../../library/src"
     }
 }

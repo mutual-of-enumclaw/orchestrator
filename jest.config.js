@@ -9,5 +9,10 @@ module.exports = {
     reporters: ["default", "jest-junit"],
     coverageReporters: ['cobertura', 'text', 'text-summary'],
     verbose: true,
-    roots: ['src/']
+    roots: [
+        'src/',
+        'library/src',
+        'metrics/src',
+        'activity/src'
+    ]
 };

@@ -1,0 +1,236 @@
+Transform: AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Runtime: nodejs12.x
+    CodeUri: src
+    MemorySize: 128
+    Timeout: 30
+    Layers:
+      - !Ref OrchestratorLayerArn
+    Environment:
+      Variables:
+        OrchestratorConfig: !Ref OrchestratorConfig
+
+Parameters:
+  StatusTableName:
+    Type: String
+  StatusTableArn:
+    Type: String
+  StatusTableStreamArn:
+    Type: String
+  EnvironmentTagName:
+    Type: String
+    Description: Environment Name (injected by Stackery at deployment time)
+  StackTagName:
+    Type: String
+    Description: Stack Name (injected by Stackery at deployment time)
+  OrchestratorLayerArn:
+    Type: String
+    Default: arn:aws:lambda:us-west-2:000000000000:layer:not-a-real-layer:1
+  OrchestratorConfig:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config
+
+Resources:
+  snsTopicFailure:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: Policy Issue Failure
+      TopicName: !Sub ${StackTagName}-failure
+  dynamodbTableMetrics:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: uid
+          AttributeType: S
+        - AttributeName: workflow
+          AttributeType: S
+      KeySchema:
+        - AttributeName: workflow
+          KeyType: HASH
+        - AttributeName: uid
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub ${StackTagName}-failure-metrics
+      TimeToLiveSpecification:
+        AttributeName: timeout
+        Enabled: true
+  s3Workflows:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${StackTagName}-wr-${AWS::AccountId}-${AWS::Region}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+  StepFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - states.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${StackTagName}-CustomDataExtractRole
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                  - dynamodb:GetItem
+                Resource:
+                  - !GetAtt alertSupportTeam.Arn
+                  - !Ref StatusTableArn
+  StepFunction:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Ref StackTagName
+      RoleArn: !GetAtt StepFunctionRole.Arn
+      DefinitionString: !Sub |-
+        {
+          "Comment": "This state machine tracks if the bind process completes in a specific period of time",
+          "StartAt": "WaitForProcessing",
+          "States": {
+              "WaitForProcessing": {
+                  "Type":"Wait",
+                  "Seconds": 900,
+                  "Next":"UpdatePolicyStatus"
+              },
+              "UpdatePolicyStatus": {
+                  "Type":"Task",
+                  "Resource": "arn:aws:states:::dynamodb:getItem",
+                  "Parameters": {
+                      "TableName":"${StatusTableName}",
+                      "Key": {"uid":{"S.$": "$.uid"}, "workflow":{"S.$": "$.workflow"}}
+                  },
+                  "ResultPath":"$.dynamo",
+                  "Next":"ValidateStatus",
+                  "Retry": [
+                      {
+                          "ErrorEquals": [ "States.ALL" ],
+                          "IntervalSeconds": 1,
+                          "BackoffRate": 2.0,
+                          "MaxAttempts": 100
+                      }
+                  ]
+              },
+              "ValidateStatus": {
+                  "Type":"Choice",
+                  "Choices": [
+                      {
+                          "Variable": "$.dynamo.Item.status.M.state.S",
+                          "StringEquals":"Complete",
+                          "Next": "End"
+                      }
+                  ],
+                  "Default":"AlertSupportTeam"
+              },
+              "AlertSupportTeam": {
+                  "Type":"Task",
+                  "Resource":"${alertSupportTeam.Arn}",
+                  "Next":"WaitForProcessing",
+                  "Retry": [
+                      {
+                          "ErrorEquals": [ "States.ALL" ],
+                          "IntervalSeconds": 1,
+                          "BackoffRate": 2.0,
+                          "MaxAttempts": 100
+                      }
+                  ]
+              },
+              "End": {
+                  "Type":"Pass",
+                  "End":true
+              }
+          }
+        }
+  reportMetrics:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${StackTagName}-report
+      Handler: dist/reportMetrics.handler
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: reportMetrics
+      Events:
+        UpdateMetrics:
+          Type: Schedule
+          Properties:
+            Schedule: rate(15 minutes)
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+                - s3:ListBucket
+              Resource:
+                - !GetAtt s3Workflows.Arn
+                - !Sub ${s3Workflows.Arn}/*
+                - !GetAtt dynamodbTableMetrics.Arn
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource:
+                - '*'
+    Metadata:
+      RuntimeOption: typescript
+  alertSupportTeam:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${StackTagName}-alertSupportTeam
+      Handler: dist/alertSupportTeam.handler
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: alertSupportTeam
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - sns:publish
+                - dynamodb:PutItem
+                - s3:ListBucket
+              Resource:
+                - !Ref snsTopicFailure
+                - !GetAtt dynamodbTableMetrics.Arn
+                - !GetAtt s3Workflows.Arn
+                - !Sub ${s3Workflows.Arn}/*
+    Metadata:
+      RuntimeOption: typescript
+  startValidStateMachine:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${StackTagName}-startValidStateMachine
+      Handler: dist/startValidationStateMachine.handler
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: startValidStateMachine
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+                - states:StartExecution
+              Resource:
+                - !GetAtt s3Workflows.Arn
+                - !Sub ${s3Workflows.Arn}/*
+                - !Ref StepFunction
+      Environment:
+        Variables:
+          stateMachineArnstateMachineArn: !Ref StepFunction
+      Events:
+        dynamodbTableMetrics:
+          Type: DynamoDB
+          Properties:
+            Stream: !Ref StatusTableStreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 1
+    Metadata:
+      RuntimeOption: typescript
+

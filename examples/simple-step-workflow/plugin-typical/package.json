@@ -1,6 +1,8 @@
 {
+    "name": "@moe-tech/orch-example-parallel",
+    "version": "2.0.0",
     "license": "MIT",
-    "dependencies": {
-        "@moe-tech/orchestrator": "^1.0.44"
+    "devDependencies": {
+        "@moe-tech/orchestrator": "file:../../../library/src"
     }
 }

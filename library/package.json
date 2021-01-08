@@ -1,0 +1,10 @@
+{
+    "name": "orchestrator-layer",
+    "version": "1.0.0",
+    "scripts": {
+        "build": "tsc -d -p src"
+    },
+    "dependencies": {
+        "@moe-tech/orchestrator": "file:src"
+    }
+}

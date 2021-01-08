@@ -1,8 +1,7 @@
 {
     "compileOnSave": true,
     "compilerOptions": {
-        "baseUrl": "./src",
-        "outDir": "./dist",
+        "baseUrl": ".",
         "sourceMap": true,
         "declaration": true,
         "module": "commonjs",
@@ -17,7 +16,8 @@
         "forceConsistentCasingInFileNames": true
     },
     "include": [
-        "./src/**/*"
+        "./src/**/*",
+        "./metrics/src/**/*"
     ],
     "exclude": [
         "node_modules",

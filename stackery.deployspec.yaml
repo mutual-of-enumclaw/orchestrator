@@ -1,0 +1,21 @@
+stages:
+ setup:
+   - npm run installTypescript
+   - npm run installUtils
+   - npm run activities -- --stackery-json
+   - npm run build
+   - stackery deploy-stage setup
+ build:
+   - stackery deploy-stage convert-edge-functions
+   - stackery deploy-stage build
+ addIntegrations:
+   - stackery deploy-stage add-integrations
+   - stackery deploy-stage add-environment-context
+ package:
+   - stackery deploy-stage package
+   - stackery deploy-stage restore-edge-functions
+ submitChangeSet:
+   - stackery deploy-stage submit-change-set
+ executeChangeSet:
+   - stackery deploy-stage execute-change-set
+   

@@ -1,0 +1,11 @@
+{
+    "name": "@moe-tech/orchestrator-activity",
+    "version": "1.0.0",
+    "scripts": {
+        "build": "tsc -d -p src"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "aws-sdk": "^2.817.0"
+    }
+}

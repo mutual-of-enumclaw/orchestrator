@@ -1,0 +1,119 @@
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  orchstratorStack:
+    Type: String
+    Default: nk-orch-snd
+
+Resources:
+  StepFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "states.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole" 
+      Policies:
+        - PolicyName: "root"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - lambda:InvokeFunction
+                  - states:StartExecution
+                  - events:PutTargets
+                  - events:PutRule
+                  - events:DescribeRule
+                Resource:
+                  - Fn::ImportValue: !Sub ${orchstratorStack}-init-activites
+                  - Fn::ImportValue: !Sub ${orchstratorStack}-Step1-workflow
+                  - Fn::ImportValue: !Sub ${orchstratorStack}-Step2-workflow
+                  - Fn::ImportValue: !Sub ${orchstratorStack}-Step3-workflow
+                  - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForStepFunctionsExecutionRule
+
+  Workflow:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${AWS::StackName}-workflow
+      RoleArn:
+        Fn::GetAtt:
+          - StepFunctionRole
+          - Arn
+      DefinitionString:
+        !Sub 
+          - |
+              {
+                "Comment": "An example workflow which has 1 orchestrator step",
+                "StartAt": "SetActivities",
+                "States": {
+                  "SetActivities": {
+                    "Type": "Pass",
+                    "Result": {
+                      "Step1": "",
+                      "Step2": "",
+                      "Step3": ""
+                    },
+                    "ResultPath": "$.stages",
+                    "Next": "SetWorkflow"
+                  },
+                  "SetWorkflow": {
+                    "Type": "Pass",
+                    "Result": "SimpleActivityWorkflow",
+                    "ResultPath": "$.metadata.workflow",
+                    "Next": "SetStatusStages"
+                  },
+                  "SetStatusStages": {
+                    "Type": "Task",
+                    "Resource": "${initializeArn}",
+                    "Next":"Step1"
+                  },
+
+                  "Step1": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:states:::states:startExecution.sync",
+                    "Parameters": {
+                      "StateMachineArn": "${step1Arn}",
+                      "Input.$": "$"
+                    },
+                    "ResultPath": "$.output",
+                    "Next": "Step2"
+                  },
+
+                  "Step2": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:states:::states:startExecution.sync",
+                    "Parameters": {
+                      "StateMachineArn": "${step2Arn}",
+                      "Input.$": "$"
+                    },
+                    "ResultPath": "$.output",
+                    "Next": "Step3"
+                  },
+
+                  "Step3": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:states:::states:startExecution.sync",
+                    "Parameters": {
+                      "StateMachineArn": "${step3Arn}",
+                      "Input.$": "$"
+                    },
+                    "ResultPath": "$.output",
+                    "End": true
+                  }
+                }
+              }
+          - initializeArn: 
+              Fn::ImportValue: !Sub ${orchstratorStack}-init-activites
+            step1Arn:
+              Fn::ImportValue: !Sub ${orchstratorStack}-Step1-workflow
+            step2Arn:
+              Fn::ImportValue: !Sub ${orchstratorStack}-Step2-workflow
+            step3Arn:
+              Fn::ImportValue: !Sub ${orchstratorStack}-Step3-workflow
