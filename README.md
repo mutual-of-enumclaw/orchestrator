@@ -182,4 +182,3 @@ Epsagon is a tracing utility which can be used to trace calls from lambda functi
 
 ## Stackery
 Stackery is a vendor that simplifies serverless stack deployments into AWS.  Their system simplifies environment definition with secrets and the parameter store, and deployment pipelines allowing teams to focus more on capabilities rather than how to build release frameworks across accounts.
-
