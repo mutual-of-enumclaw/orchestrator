@@ -223,11 +223,8 @@ async function orchestratorSqsEnqueueRecord (record: SNSEventRecord, pluginInfo:
     };
 
     if (sqsUrl.toLowerCase().endsWith('.fifo')) {
-        params.MessageGroupId = pluginInfo.fifoKey &&
-                                    message.metadata &&
-                                    message.metadata[pluginInfo.fifoKey]
-            ? message.metadata[pluginInfo.fifoKey]
-            : message.uid;
+        params.MessageGroupId = pluginInfo?.fifoKey || message.uid;
+        console.log(params.MessageGroupId);
     }
 
     await sqs.sendMessage(params).promise();
