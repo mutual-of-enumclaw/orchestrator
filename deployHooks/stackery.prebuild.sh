@@ -1,5 +1,8 @@
 #!/bin/bash
 npm ci
-npm run installTypescript
-npm run installUtils
+
+cd orch-utils
+npm ci
+cd ..
+
 npm run activities -- --stackery-json
