@@ -1,6 +1,8 @@
 #!/bin/bash
 npm ci
 
+rm -Rf .aws-sam
+
 cd orch-utils
 npm ci
 cd ..
