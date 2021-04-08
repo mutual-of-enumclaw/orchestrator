@@ -20,7 +20,7 @@ async function processCliCommand() {
 
 async function loadActivities(args) {
 
-    const yamlFile = './template.yml';
+    const yamlFile = './template.yaml';
     console.log(args);
     let ssmName = args['--ssm-name'];
     if(!ssmName && args['--stackery-json']) {
