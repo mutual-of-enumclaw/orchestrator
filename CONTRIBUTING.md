@@ -31,7 +31,6 @@ Our documentation lives on GitHub in the [docs](docs) directory. Do you see a ty
 The easiest thing you can do to help us move forward and make an impact on our progress is to simply provide support to other people having difficulties with their Serverless projects.
 
 You can do that by replying to [issues on Jira](https://mutualofenumclaw.atlassian.net/secure/RapidBoard.jspa?rapidView=5&view=planning.nodetail).
-
 ---
 
 # Code Style
