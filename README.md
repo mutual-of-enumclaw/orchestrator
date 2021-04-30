@@ -22,7 +22,7 @@ package | version
 
 # Deploying the Orchestrator
 
-## Dependencies
+## Dependencies 
 
 AWS SAM
 
