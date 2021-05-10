@@ -175,6 +175,7 @@ Resources:
 
   PluginTable:
       Type: AWS::DynamoDB::Table
+      Condition: IsPrimaryRegion
       Properties:
         KeySchema:
           - AttributeName: orchestratorId
@@ -206,9 +207,18 @@ Resources:
             Value: "true"
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
+  
+  RunPluginDdbGlobalTables:
+    Type: Custom::GlobalTable
+    Condition: IsSecondaryRegion
+    Properties:
+      ServiceToken:
+        Ref: DdbGlobalTableArn
+      TableName: !Sub ${AWS::StackName}-PluginTable
 
   StatusTable:
       Type: AWS::DynamoDB::Table
+      Condition: IsPrimaryRegion
       Properties:
         StreamSpecification:
           StreamViewType: NEW_AND_OLD_IMAGES
@@ -231,6 +241,14 @@ Resources:
             Value: "true"
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
+  
+  RunStatusDdbGlobalTables:
+    Type: Custom::GlobalTable
+    Condition: IsSecondaryRegion
+    Properties:
+      ServiceToken:
+        Ref: DdbGlobalTableArn
+      TableName: !Sub ${AWS::StackName}-StatusTable
 
   Library:
     Type: AWS::Serverless::LayerVersion
@@ -394,6 +412,21 @@ Parameters:
     Type: String
     Description: This is used to force an update of the config if no other changes are made
     Default: "1"
+  DeployedRegions:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/nucleus/deployedRegions
+  DdbGlobalTableArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/nucleus/core/customResources/ddbGlobalTable
+
+Conditions:
+  IsSecondaryRegion: !Not
+    - !Equals
+      - !Select [0, !Split [",", !Ref DeployedRegions]]
+      - !Ref AWS::Region
+  IsPrimaryRegion: !Equals
+    - !Select [0, !Split [",", !Ref DeployedRegions]]
+    - !Ref AWS::Region
 
 Outputs:
     DynamoDbPluginTableName:
