@@ -212,8 +212,7 @@ Resources:
     Type: Custom::GlobalTable
     Condition: IsSecondaryRegion
     Properties:
-      ServiceToken:
-        Ref: DdbGlobalTableArn
+      ServiceToken: !Ref DdbGlobalTableArn
       TableName: !Sub ${AWS::StackName}-PluginTable
 
   StatusTable:
@@ -246,8 +245,7 @@ Resources:
     Type: Custom::GlobalTable
     Condition: IsSecondaryRegion
     Properties:
-      ServiceToken:
-        Ref: DdbGlobalTableArn
+      ServiceToken: !Ref DdbGlobalTableArn
       TableName: !Sub ${AWS::StackName}-StatusTable
 
   Library:
@@ -420,13 +418,10 @@ Parameters:
     Default: /<EnvironmentName>/nucleus/core/customResources/ddbGlobalTable
 
 Conditions:
-  IsSecondaryRegion: !Not
-    - !Equals
-      - !Select [0, !Split [",", !Ref DeployedRegions]]
-      - !Ref AWS::Region
   IsPrimaryRegion: !Equals
     - !Select [0, !Split [",", !Ref DeployedRegions]]
     - !Ref AWS::Region
+  IsSecondaryRegion: !Not [!Condition IsPrimary]
 
 Outputs:
     DynamoDbPluginTableName:
