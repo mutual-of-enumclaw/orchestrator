@@ -421,7 +421,7 @@ Conditions:
   IsPrimaryRegion: !Equals
     - !Select [0, !Split [",", !Ref DeployedRegions]]
     - !Ref AWS::Region
-  IsSecondaryRegion: !Not [!Condition IsPrimary]
+  IsSecondaryRegion: !Not [!Condition IsPrimaryRegion]
 
 Outputs:
     DynamoDbPluginTableName:
