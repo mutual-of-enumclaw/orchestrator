@@ -30,6 +30,18 @@ Parameters:
   OrchestratorConfig:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config
+  DeployedRegions:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/nucleus/deployedRegions
+  DdbGlobalTableArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/nucleus/core/customResources/ddbGlobalTable
+
+Conditions:
+  IsPrimaryRegion: !Equals
+    - !Select [0, !Split [",", !Ref DeployedRegions]]
+    - !Ref AWS::Region
+  IsSecondaryRegion: !Not [!Condition IsPrimaryRegion]
 
 Resources:
   snsTopicFailure:
@@ -37,8 +49,10 @@ Resources:
     Properties:
       DisplayName: Policy Issue Failure
       TopicName: !Sub ${StackTagName}-failure
+
   dynamodbTableMetrics:
     Type: AWS::DynamoDB::Table
+    Condition: IsPrimaryRegion
     Properties:
       AttributeDefinitions:
         - AttributeName: uid
@@ -55,6 +69,14 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: timeout
         Enabled: true
+
+  RunMetricsDdbGlobalTables:
+    Type: Custom::GlobalTable
+    Condition: IsSecondaryRegion
+    Properties:
+      ServiceToken: !Ref DdbGlobalTableArn
+      TableName: "#{AWS::StackName}-failure-metrics"
+
   s3Workflows:
     Type: AWS::S3::Bucket
     Properties:
@@ -173,7 +195,7 @@ Resources:
               Resource:
                 - !GetAtt s3Workflows.Arn
                 - !Sub ${s3Workflows.Arn}/*
-                - !GetAtt dynamodbTableMetrics.Arn
+                - !If [IsPrimaryRegion, !GetAtt dynamodbTableMetrics.Arn, !GetAtt RunMetricsDdbGlobalTables.TableArn]
             - Effect: Allow
               Action:
                 - cloudwatch:PutMetricData
@@ -198,7 +220,7 @@ Resources:
                 - s3:ListBucket
               Resource:
                 - !Ref snsTopicFailure
-                - !GetAtt dynamodbTableMetrics.Arn
+                - !If [IsPrimaryRegion, !GetAtt dynamodbTableMetrics.Arn, !GetAtt RunMetricsDdbGlobalTables.TableArn]
                 - !GetAtt s3Workflows.Arn
                 - !Sub ${s3Workflows.Arn}/*
     Metadata:
