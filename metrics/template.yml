@@ -78,7 +78,7 @@ Resources:
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
 
-  RunS3Replication:
+  RunWorkflowsS3Replication:
     Type: Custom::BucketReplication
     Condition: IsSecondaryRegion
     Properties:
