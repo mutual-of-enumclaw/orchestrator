@@ -30,6 +30,14 @@ Parameters:
   OrchestratorConfig:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config
+  DeployedRegions:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/nucleus/deployedRegions
+
+Conditions:
+  IsPrimaryRegion: !Equals
+    - !Select [0, !Split [",", !Ref DeployedRegions]]
+    - !Ref AWS::Region
 
 Resources:
   snsTopicFailure:
@@ -68,7 +76,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -79,7 +87,7 @@ Resources:
       Policies:
         - PolicyName: !Sub ${StackTagName}-CustomDataExtractRole
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -159,11 +167,6 @@ Resources:
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: reportMetrics
-      Events:
-        UpdateMetrics:
-          Type: Schedule
-          Properties:
-            Schedule: rate(15 minutes)
       Policies:
         - Statement:
             - Effect: Allow
@@ -178,9 +181,25 @@ Resources:
               Action:
                 - cloudwatch:PutMetricData
               Resource:
-                - '*'
+                - "*"
     Metadata:
       RuntimeOption: typescript
+  ReportMetricsRule:
+    Type: AWS::Events::Rule
+    Condition: IsPrimaryRegion
+    Properties:
+      ScheduleExpression: rate(15 minutes)
+      Targets:
+        - Id: reportMetrics
+          Arn: !GetAtt reportMetrics.Arn
+  InvokeReportMetricsPermission:
+    Type: AWS::Lambda::Permission
+    Condition: IsPrimaryRegion
+    Properties:
+      FunctionName: !GetAtt reportMetrics.Arn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ReportMetricsRule.Arn
   alertSupportTeam:
     Type: AWS::Serverless::Function
     Properties:
@@ -233,4 +252,3 @@ Resources:
             BatchSize: 1
     Metadata:
       RuntimeOption: typescript
-
