@@ -175,7 +175,6 @@ Resources:
 
   PluginTable:
       Type: AWS::DynamoDB::Table
-      Condition: IsPrimaryRegion
       Properties:
         KeySchema:
           - AttributeName: orchestratorId
@@ -207,13 +206,6 @@ Resources:
             Value: "true"
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
-  
-  RunPluginDdbGlobalTables:
-    Type: Custom::GlobalTable
-    Condition: IsSecondaryRegion
-    Properties:
-      ServiceToken: !Ref DdbGlobalTableArn
-      TableName: !Sub ${AWS::StackName}-PluginTable
 
   StatusTable:
       Type: AWS::DynamoDB::Table
