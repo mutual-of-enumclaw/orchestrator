@@ -36,6 +36,9 @@ Parameters:
   DdbGlobalTableArn:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/nucleus/core/customResources/ddbGlobalTable
+  S3ReplicationArn:
+      Type: AWS::SSM::Parameter::Value<String>
+      Default: /<EnvironmentName>/nucleus/core/customResources/s3Replication
 
 Conditions:
   IsPrimaryRegion: !Equals
@@ -86,6 +89,15 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+
+  RunWorkflowsS3Replication:
+    Type: Custom::BucketReplication
+    Condition: IsSecondaryRegion
+    Properties:
+      ServiceToken: !Ref S3ReplicationArn
+      Bucket1Name: !Ref s3Workflows
+      AccountId: !Ref AWS::AccountId
+        
   StepFunctionRole:
     Type: AWS::IAM::Role
     Properties:
