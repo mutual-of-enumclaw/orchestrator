@@ -29,16 +29,13 @@ Parameters:
     Default: arn:aws:lambda:us-west-2:000000000000:layer:not-a-real-layer:1
   OrchestratorConfig:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config
-  DeployedRegions:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/nucleus/deployedRegions
-  DdbGlobalTableArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/nucleus/core/customResources/ddbGlobalTable
+    Default: /snd2/orchestrator/stacks/nucleusorchestratorcore/config # /snd2/orchestrator/stacks/nucleus-orchestrator-core-snd2/config
   S3ReplicationArn:
       Type: AWS::SSM::Parameter::Value<String>
-      Default: /<EnvironmentName>/nucleus/core/customResources/s3Replication
+      Default: /snd2/nucleus/core/customResources/s3Replication
+  DeployedRegions:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /snd2/nucleus/deployedRegions
 
 Conditions:
   IsPrimaryRegion: !Equals
@@ -52,10 +49,8 @@ Resources:
     Properties:
       DisplayName: Policy Issue Failure
       TopicName: !Sub ${StackTagName}-failure
-
   dynamodbTableMetrics:
     Type: AWS::DynamoDB::Table
-    Condition: IsPrimaryRegion
     Properties:
       AttributeDefinitions:
         - AttributeName: uid
@@ -72,13 +67,6 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: timeout
         Enabled: true
-
-  RunMetricsDdbGlobalTables:
-    Type: Custom::GlobalTable
-    Condition: IsSecondaryRegion
-    Properties:
-      ServiceToken: !Ref DdbGlobalTableArn
-      TableName: "#{AWS::StackName}-failure-metrics"
 
   s3Workflows:
     Type: AWS::S3::Bucket
@@ -207,7 +195,7 @@ Resources:
               Resource:
                 - !GetAtt s3Workflows.Arn
                 - !Sub ${s3Workflows.Arn}/*
-                - !If [IsPrimaryRegion, !GetAtt dynamodbTableMetrics.Arn, !GetAtt RunMetricsDdbGlobalTables.TableArn]
+                - !GetAtt dynamodbTableMetrics.Arn
             - Effect: Allow
               Action:
                 - cloudwatch:PutMetricData
@@ -232,7 +220,7 @@ Resources:
                 - s3:ListBucket
               Resource:
                 - !Ref snsTopicFailure
-                - !If [IsPrimaryRegion, !GetAtt dynamodbTableMetrics.Arn, !GetAtt RunMetricsDdbGlobalTables.TableArn]
+                - !GetAtt dynamodbTableMetrics.Arn
                 - !GetAtt s3Workflows.Arn
                 - !Sub ${s3Workflows.Arn}/*
     Metadata:

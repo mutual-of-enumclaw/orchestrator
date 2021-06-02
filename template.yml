@@ -12,14 +12,12 @@ Resources:
   RootStackParamStore:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: 
-        !Sub 
-          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/base
-          - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+      Name: !Sub
+        - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/base
+        - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
       Value: !Ref AWS::StackName
       Type: String
 
-  
   pluginUpdate:
     Type: AWS::Serverless::Function
     Properties:
@@ -42,7 +40,7 @@ Resources:
               Action:
                 - lambda:InvokeFunction
                 - sns:ListSubscriptionsByTopic
-              Resource: '*'
+              Resource: "*"
       Environment:
         Variables:
           pluginTable: !Ref PluginTable
@@ -86,7 +84,7 @@ Resources:
               Action:
                 - lambda:InvokeFunction
                 - sns:ListSubscriptionsByTopic
-              Resource: '*'
+              Resource: "*"
       Environment:
         Variables:
           pluginTable: !Ref PluginTable
@@ -120,7 +118,10 @@ Resources:
       Environment:
         Variables:
           pluginTable: !Ref PluginTable
-          statusTable: !Ref StatusTable
+          statusTable: !If
+            - IsPrimaryRegion
+            - !Ref StatusTable
+            - !GetAtt RunStatusDdbGlobalTables.TableName
           traceConfig: !GetAtt OrchestratorResource.Config
       Policies:
         - Statement:
@@ -129,7 +130,10 @@ Resources:
                 - dynamodb:UpdateItem
                 - dynamodb:GetItem
               Resource:
-                - !GetAtt StatusTable.Arn
+                - !If
+                  - IsPrimaryRegion
+                  - !GetAtt StatusTable.Arn
+                  - !GetAtt RunStatusDdbGlobalTables.TableArn
             - Effect: Allow
               Action:
                 - dynamodb:Query
@@ -139,17 +143,19 @@ Resources:
               Action:
                 - states:SendTaskSuccess
                 - states:SendTaskFailure
-              Resource: '*'
+              Resource: "*"
       Events:
         StatusTable:
           Type: DynamoDB
           Properties:
-            Stream: !GetAtt StatusTable.StreamArn
+            Stream: !If
+              - IsPrimaryRegion
+              - !GetAtt StatusTable.StreamArn
+              - !GetAtt RunStatusDdbGlobalTables.StreamArn
             StartingPosition: TRIM_HORIZON
             BatchSize: 1
     Metadata:
       RuntimeOption: typescript
-
 
   initializeActivities:
     Type: AWS::Serverless::Function
@@ -162,83 +168,89 @@ Resources:
       Environment:
         Variables:
           OrchestratorConfig: !GetAtt OrchestratorResource.Config
-          statusTable: !Ref StatusTable
+          statusTable: !If
+            - IsPrimaryRegion
+            - !Ref StatusTable
+            - !GetAtt RunStatusDdbGlobalTables.TableName
+
       Policies:
         - Statement:
             - Effect: Allow
               Action:
                 - dynamodb:PutItem
                 - dynamodb:GetItem
-              Resource: !GetAtt StatusTable.Arn
+              Resource: !If
+                - IsPrimaryRegion
+                - !GetAtt StatusTable.Arn
+                - !GetAtt RunStatusDdbGlobalTables.TableArn
     Metadata:
       RuntimeOption: typescript
 
   PluginTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        KeySchema:
-          - AttributeName: orchestratorId
-            KeyType: HASH
-          - AttributeName: subscriptionArn
-            KeyType: RANGE
-        GlobalSecondaryIndexes:
-          - IndexName: FunctionIndex
-            KeySchema:
-              - AttributeName: functionName
-                KeyType: HASH
-              - AttributeName: subscriptionArn
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
-        AttributeDefinitions:
-          - AttributeName: orchestratorId
-            AttributeType: S
-          - AttributeName: functionName
-            AttributeType: S
-          - AttributeName: subscriptionArn
-            AttributeType: S
-        BillingMode: PAY_PER_REQUEST
-        TableName: !Sub ${AWS::StackName}-plugin
-        Tags:
-          - Key: Role
-            Value: Configuration
-          - Key: NPI
-            Value: "true"
-        PointInTimeRecoverySpecification:
-          PointInTimeRecoveryEnabled: true
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: orchestratorId
+          KeyType: HASH
+        - AttributeName: subscriptionArn
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: FunctionIndex
+          KeySchema:
+            - AttributeName: functionName
+              KeyType: HASH
+            - AttributeName: subscriptionArn
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      AttributeDefinitions:
+        - AttributeName: orchestratorId
+          AttributeType: S
+        - AttributeName: functionName
+          AttributeType: S
+        - AttributeName: subscriptionArn
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub ${AWS::StackName}-plugin
+      Tags:
+        - Key: Role
+          Value: Configuration
+        - Key: NPI
+          Value: "true"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
 
   StatusTable:
-      Type: AWS::DynamoDB::Table
-      Condition: IsPrimaryRegion
-      Properties:
-        StreamSpecification:
-          StreamViewType: NEW_AND_OLD_IMAGES
-        KeySchema:
-          - AttributeName: uid
-            KeyType: HASH
-          - AttributeName: workflow
-            KeyType: RANGE
-        AttributeDefinitions:
-          - AttributeName: uid
-            AttributeType: S
-          - AttributeName: workflow
-            AttributeType: S
-        BillingMode: PAY_PER_REQUEST
-        TableName: !Sub ${AWS::StackName}-status
-        Tags:
-          - Key: Role
-            Value: Status
-          - Key: NPI
-            Value: "true"
-        PointInTimeRecoverySpecification:
-          PointInTimeRecoveryEnabled: true
-  
+    Type: AWS::DynamoDB::Table
+    Condition: IsPrimaryRegion
+    Properties:
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      KeySchema:
+        - AttributeName: uid
+          KeyType: HASH
+        - AttributeName: workflow
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: uid
+          AttributeType: S
+        - AttributeName: workflow
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub ${StackTagName}-${StageName}-status
+      Tags:
+        - Key: Role
+          Value: Status
+        - Key: NPI
+          Value: "true"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
   RunStatusDdbGlobalTables:
     Type: Custom::GlobalTable
-    Condition: IsSecondaryRegion
     Properties:
       ServiceToken: !Ref DdbGlobalTableArn
-      TableName: !Sub ${AWS::StackName}-StatusTable
+      TableName: !Sub ${StackTagName}-${StageName}-status
 
   Library:
     Type: AWS::Serverless::LayerVersion
@@ -255,13 +267,12 @@ Resources:
   LibraryParamStore:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: 
-        !Sub 
-          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/layer
-          - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+      Name: !Sub
+        - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/layer
+        - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
       Value: !Ref Library
       Type: String
-  
+
   OrchestratorIntegration:
     Type: AWS::Serverless::Function
     Properties:
@@ -275,13 +286,18 @@ Resources:
           environment: !Ref EnvironmentTagName
           stack: !Ref StackTagName
           epsagonTokenPath: !Sub /${EnvironmentTagName}/epsagon/token
-          epsagonAppNamePath: 
-            !Sub 
-              - /${EnvironmentTagName}/epsagon/stacks/${parmStack}/appname
-              - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-          statusTable: !Ref StatusTable
-          statusTableArn: !GetAtt StatusTable.Arn
-          temp: 'change to force update'
+          epsagonAppNamePath: !Sub
+            - /${EnvironmentTagName}/epsagon/stacks/${parmStack}/appname
+            - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
+          statusTable: !If
+            - IsPrimaryRegion
+            - !Ref StatusTable
+            - !GetAtt RunStatusDdbGlobalTables.TableName
+          statusTableArn: !If
+            - IsPrimaryRegion
+            - !GetAtt StatusTable.Arn
+            - !GetAtt RunStatusDdbGlobalTables.TableArn
+          temp: "change to force update"
       Policies:
         - Statement:
             - Effect: Allow
@@ -289,15 +305,15 @@ Resources:
                 - ssm:GetParameters
                 - ssm:PutParameter
               Resource:
-                - !Sub 
-                    - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/epsagon/stacks/${parmStack}/appname
-                    - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-                - !Sub 
-                    - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-                    - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-                - !Sub 
-                    - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/epsagon/token
-                    - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
+                - !Sub
+                  - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/epsagon/stacks/${parmStack}/appname
+                  - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
+                - !Sub
+                  - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+                  - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
+                - !Sub
+                  - arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${EnvironmentTagName}/epsagon/token
+                  - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
 
   OrchestratorResource:
     Type: Custom::OrchestratorIntegration
@@ -312,17 +328,25 @@ Resources:
     Properties:
       Location: metrics/template.yml
       Parameters:
-        StackTagName: !Sub ${AWS::StackName}-metrics
+        StackTagName: !Sub ${StackTagName}-${EnvironmentTagName}-metrics
         EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !Ref StatusTable
-        StatusTableArn: !GetAtt StatusTable.Arn
-        StatusTableStreamArn: !GetAtt StatusTable.StreamArn
+        StatusTableName: !If
+          - IsPrimaryRegion
+          - !Ref StatusTable
+          - !GetAtt RunStatusDdbGlobalTables.TableName
+        StatusTableArn: !If
+          - IsPrimaryRegion
+          - !GetAtt StatusTable.Arn
+          - !GetAtt RunStatusDdbGlobalTables.TableArn
+        StatusTableStreamArn: !If
+          - IsPrimaryRegion
+          - !GetAtt StatusTable.StreamArn
+          - !GetAtt RunStatusDdbGlobalTables.StreamArn
         OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-  
+        OrchestratorConfig: !Sub
+          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+          - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
+
   ##
   ## Start Activities Section
   ##
@@ -336,16 +360,20 @@ Resources:
         ParentStackName: !Ref AWS::StackName
         Name: "Step1"
         EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !Ref StatusTable
-        StatusTableArn: !GetAtt StatusTable.Arn
+        StatusTableName: !If
+          - IsPrimaryRegion
+          - !Ref StatusTable
+          - !GetAtt RunStatusDdbGlobalTables.TableName
+        StatusTableArn: !If
+          - IsPrimaryRegion
+          - !GetAtt StatusTable.Arn
+          - !GetAtt RunStatusDdbGlobalTables.TableArn
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
+        OrchestratorConfig: !Sub
+          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+          - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
 
   activityStep2:
     Type: AWS::Serverless::Application
@@ -356,16 +384,20 @@ Resources:
         ParentStackName: !Ref AWS::StackName
         Name: "Step2"
         EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !Ref StatusTable
-        StatusTableArn: !GetAtt StatusTable.Arn
+        StatusTableName: !If
+          - IsPrimaryRegion
+          - !Ref StatusTable
+          - !GetAtt RunStatusDdbGlobalTables.TableName
+        StatusTableArn: !If
+          - IsPrimaryRegion
+          - !GetAtt StatusTable.Arn
+          - !GetAtt RunStatusDdbGlobalTables.TableArn
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
+        OrchestratorConfig: !Sub
+          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+          - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
 
   activityStep3:
     Type: AWS::Serverless::Application
@@ -376,16 +408,20 @@ Resources:
         ParentStackName: !Ref AWS::StackName
         Name: "Step3"
         EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !Ref StatusTable
-        StatusTableArn: !GetAtt StatusTable.Arn
+        StatusTableName: !If
+          - IsPrimaryRegion
+          - !Ref StatusTable
+          - !GetAtt RunStatusDdbGlobalTables.TableName
+        StatusTableArn: !If
+          - IsPrimaryRegion
+          - !GetAtt StatusTable.Arn
+          - !GetAtt RunStatusDdbGlobalTables.TableArn
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
+        OrchestratorConfig: !Sub
+          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+          - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
 
   ##
   ## End Activities Section
@@ -408,56 +444,60 @@ Parameters:
   DdbGlobalTableArn:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/nucleus/core/customResources/ddbGlobalTable
+  StageName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/name
 
 Conditions:
   IsPrimaryRegion: !Equals
     - !Select [0, !Split [",", !Ref DeployedRegions]]
     - !Ref AWS::Region
-  IsSecondaryRegion: !Not [!Condition IsPrimaryRegion]
 
 Outputs:
-    DynamoDbPluginTableName:
-      Value: 
-        Ref: PluginTable
-      Export:
-        Name: !Sub "${AWS::StackName}-plugin-name"
+  DynamoDbPluginTableName:
+    Value:
+      Ref: PluginTable
+    Export:
+      Name: !Sub "${AWS::StackName}-plugin-name"
 
-    DynamoDbPluginTableArn:
-      Value: 
-        Fn::GetAtt: 
-          - PluginTable
-          - Arn
-      Export:
-        Name: !Sub "${AWS::StackName}-plugin-arn"
+  DynamoDbPluginTableArn:
+    Value:
+      Fn::GetAtt:
+        - PluginTable
+        - Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-plugin-arn"
 
-    DynamoDbStatusTableName:
-      Value: 
-        Ref: StatusTable
-      Export:
-        Name: !Sub "${AWS::StackName}-status-name"
+  DynamoDbStatusTableName:
+    Value: !If
+      - IsPrimaryRegion
+      - !Ref StatusTable
+      - !GetAtt RunStatusDdbGlobalTables.TableName
+    Export:
+      Name: !Sub "${AWS::StackName}-status-name"
 
-    DynamoDbStatusTableArn:
-      Value: 
-        Fn::GetAtt: 
-          - StatusTable
-          - Arn
-      Export:
-        Name: !Sub "${AWS::StackName}-status-arn"
+  DynamoDbStatusTableArn:
+    Value: !If
+      - IsPrimaryRegion
+      - !GetAtt StatusTable.Arn
+      - !GetAtt RunStatusDdbGlobalTables.TableArn
+    Export:
+      Name: !Sub "${AWS::StackName}-status-arn"
 
-    DynamoDbStatusTableStreamArn:
-      Value:
-        Fn::GetAtt:
-          - StatusTable
-          - StreamArn
-      Export:
-        Name: !Sub "${AWS::StackName}-status-stream-arn"
+  DynamoDbStatusTableStreamArn:
+    Value: !If
+      - IsPrimaryRegion
+      - !GetAtt StatusTable.StreamArn
+      - !GetAtt RunStatusDdbGlobalTables.StreamArn
+    Export:
+      Name: !Sub "${AWS::StackName}-status-stream-arn"
 
-    InitailizeActivities:
-      Value: !GetAtt initializeActivities.Arn
-      Export:
-        Name: !Sub "${AWS::StackName}-init-activites"
+  InitailizeActivities:
+    Value: !GetAtt initializeActivities.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-init-activites"
 
-    Layer:
-      Value: !Ref Library
-      Export:
-        Name: !Sub "${AWS::StackName}-layer"
+  Layer:
+    Value: !Ref Library
+    Export:
+      Name: !Sub "${AWS::StackName}-layer"
