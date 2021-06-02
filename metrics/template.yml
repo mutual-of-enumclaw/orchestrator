@@ -29,13 +29,13 @@ Parameters:
     Default: arn:aws:lambda:us-west-2:000000000000:layer:not-a-real-layer:1
   OrchestratorConfig:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /snd2/orchestrator/stacks/nucleusorchestratorcore/config # /snd2/orchestrator/stacks/nucleus-orchestrator-core-snd2/config
+    Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config
   S3ReplicationArn:
       Type: AWS::SSM::Parameter::Value<String>
-      Default: /snd2/nucleus/core/customResources/s3Replication
+      Default: /<EnvironmentName>/nucleus/core/customResources/s3Replication
   DeployedRegions:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /snd2/nucleus/deployedRegions
+    Default: /<EnvironmentName>/nucleus/deployedRegions
 
 Conditions:
   IsPrimaryRegion: !Equals
