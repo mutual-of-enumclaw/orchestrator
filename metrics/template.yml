@@ -30,6 +30,9 @@ Parameters:
   OrchestratorConfig:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config
+  S3ReplicationArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/nucleus/core/customResources/s3Replication
   DeployedRegions:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/nucleus/deployedRegions
@@ -38,6 +41,7 @@ Conditions:
   IsPrimaryRegion: !Equals
     - !Select [0, !Split [",", !Ref DeployedRegions]]
     - !Ref AWS::Region
+  IsSecondaryRegion: !Not [!Condition IsPrimaryRegion]
 
 Resources:
   snsTopicFailure:
@@ -63,6 +67,7 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: timeout
         Enabled: true
+
   s3Workflows:
     Type: AWS::S3::Bucket
     Properties:
@@ -72,6 +77,15 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+
+  RunWorkflowsS3Replication:
+    Type: Custom::BucketReplication
+    Condition: IsSecondaryRegion
+    Properties:
+      ServiceToken: !Ref S3ReplicationArn
+      Bucket1Name: !Ref s3Workflows
+      AccountId: !Ref AWS::AccountId
+
   StepFunctionRole:
     Type: AWS::IAM::Role
     Properties:
