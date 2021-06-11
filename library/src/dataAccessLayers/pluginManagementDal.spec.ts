@@ -12,6 +12,8 @@ const dal = new PluginManagementDal('Test');
 const activity = 'orchId';
 const stage = 'stageName';
 
+process.env.AWS_DEFAULT_REGION = 'us-west-2';
+
 describe('addPlugin', () => {
     test('Basic add', async () => {
         dynamoDb.reset();
@@ -19,6 +21,7 @@ describe('addPlugin', () => {
 
         expect(dynamoDb.putInput.Item.orchestratorId).toBe('orchId|stageName');
         expect(dynamoDb.putInput.Item.subscriptionArn).toBe('arn:subscription');
+        expect(dynamoDb.putInput.Item.awsRegion).toBe('us-west-2')
     });
 });
 

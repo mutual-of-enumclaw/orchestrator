@@ -11,6 +11,7 @@ import { OrchestratorStatusDal } from './orchestratorStatusDal';
 const mockDb = new MockDynamoDb(DynamoDB.DocumentClient);
 
 process.env.OrchestratorConfig = JSON.stringify({ statusTable: 'Test' });
+process.env.AWS_DEFAULT_REGION = 'us-west-2';
 
 describe('getStatusObject', () => {
     const dal = new OrchestratorStatusDal();
@@ -55,11 +56,13 @@ describe('updateStageStatus', () => {
         mockDb.reset();
         await dal.updateStageStatus('', '', '', null, null, '');
         expect(mockDb.update).toBeCalled();
+        expect(mockDb.updateInputs[0].ExpressionAttributeValues[':awsRegion']).toBe('us-west-2')
     });
 
     test('valid values', async () => {
         await dal.updateStageStatus('test', 'test', 'test', OrchestratorStage.PreProcessing,
             OrchestratorComponentState.Complete, 'test');
         expect(mockDb.update).toBeCalled();
+        expect(mockDb.updateInputs[0].ExpressionAttributeValues[':awsRegion']).toBe('us-west-2')
     });
 });

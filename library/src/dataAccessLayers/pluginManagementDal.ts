@@ -19,10 +19,10 @@ const dynamodb = new DynamoDB.DocumentClient();
 const lambda = new Lambda();
 
 export class PluginManagementDal {
-    constructor (private pluginTable: string) {
+    constructor(private pluginTable: string) {
     }
 
-    public async getPluginBySubscription (subscriptionArn: string): Promise<PluginStorageDefinition> {
+    public async getPluginBySubscription(subscriptionArn: string): Promise<PluginStorageDefinition> {
         const results = await dynamodb.scan({
             TableName: process.env.pluginTable,
             FilterExpression: '#subscriptionArn = :subscriptionArn',
@@ -37,7 +37,7 @@ export class PluginManagementDal {
         return results.Count === 0 ? undefined : results.Items[0] as PluginStorageDefinition;
     }
 
-    public async getPluginByFunction (functionName: string): Promise<PluginStorageDefinition[]> {
+    public async getPluginByFunction(functionName: string): Promise<PluginStorageDefinition[]> {
         const functionQuery = await dynamodb.query({
             TableName: process.env.pluginTable,
             IndexName: 'FunctionIndex',
@@ -53,7 +53,7 @@ export class PluginManagementDal {
         return functionQuery.Items as PluginStorageDefinition[];
     }
 
-    public async getPlugin (orchestratorId: string, stage: string, functionName: string): Promise<PluginStorageDefinition> {
+    public async getPlugin(orchestratorId: string, stage: string, functionName: string): Promise<PluginStorageDefinition> {
         const result = await dynamodb.query({
             TableName: this.pluginTable,
             KeyConditionExpression: 'orchestratorId = :orchId',
@@ -71,21 +71,22 @@ export class PluginManagementDal {
         return result.Items[0] as PluginStorageDefinition;
     }
 
-    public async addPlugin (orchestratorId: string,
+    public async addPlugin(orchestratorId: string,
         stage: string,
         subscriptionArn: string,
-        params: {functionName: string, pluginName: string, mandatory: boolean, order: number}) {
+        params: { functionName: string, pluginName: string, mandatory: boolean, order: number }) {
         await dynamodb.put({
             TableName: this.pluginTable,
             Item: {
                 orchestratorId: `${orchestratorId}|${stage}`,
                 subscriptionArn,
+                awsRegion: process.env.AWS_DEFAULT_REGION,
                 ...params
             }
         }).promise();
     }
 
-    public async removePlugin (orchestratorId: string, stage: string, subscriptionArn: string) {
+    public async removePlugin(orchestratorId: string, stage: string, subscriptionArn: string) {
         await dynamodb.delete({
             TableName: this.pluginTable,
             Key: {
@@ -95,7 +96,7 @@ export class PluginManagementDal {
         }).promise();
     }
 
-    public async getPluginConfig (item: PluginStorageDefinition): Promise<PluginStorageDefinition> {
+    public async getPluginConfig(item: PluginStorageDefinition): Promise<PluginStorageDefinition> {
         console.log('Invoking Lambda');
         const lambdaResult = await lambda.invoke({
             FunctionName: item.functionName,

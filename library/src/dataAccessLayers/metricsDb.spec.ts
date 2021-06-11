@@ -5,6 +5,8 @@ import { MetricsDb } from './metricsDb';
 const dynamoDb = new MockDynamoDb(DynamoDB.DocumentClient);
 const metricsDb = new MetricsDb(dynamoDb as any);
 
+process.env.AWS_DEFAULT_REGION = 'us-west-2';
+
 describe('putIssueFailure', () => {
     beforeEach(() => {
         dynamoDb.reset();
@@ -15,6 +17,7 @@ describe('putIssueFailure', () => {
         expect(dynamoDb.putInput.Item.uid).toBe('');
         expect(dynamoDb.putInput.Item.workflow).toBe('');
         expect(dynamoDb.putInput.Item.timeout).toBeGreaterThanOrEqual(time);
+        expect(dynamoDb.putInput.Item.awsRegion).toBe('us-west-2');
     });
 
     test('Valid', async () => {
@@ -23,6 +26,7 @@ describe('putIssueFailure', () => {
         expect(dynamoDb.putInput.Item.uid).toBe('123');
         expect(dynamoDb.putInput.Item.workflow).toBe('test');
         expect(dynamoDb.putInput.Item.timeout).toBeGreaterThanOrEqual(time);
+        expect(dynamoDb.putInput.Item.awsRegion).toBe('us-west-2');
     });
 });
 

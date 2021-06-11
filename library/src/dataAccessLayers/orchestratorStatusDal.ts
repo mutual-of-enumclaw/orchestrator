@@ -9,7 +9,7 @@ import { OrchestratorComponentState, OrchestratorStage, OrchestratorWorkflowStat
 export class OrchestratorStatusDal {
     private dal: DynamoDB.DocumentClient = new DynamoDB.DocumentClient();
 
-    public async getStatusObject (uid: string,
+    public async getStatusObject(uid: string,
         workflow: string,
         consistentRead?: boolean): Promise<OrchestratorWorkflowStatus> {
         if (!uid) {
@@ -26,7 +26,7 @@ export class OrchestratorStatusDal {
         return result.Item as OrchestratorWorkflowStatus;
     }
 
-    public async updatePluginStatus (
+    public async updatePluginStatus(
         uid: string, workflow: string, activity: string, stage: OrchestratorStage,
         mandatory: boolean, pluginName: string, state: OrchestratorComponentState,
         message: string) {
@@ -51,23 +51,26 @@ export class OrchestratorStatusDal {
         const params = {
             TableName: getConfig().statusTable,
             Key: { uid, workflow },
-            UpdateExpression: 'set #activities.#activity.#stage.#type.#pluginName = :status',
+            UpdateExpression: 'set #activities.#activity.#stage.#type.#pluginName = :status' +
+                ', #awsRegion = : awsRegion',
             ExpressionAttributeNames: {
                 '#activities': 'activities',
                 '#activity': activity,
                 '#stage': stage,
                 '#type': type,
-                '#pluginName': pluginName
+                '#pluginName': pluginName,
+                '#awsRegion': 'awsRegion'
             },
             ExpressionAttributeValues: {
-                ':status': status
+                ':status': status,
+                ':awsRegion': process.env.AWS_DEFAULT_REGION
             }
         };
 
         await this.dal.update(params).promise();
     }
 
-    public async updateStageStatus (
+    public async updateStageStatus(
         uid: string, workflow: string, activity: string, stage: OrchestratorStage,
         state: OrchestratorComponentState, message: string, updateTime: Date = new Date(), token: string = '') {
         const params = {
@@ -75,7 +78,8 @@ export class OrchestratorStatusDal {
             Key: { uid, workflow },
             UpdateExpression: 'set #activities.#activity.#stage.#status.#state = :state' +
                 ', #activities.#activity.#stage.#status.#message = :message' +
-                ', #activities.#activity.#stage.#status.#startTime = :startTime',
+                ', #activities.#activity.#stage.#status.#startTime = :startTime' +
+                ', #awsRegion = :awsRegion',
             ExpressionAttributeNames: {
                 '#activities': 'activities',
                 '#activity': activity,
@@ -83,12 +87,14 @@ export class OrchestratorStatusDal {
                 '#status': 'status',
                 '#state': 'state',
                 '#message': 'message',
-                '#startTime': 'startTime'
+                '#startTime': 'startTime',
+                '#awsRegion': 'awsRegion'
             },
             ExpressionAttributeValues: {
                 ':state': state,
                 ':message': message,
-                ':startTime': updateTime.toString()
+                ':startTime': updateTime.toString(),
+                ':awsRegion': process.env.AWS_DEFAULT_REGION
             }
         };
 
