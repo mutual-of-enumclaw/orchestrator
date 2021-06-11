@@ -27,6 +27,13 @@ export async function initializeWorkflow (event: OrchestratorWorkflowStatus) {
     if (savedData) {
         console.log('Using saved activity status and checking metadata');
         event.activities = (savedData.activities) ? savedData.activities : event.activities;
+        //NPL-958 Add packageNumber to event MetaData (if packageNumber is present on Previous metaData) before comparison
+        if(savedData.metadata.packageNumber && !event.metadata.packageNumber){
+            console.log('Add packageNumber to event MetaData before comparision');
+            event.metadata.packageNumber = savedData.metadata.packageNumber;
+        }
+        console.log(JSON.stringify(savedData.metadata));
+        console.log(JSON.stringify(event.metadata)); 
         const previousMetadata = JSON.stringify(savedData.metadata, Object.keys(savedData.metadata).sort());
         const incomingMetadata = JSON.stringify(event.metadata, Object.keys(event.metadata).sort());
         if (!event.metadataOverride && previousMetadata !== incomingMetadata) {
