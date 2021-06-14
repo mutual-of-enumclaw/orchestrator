@@ -7,6 +7,7 @@ const metricsDb = new MetricsDb(dynamoDb as any);
 
 process.env.AWS_DEFAULT_REGION = 'us-west-2';
 
+
 describe('putIssueFailure', () => {
     beforeEach(() => {
         dynamoDb.reset();
