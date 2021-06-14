@@ -52,7 +52,7 @@ export class OrchestratorStatusDal {
             TableName: getConfig().statusTable,
             Key: { uid, workflow },
             UpdateExpression: 'set #activities.#activity.#stage.#type.#pluginName = :status' +
-                ', #awsRegion = : awsRegion',
+                ', #awsRegion = :awsRegion',
             ExpressionAttributeNames: {
                 '#activities': 'activities',
                 '#activity': activity,
