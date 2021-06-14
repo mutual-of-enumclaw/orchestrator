@@ -18,7 +18,6 @@ export interface PluginStorageDefinition {
 const dynamodb = new DynamoDB.DocumentClient();
 const lambda = new Lambda();
 
-
 export class PluginManagementDal {
     constructor(private pluginTable: string) {
     }

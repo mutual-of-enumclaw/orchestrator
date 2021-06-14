@@ -3,7 +3,6 @@
  * License: Public
  */
 
-
 import { DynamoDB } from 'aws-sdk';
 import { OrchestratorComponentState, OrchestratorStage } from '../types';
 import { MockDynamoDb } from '../__mock__/aws';

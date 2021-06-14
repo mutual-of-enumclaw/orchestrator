@@ -1,6 +1,5 @@
 import * as AWS from 'aws-sdk';
 
-
 export class MetricsDb {
     dynamoDb: AWS.DynamoDB.DocumentClient;
     constructor(dynamoDal?: AWS.DynamoDB.DocumentClient) {
