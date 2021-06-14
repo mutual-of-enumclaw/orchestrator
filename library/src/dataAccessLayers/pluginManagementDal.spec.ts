@@ -14,7 +14,6 @@ const stage = 'stageName';
 
 process.env.AWS_DEFAULT_REGION = 'us-west-2';
 
-
 describe('addPlugin', () => {
     test('Basic add', async () => {
         dynamoDb.reset();
