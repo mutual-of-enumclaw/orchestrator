@@ -55,8 +55,14 @@ async function loadActivities(args) {
         ParentStackName: !Ref AWS::StackName
         Name: "${name}"
         EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !Ref StatusTable
-        StatusTableArn: !GetAtt StatusTable.Arn
+        StatusTableName: !If
+          - IsPrimaryRegion
+          - !Ref StatusTable
+          - !GetAtt RunStatusDdbGlobalTables.TableName
+        StatusTableArn: !If
+          - IsPrimaryRegion
+          - !GetAtt StatusTable.Arn
+          - !GetAtt RunStatusDdbGlobalTables.TableArn
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
