@@ -328,7 +328,7 @@ Resources:
     Properties:
       Location: metrics/template.yml
       Parameters:
-        StackTagName: !Sub ${StackTagName}-${EnvironmentTagName}-metrics
+        StackTagName: !Sub ${StackTagName}-${StageName}-metrics
         EnvironmentTagName: !Ref EnvironmentTagName
         StatusTableName: !If
           - IsPrimaryRegion

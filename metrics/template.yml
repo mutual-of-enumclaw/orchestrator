@@ -31,8 +31,8 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/orchestrator/stacks/<StackName>/config
   S3ReplicationArn:
-      Type: AWS::SSM::Parameter::Value<String>
-      Default: /<EnvironmentName>/nucleus/core/customResources/s3Replication
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/nucleus/core/customResources/s3Replication
   DeployedRegions:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/nucleus/deployedRegions
@@ -85,12 +85,12 @@ Resources:
       ServiceToken: !Ref S3ReplicationArn
       Bucket1Name: !Ref s3Workflows
       AccountId: !Ref AWS::AccountId
-        
+
   StepFunctionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
             Principal:
@@ -101,7 +101,7 @@ Resources:
       Policies:
         - PolicyName: !Sub ${StackTagName}-CustomDataExtractRole
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: 2012-10-17
             Statement:
               - Effect: Allow
                 Action:
@@ -200,7 +200,7 @@ Resources:
               Action:
                 - cloudwatch:PutMetricData
               Resource:
-                - '*'
+                - "*"
     Metadata:
       RuntimeOption: typescript
   alertSupportTeam:
@@ -255,4 +255,3 @@ Resources:
             BatchSize: 1
     Metadata:
       RuntimeOption: typescript
-
