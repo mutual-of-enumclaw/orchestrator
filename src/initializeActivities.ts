@@ -6,7 +6,7 @@ import {
 
 const dynamodb: DynamoDB.DocumentClient = new DynamoDB.DocumentClient();
 
-export async function initializeWorkflow (event: OrchestratorWorkflowStatus) {
+export async function initializeWorkflow(event: OrchestratorWorkflowStatus) {
     if (!event || !event.uid) {
         throw new Error('Event is either invalid or malformed');
     }
@@ -28,12 +28,12 @@ export async function initializeWorkflow (event: OrchestratorWorkflowStatus) {
         console.log('Using saved activity status and checking metadata');
         event.activities = (savedData.activities) ? savedData.activities : event.activities;
         //NPL-958 Add packageNumber to event MetaData (if packageNumber is present on Previous metaData) before comparison
-        if(savedData.metadata.packageNumber && !event.metadata.packageNumber){
+        if (savedData.metadata.packageNumber && !event.metadata.packageNumber) {
             console.log('Add packageNumber to event MetaData before comparision');
             event.metadata.packageNumber = savedData.metadata.packageNumber;
         }
         console.log(JSON.stringify(savedData.metadata));
-        console.log(JSON.stringify(event.metadata)); 
+        console.log(JSON.stringify(event.metadata));
         const previousMetadata = JSON.stringify(savedData.metadata, Object.keys(savedData.metadata).sort());
         const incomingMetadata = JSON.stringify(event.metadata, Object.keys(event.metadata).sort());
         if (!event.metadataOverride && previousMetadata !== incomingMetadata) {
@@ -57,6 +57,7 @@ export async function initializeWorkflow (event: OrchestratorWorkflowStatus) {
     }
 
     event.currentDate = new Date().getTime();
+    event['awsRegion'] = process.env.AWS_DEFAULT_REGION;
 
     // Save status to status table
     await dynamodb.put({
@@ -68,7 +69,7 @@ export async function initializeWorkflow (event: OrchestratorWorkflowStatus) {
     return event;
 }
 
-function getActivityForStage (stage: string, event: OrchestratorWorkflowStatus, setTimeout: any) {
+function getActivityForStage(stage: string, event: OrchestratorWorkflowStatus, setTimeout: any) {
     if (event.activities[stage]) {
         resetErrorStatusInActivity(event.activities[stage]);
         return;
@@ -116,14 +117,14 @@ function getActivityForStage (stage: string, event: OrchestratorWorkflowStatus, 
     };
 }
 
-function resetErrorStatusInActivity (activityStatus: OrchestratorActivityStatus): void {
+function resetErrorStatusInActivity(activityStatus: OrchestratorActivityStatus): void {
     activityStatus.status.state = OrchestratorComponentState.NotStarted;
     resetErrorStatusInSection(activityStatus.pre);
     resetErrorStatusInSection(activityStatus.async);
     resetErrorStatusInSection(activityStatus.post);
 }
 
-export function resetErrorStatusInSection (status: OrchestratorAsyncStatus| OrchestratorSyncStatus): void {
+export function resetErrorStatusInSection(status: OrchestratorAsyncStatus | OrchestratorSyncStatus): void {
     if (!status) {
         return;
     }
@@ -155,7 +156,7 @@ export function resetErrorStatusInSection (status: OrchestratorAsyncStatus| Orch
     }
 }
 
-export async function getActivity (event: OrchestratorWorkflowStatus): Promise<OrchestratorWorkflowStatus> {
+export async function getActivity(event: OrchestratorWorkflowStatus): Promise<OrchestratorWorkflowStatus> {
     console.log(`Attemting to retrieve previous workflow ('${event.uid}', '${event.workflow}')`);
     const ret = await dynamodb.get({
         TableName: process.env.statusTable,
