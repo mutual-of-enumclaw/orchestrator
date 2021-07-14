@@ -246,11 +246,12 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
 
-  RunStatusDdbGlobalTables:
-    Type: Custom::GlobalTable
+  ParamStatusTableName:
+    Type: AWS::SSM::Parameter
     Properties:
-      ServiceToken: !Ref DdbGlobalTableArn
-      TableName: !Sub ${StackTagName}-${StageName}-status
+      Type: String
+      Name: !Sub /${EnvironmentTagName}/orchestrator/tables/status/name
+      Value: !Sub ${StackTagName}-${StageName}-status
 
   Library:
     Type: AWS::Serverless::LayerVersion
