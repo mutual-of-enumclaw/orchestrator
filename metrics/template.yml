@@ -246,6 +246,7 @@ Resources:
       Environment:
         Variables:
           stateMachineArnstateMachineArn: !Ref StepFunction
+          WorkflowRegistry: !Ref s3Workflows
       Events:
         dynamodbTableMetrics:
           Type: DynamoDB
