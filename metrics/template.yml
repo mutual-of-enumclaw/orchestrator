@@ -245,7 +245,7 @@ Resources:
                 - !Ref StepFunction
       Environment:
         Variables:
-          stateMachineArnstateMachineArn: !Ref StepFunction
+          stateMachineArn: !Ref StepFunction
           WorkflowRegistry: !Ref s3Workflows
       Events:
         dynamodbTableMetrics:
