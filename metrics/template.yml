@@ -114,68 +114,58 @@ Resources:
                   - !GetAtt alertSupportTeam.Arn
                   - !Ref StatusTableArn
   StepFunction:
-    Type: AWS::StepFunctions::StateMachine
+    Type: AWS::Serverless::StateMachine
     Properties:
-      StateMachineName: !Ref StackTagName
-      RoleArn: !GetAtt StepFunctionRole.Arn
-      DefinitionString: !Sub |-
-        {
-          "Comment": "This state machine tracks if the bind process completes in a specific period of time",
-          "StartAt": "WaitForProcessing",
-          "States": {
-              "WaitForProcessing": {
-                  "Type":"Wait",
-                  "Seconds": 900,
-                  "Next":"UpdatePolicyStatus"
-              },
-              "UpdatePolicyStatus": {
-                  "Type":"Task",
-                  "Resource": "arn:aws:states:::dynamodb:getItem",
-                  "Parameters": {
-                      "TableName":"${StatusTableName}",
-                      "Key": {"uid":{"S.$": "$.uid"}, "workflow":{"S.$": "$.workflow"}}
-                  },
-                  "ResultPath":"$.dynamo",
-                  "Next":"ValidateStatus",
-                  "Retry": [
-                      {
-                          "ErrorEquals": [ "States.ALL" ],
-                          "IntervalSeconds": 1,
-                          "BackoffRate": 2.0,
-                          "MaxAttempts": 100
-                      }
-                  ]
-              },
-              "ValidateStatus": {
-                  "Type":"Choice",
-                  "Choices": [
-                      {
-                          "Variable": "$.dynamo.Item.status.M.state.S",
-                          "StringEquals":"Complete",
-                          "Next": "End"
-                      }
-                  ],
-                  "Default":"AlertSupportTeam"
-              },
-              "AlertSupportTeam": {
-                  "Type":"Task",
-                  "Resource":"${alertSupportTeam.Arn}",
-                  "Next":"WaitForProcessing",
-                  "Retry": [
-                      {
-                          "ErrorEquals": [ "States.ALL" ],
-                          "IntervalSeconds": 1,
-                          "BackoffRate": 2.0,
-                          "MaxAttempts": 100
-                      }
-                  ]
-              },
-              "End": {
-                  "Type":"Pass",
-                  "End":true
-              }
-          }
-        }
+      Name: !Ref StackTagName
+      Role: !GetAtt StepFunctionRole.Arn
+      Definition:
+        Comment:
+          This state machine tracks if the bind process completes in a specific period
+          of time
+        StartAt: WaitForProcessing
+        States:
+          WaitForProcessing:
+            Type: Wait
+            Seconds: 900
+            Next: UpdatePolicyStatus
+          UpdatePolicyStatus:
+            Type: Task
+            Resource: arn:aws:states:::dynamodb:getItem
+            Parameters:
+              TableName: !Ref StatusTableName
+              Key:
+                uid:
+                  S.$: $.uid
+                workflow:
+                  S.$: $.workflow
+            ResultPath: $.dynamo
+            Next: ValidateStatus
+            Retry:
+              - ErrorEquals:
+                  - States.ALL
+                IntervalSeconds: 1
+                BackoffRate: 2
+                MaxAttempts: 100
+          ValidateStatus:
+            Type: Choice
+            Choices:
+              - Variable: $.dynamo.Item.status.M.state.S
+                StringEquals: Complete
+                Next: End
+            Default: AlertSupportTeam
+          AlertSupportTeam:
+            Type: Task
+            Resource: !GetAtt alertSupportTeam.Arn
+            Next: WaitForProcessing
+            Retry:
+              - ErrorEquals:
+                  - States.ALL
+                IntervalSeconds: 1
+                BackoffRate: 2
+                MaxAttempts: 100
+          End:
+            Type: Pass
+            End: true
   reportMetrics:
     Type: AWS::Serverless::Function
     Properties:
@@ -260,10 +250,13 @@ Resources:
             - Effect: Allow
               Action:
                 - s3:PutObject
-                - states:StartExecution
               Resource:
                 - !GetAtt s3Workflows.Arn
                 - !Sub ${s3Workflows.Arn}/*
+            - Effect: Allow
+              Action:
+                - states:StartExecution
+              Resource:
                 - !Ref StepFunction
       Environment:
         Variables:
