@@ -36,6 +36,9 @@ Parameters:
   DeployedRegions:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/nucleus/deployedRegions
+  FailureMetric:
+    Type: ${self:custom.ParameterTypes.current}
+    Default: /<EnvironmentName>/orchestrator/metric
 
 Conditions:
   IsPrimaryRegion: !Equals
@@ -190,17 +193,26 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - dynamodb:Scan
                 - s3:ListBucket
               Resource:
                 - !GetAtt s3Workflows.Arn
                 - !Sub ${s3Workflows.Arn}/*
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+              Resource:
                 - !GetAtt dynamodbTableMetrics.Arn
             - Effect: Allow
               Action:
                 - cloudwatch:PutMetricData
               Resource:
                 - "*"
+      Environment:
+        Variables:
+          metricsTable: !Ref dynamodbTableMetrics
+          WorkflowRegistry: !Ref s3Workflows
+          metric: !Ref FailureMetric
+          metricNamespace: !Ref AWS::StackName
     Metadata:
       RuntimeOption: typescript
   alertSupportTeam:
@@ -215,14 +227,24 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - sns:publish
-                - dynamodb:PutItem
                 - s3:ListBucket
               Resource:
-                - !Ref snsTopicFailure
-                - !GetAtt dynamodbTableMetrics.Arn
                 - !GetAtt s3Workflows.Arn
                 - !Sub ${s3Workflows.Arn}/*
+            - Effect: Allow
+              Action:
+                - sns:publish
+              Resource:
+                - !Ref snsTopicFailure
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource:
+                - !GetAtt dynamodbTableMetrics.Arn
+      Environment:
+        Variables:
+          notificationArn: !Ref snsTopicFailure
+          metricsTable: !Ref dynamodbTableMetrics
     Metadata:
       RuntimeOption: typescript
   startValidStateMachine:
@@ -247,7 +269,6 @@ Resources:
         Variables:
           stateMachineArn: !Ref StepFunction
           WorkflowRegistry: !Ref s3Workflows
-          notificationArn: !Ref snsTopicFailure
       Events:
         dynamodbTableMetrics:
           Type: DynamoDB
