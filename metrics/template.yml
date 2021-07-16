@@ -37,7 +37,7 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/nucleus/deployedRegions
   FailureMetric:
-    Type: ${self:custom.ParameterTypes.current}
+    Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/orchestrator/metric
 
 Conditions:
