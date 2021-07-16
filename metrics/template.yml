@@ -36,6 +36,9 @@ Parameters:
   DeployedRegions:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/nucleus/deployedRegions
+  FailureMetric:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/orchestrator/metric
 
 Conditions:
   IsPrimaryRegion: !Equals
@@ -111,68 +114,58 @@ Resources:
                   - !GetAtt alertSupportTeam.Arn
                   - !Ref StatusTableArn
   StepFunction:
-    Type: AWS::StepFunctions::StateMachine
+    Type: AWS::Serverless::StateMachine
     Properties:
-      StateMachineName: !Ref StackTagName
-      RoleArn: !GetAtt StepFunctionRole.Arn
-      DefinitionString: !Sub |-
-        {
-          "Comment": "This state machine tracks if the bind process completes in a specific period of time",
-          "StartAt": "WaitForProcessing",
-          "States": {
-              "WaitForProcessing": {
-                  "Type":"Wait",
-                  "Seconds": 900,
-                  "Next":"UpdatePolicyStatus"
-              },
-              "UpdatePolicyStatus": {
-                  "Type":"Task",
-                  "Resource": "arn:aws:states:::dynamodb:getItem",
-                  "Parameters": {
-                      "TableName":"${StatusTableName}",
-                      "Key": {"uid":{"S.$": "$.uid"}, "workflow":{"S.$": "$.workflow"}}
-                  },
-                  "ResultPath":"$.dynamo",
-                  "Next":"ValidateStatus",
-                  "Retry": [
-                      {
-                          "ErrorEquals": [ "States.ALL" ],
-                          "IntervalSeconds": 1,
-                          "BackoffRate": 2.0,
-                          "MaxAttempts": 100
-                      }
-                  ]
-              },
-              "ValidateStatus": {
-                  "Type":"Choice",
-                  "Choices": [
-                      {
-                          "Variable": "$.dynamo.Item.status.M.state.S",
-                          "StringEquals":"Complete",
-                          "Next": "End"
-                      }
-                  ],
-                  "Default":"AlertSupportTeam"
-              },
-              "AlertSupportTeam": {
-                  "Type":"Task",
-                  "Resource":"${alertSupportTeam.Arn}",
-                  "Next":"WaitForProcessing",
-                  "Retry": [
-                      {
-                          "ErrorEquals": [ "States.ALL" ],
-                          "IntervalSeconds": 1,
-                          "BackoffRate": 2.0,
-                          "MaxAttempts": 100
-                      }
-                  ]
-              },
-              "End": {
-                  "Type":"Pass",
-                  "End":true
-              }
-          }
-        }
+      Name: !Ref StackTagName
+      Role: !GetAtt StepFunctionRole.Arn
+      Definition:
+        Comment:
+          This state machine tracks if the bind process completes in a specific period
+          of time
+        StartAt: WaitForProcessing
+        States:
+          WaitForProcessing:
+            Type: Wait
+            Seconds: 900
+            Next: UpdatePolicyStatus
+          UpdatePolicyStatus:
+            Type: Task
+            Resource: arn:aws:states:::dynamodb:getItem
+            Parameters:
+              TableName: !Ref StatusTableName
+              Key:
+                uid:
+                  S.$: $.uid
+                workflow:
+                  S.$: $.workflow
+            ResultPath: $.dynamo
+            Next: ValidateStatus
+            Retry:
+              - ErrorEquals:
+                  - States.ALL
+                IntervalSeconds: 1
+                BackoffRate: 2
+                MaxAttempts: 100
+          ValidateStatus:
+            Type: Choice
+            Choices:
+              - Variable: $.dynamo.Item.status.M.state.S
+                StringEquals: Complete
+                Next: End
+            Default: AlertSupportTeam
+          AlertSupportTeam:
+            Type: Task
+            Resource: !GetAtt alertSupportTeam.Arn
+            Next: WaitForProcessing
+            Retry:
+              - ErrorEquals:
+                  - States.ALL
+                IntervalSeconds: 1
+                BackoffRate: 2
+                MaxAttempts: 100
+          End:
+            Type: Pass
+            End: true
   reportMetrics:
     Type: AWS::Serverless::Function
     Properties:
@@ -190,17 +183,26 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - dynamodb:Scan
                 - s3:ListBucket
               Resource:
                 - !GetAtt s3Workflows.Arn
                 - !Sub ${s3Workflows.Arn}/*
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+              Resource:
                 - !GetAtt dynamodbTableMetrics.Arn
             - Effect: Allow
               Action:
                 - cloudwatch:PutMetricData
               Resource:
                 - "*"
+      Environment:
+        Variables:
+          metricsTable: !Ref dynamodbTableMetrics
+          WorkflowRegistry: !Ref s3Workflows
+          metric: !Ref FailureMetric
+          metricNamespace: !Ref AWS::StackName
     Metadata:
       RuntimeOption: typescript
   alertSupportTeam:
@@ -215,14 +217,24 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - sns:publish
-                - dynamodb:PutItem
                 - s3:ListBucket
               Resource:
-                - !Ref snsTopicFailure
-                - !GetAtt dynamodbTableMetrics.Arn
                 - !GetAtt s3Workflows.Arn
                 - !Sub ${s3Workflows.Arn}/*
+            - Effect: Allow
+              Action:
+                - sns:publish
+              Resource:
+                - !Ref snsTopicFailure
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource:
+                - !GetAtt dynamodbTableMetrics.Arn
+      Environment:
+        Variables:
+          notificationArn: !Ref snsTopicFailure
+          metricsTable: !Ref dynamodbTableMetrics
     Metadata:
       RuntimeOption: typescript
   startValidStateMachine:
@@ -238,14 +250,18 @@ Resources:
             - Effect: Allow
               Action:
                 - s3:PutObject
-                - states:StartExecution
               Resource:
                 - !GetAtt s3Workflows.Arn
                 - !Sub ${s3Workflows.Arn}/*
+            - Effect: Allow
+              Action:
+                - states:StartExecution
+              Resource:
                 - !Ref StepFunction
       Environment:
         Variables:
-          stateMachineArnstateMachineArn: !Ref StepFunction
+          stateMachineArn: !Ref StepFunction
+          WorkflowRegistry: !Ref s3Workflows
       Events:
         dynamodbTableMetrics:
           Type: DynamoDB
