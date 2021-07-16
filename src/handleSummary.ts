@@ -19,7 +19,7 @@ export class StatusSummary {
     public optionalError: boolean;
     public notStarted: boolean;
 
-    constructor () {
+    constructor() {
         this.error = false;
         this.optionalError = false;
         this.complete = true;
@@ -27,7 +27,7 @@ export class StatusSummary {
         this.notStarted = true;
     }
 
-    public getState (): OrchestratorComponentState {
+    public getState(): OrchestratorComponentState {
         let state: OrchestratorComponentState = OrchestratorComponentState.NotStarted;
         if (this.error) {
             state = OrchestratorComponentState.Error;
@@ -43,7 +43,7 @@ export class StatusSummary {
         return state;
     }
 
-    public updateState (state: OrchestratorComponentState) {
+    public updateState(state: OrchestratorComponentState) {
         if (state !== OrchestratorComponentState.NotStarted) {
             this.notStarted = false;
         }
@@ -51,16 +51,16 @@ export class StatusSummary {
             this.optionalError = true;
         }
         if (state !== OrchestratorComponentState.Complete) {
-        // console.log('State not complete ' + state);
+            // console.log('State not complete ' + state);
             this.complete = false;
         }
         if (!(state === OrchestratorComponentState.Complete ||
             state === OrchestratorComponentState.MandatoryCompleted)) {
-        // console.log('State not mandatory complete ' + state);
+            // console.log('State not mandatory complete ' + state);
             this.mandatoryComplete = false;
         }
         if (state === OrchestratorComponentState.Error) {
-        // console.log('State is error');
+            // console.log('State is error');
             this.error = true;
         }
     }
@@ -84,7 +84,7 @@ export const updateActivityStatus = lambdaWrapperAsync(async (event: DynamoDBStr
     await Promise.all(promises);
 });
 
-function deDupe (records: DynamoDBRecord[]): DynamoDBRecord[] {
+function deDupe(records: DynamoDBRecord[]): DynamoDBRecord[] {
     const toProcess = {};
     records.forEach(record => {
         if (record.dynamodb.NewImage && record.dynamodb.NewImage.uid.S) {
@@ -94,13 +94,13 @@ function deDupe (records: DynamoDBRecord[]): DynamoDBRecord[] {
     return Object.values(toProcess);
 }
 
-function setFieldName (name: string, fieldNames: any) {
+function setFieldName(name: string, fieldNames: any) {
     if (!fieldNames['#' + name]) {
         fieldNames['#' + name] = name;
     }
 }
 
-async function processRecord (record: DynamoDBRecord) {
+async function processRecord(record: DynamoDBRecord) {
     const streamDate = new Date(new Date('1/1/1970').getTime() + (record.dynamodb.ApproximateCreationDateTime * 1000));
     console.log(`Stream time: ${streamDate.toString()}`);
     const statusObj = DynamoDB.Converter.unmarshall(record.dynamodb.NewImage) as OrchestratorWorkflowStatus;
@@ -129,6 +129,11 @@ async function processRecord (record: DynamoDBRecord) {
         statusObj.status.state = workflowState;
     }
 
+    if (updates.length > 0) {
+        updates.push('awsRegion = :awsRegion');
+        attributes[':awsRegion'] = process.env.AWS_DEFAULT_REGION;
+    }
+
     let expression = '';
     for (const i in updates) {
         const item = updates[i];
@@ -137,6 +142,7 @@ async function processRecord (record: DynamoDBRecord) {
         }
         expression += item;
     }
+
 
     if (expression) {
         const params = {
@@ -151,7 +157,7 @@ async function processRecord (record: DynamoDBRecord) {
     }
 }
 
-export async function validateActivity (
+export async function validateActivity(
     activity: string, statusObj: { [key: string]: OrchestratorActivityStatus }, workflowStatus: StatusSummary,
     updates: string[], attributes: any, fieldNames: any, overall: OrchestratorWorkflowStatus,
     streamDate: Date): Promise<OrchestratorActivityStatus> {
@@ -190,7 +196,7 @@ export async function validateActivity (
     return activityStatus;
 }
 
-async function validateActivityStages (
+async function validateActivityStages(
     activity: string, activityStatus: OrchestratorActivityStatus,
     updates: string[], attributes: any, fieldNames: any, overall: OrchestratorWorkflowStatus,
     streamDate: Date) {
@@ -201,7 +207,7 @@ async function validateActivityStages (
     ]);
 }
 
-export async function validateStage (
+export async function validateStage(
     activity: string, activityStatus: OrchestratorActivityStatus,
     updates: string[], attributes: any, fieldNames: any, stage: string, overall: OrchestratorWorkflowStatus,
     streamDate: Date) {
