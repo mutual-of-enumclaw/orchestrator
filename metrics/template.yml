@@ -247,6 +247,7 @@ Resources:
         Variables:
           stateMachineArn: !Ref StepFunction
           WorkflowRegistry: !Ref s3Workflows
+          notificationArn: !Ref snsTopicFailure
       Events:
         dynamodbTableMetrics:
           Type: DynamoDB
