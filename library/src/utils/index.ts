@@ -4,3 +4,4 @@ export * from './pluginRegistrationTimeout';
 export * from './snsUtils';
 export * from './metricsReporting';
 export * from './workflowRegister';
+export * from './regionUtils';
