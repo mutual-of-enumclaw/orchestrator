@@ -3,7 +3,7 @@
     "author": "Mutual of Enumclaw",
     "publisher": "Mutual of Enumclaw",
     "license": "LGPLv3",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "description": "The core data and related processing for orchestrators",
     "engines": {
         "node": ">=12.0.0"
@@ -36,7 +36,7 @@
         "@moe-tech/orch-utils": "file:orch-utils",
         "@types/aws-lambda": "^8.10.64",
         "@types/jest": "^23.3.9",
-        "@types/node": "^10.17.49",
+        "@types/node": "^10.17.60",
         "@typescript-eslint/eslint-plugin": "^4.8.2",
         "@typescript-eslint/parser": "^4.8.2",
         "eslint": "^7.14.0",
