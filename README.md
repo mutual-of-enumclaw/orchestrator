@@ -22,7 +22,7 @@ package | version
 
 # Setup
 
-The build command has a pre-build step that will install your dependencies.
+The build command has a pre-build step that will install your dependencies automatically. Don't use `npm i` yourself unless your having issues with the packages.
 
 ```bash
 npm run build
