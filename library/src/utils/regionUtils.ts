@@ -1,3 +1,6 @@
+/**
+ * Ensure you trim, string, and split the deployed regions prior to passing in: process.env.DeployedRegions?.trim().toString().split(',');
+ */
 export function skipForRegion(rawImage: any, awsRegion: string, deployedRegions: string[], logger: any, logType: any, errorObj: any): Boolean {
     const currentRegion = awsRegion;
     let recordRegion = rawImage['awsRegion'];
