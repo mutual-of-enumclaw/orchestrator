@@ -8,7 +8,6 @@
         "moduleResolution": "node",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        "types": ["node", "jest"],
         "target": "es6",
         "typeRoots": [
             "node_modules/@types"
@@ -18,7 +17,6 @@
     },
     "include": [
         "./src/**/*",
-        "./library/**/*",
         "./metrics/src/**/*"
     ],
     "exclude": [
