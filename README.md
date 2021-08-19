@@ -4,7 +4,7 @@
 
 package | version
 --- | ---
-@moe-tech/orchestrator | 2.0.0
+@moe-tech/orchestrator | 2.0.2
 
 <br/><br/>
 
@@ -19,6 +19,13 @@ package | version
 - [Example Implementation](./examples/simple-step-workflow)
 
 <br/>
+
+# Setup
+
+```bash
+# This will run the pre install script that should install and build everything for the project
+npm i
+```
 
 # Deploying the Orchestrator
 

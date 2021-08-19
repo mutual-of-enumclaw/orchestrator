@@ -9,10 +9,11 @@
         "moduleResolution": "node",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        "types": ["node"],
+        "types": ["node", "jest"],
         "target": "es6",
         "typeRoots": [
-            "node_modules/@types"
+            "node_modules/@types",
+            "node_modules/jest"
         ],
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true
