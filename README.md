@@ -22,9 +22,10 @@ package | version
 
 # Setup
 
+The build command has a pre-build step that will install your dependencies.
+
 ```bash
-# This will run the pre install script that should install and build everything for the project
-npm i
+npm run build
 ```
 
 # Deploying the Orchestrator
