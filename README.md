@@ -22,6 +22,8 @@ package | version
 
 # Setup
 
+Ensure you are using NPM v6.
+
 The build command has a pre-build step that will install your dependencies automatically. Don't use `npm i` yourself unless your having issues with the packages.
 
 ```bash
