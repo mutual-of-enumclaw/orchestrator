@@ -15,7 +15,6 @@
         "build": "tsc -d -p src",
         "pretest": "tsc -d -p library/src",
         "test": "npx jest",
-        "lt": "npm run lint && npm run test",
         "installTypescript": "npm i typescript@latest -g",
         "installHS": "npm i --prefix src && tsc -d -p src",
         "installUtils": "npm i --prefix orch-utils",
