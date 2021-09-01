@@ -4,7 +4,7 @@
 
 package | version
 --- | ---
-@moe-tech/orchestrator | 2.0.0
+@moe-tech/orchestrator | 2.0.2
 
 <br/><br/>
 
@@ -19,6 +19,16 @@ package | version
 - [Example Implementation](./examples/simple-step-workflow)
 
 <br/>
+
+# Setup
+
+Ensure you are using NPM v6.
+
+The build command has a pre-build step that will install your dependencies automatically. Don't use `npm i` yourself unless your having issues with the packages.
+
+```bash
+npm run build
+```
 
 # Deploying the Orchestrator
 

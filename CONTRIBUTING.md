@@ -35,7 +35,7 @@ You can do that by replying to [issues on Jira](https://mutualofenumclaw.atlassi
 
 # Code Style
 
-We aim for clean, consistent code style. We're using ESlint to check for codestyle issues (you can run `npm run lt` to lint your code).
+We aim for clean, consistent code style. We're using ESlint to check for codestyle issues.
 
 To help reduce the effort of creating contributions with this style, an [.editorconfig file](http://editorconfig.org/) is provided that your editor may use to override any conflicting global defaults and automate a subset of the style settings.
 
@@ -45,7 +45,7 @@ We aim for a (near) 100% test coverage, so make sure your tests cover as much of
 
 ## Test coverage
 
-During development, you can easily check coverage by running `npm run lt`, then opening the `index.html` file inside the `coverage` directory.
+During development, you can easily check coverage by running `npm run test`, then opening the `index.html` file inside the `coverage` directory.
 
 Please follow these Testing guidelines when writing your unit tests:
 

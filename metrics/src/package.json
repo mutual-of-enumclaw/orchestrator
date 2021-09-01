@@ -1,7 +1,6 @@
 {
     "name": "@moe-tech/orch-metrics",
     "version": "1.0.0",
-    "dependencies": {},
     "devDependencies": {
         "@moe-tech/orchestrator": "file:../../library/src",
         "@types/aws-lambda": "^8.10.64",
