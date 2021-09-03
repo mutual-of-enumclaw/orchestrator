@@ -14,7 +14,7 @@
         "prebuild": "npm run installLibrary && npm run installHS && npm run installActivity && npm run installMetrics",
         "build": "tsc -d -p src",
         "pretest": "tsc -d -p library/src",
-        "test": "npx jest",
+        "test": "node --max_old_space_size=4096 ./node_modules/jest/bin/jest.js --silent --runInBand --logHeapUsage",
         "installTypescript": "npm i typescript@latest -g",
         "installHS": "npm i --prefix src && tsc -d -p src",
         "installUtils": "npm i --prefix orch-utils",
