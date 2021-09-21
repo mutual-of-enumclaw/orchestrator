@@ -241,6 +241,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${StackTagName}-startValidStateMachine
+      MemorySize: 256
       Handler: dist/startValidationStateMachine.handler
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
