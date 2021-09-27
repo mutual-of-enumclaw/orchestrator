@@ -209,6 +209,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${StackTagName}-alertSupportTeam
+      MemorySize: 256
       Handler: dist/alertSupportTeam.handler
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
