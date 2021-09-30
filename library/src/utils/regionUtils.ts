@@ -2,6 +2,11 @@
  * Ensure you trim, string, and split the deployed regions prior to passing in: process.env.DeployedRegions?.trim().toString().split(',');
  */
 export function skipForRegion(rawImage: any, awsRegion: string, deployedRegions: string[], logger: any, logType: any, errorObj: any): Boolean {
+    // likely a DELETE record, exit function
+    if (Object.keys(rawImage).length === 0) {
+        return false;
+    }
+
     const currentRegion = awsRegion;
     let recordRegion = rawImage['awsRegion'];
 
@@ -11,11 +16,6 @@ export function skipForRegion(rawImage: any, awsRegion: string, deployedRegions:
 
     if (deployedRegions.indexOf(currentRegion) === -1) {
         throw new Error(`Region ${currentRegion} not in deployed regions list: ${deployedRegions}`);
-    }
-
-    // likely a DELETE record, exit function
-    if (Object.keys(rawImage).length === 0) {
-        return false;
     }
 
     if (deployedRegions.indexOf(recordRegion) === -1) {
