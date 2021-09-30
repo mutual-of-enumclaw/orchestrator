@@ -13,6 +13,11 @@ export function skipForRegion(rawImage: any, awsRegion: string, deployedRegions:
         throw new Error(`Region ${currentRegion} not in deployed regions list: ${deployedRegions}`);
     }
 
+    // likely a DELETE record, exit function
+    if (Object.keys(rawImage).length === 0) {
+        return false;
+    }
+
     if (deployedRegions.indexOf(recordRegion) === -1) {
         const err = `awsRegion ${recordRegion} is invalid. Defaulting to the deployed primary region: ${deployedRegions[0]}`;
 
