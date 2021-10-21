@@ -24,10 +24,10 @@ describe('updateActivityStatus', () => {
         process.env.AWS_REGION = "us-west-2";
         process.env.DeployedRegions = "us-west-2";
         testRunInRegionSetup({
-          envStage: "snd",
-          currentRegion: "us-west-2",
-          primaryRegion: "us-west-2",
-          activeRegions: ["us-west-2", "us-east-1"],
+            envStage: "snd",
+            currentRegion: "us-west-2",
+            primaryRegion: "us-west-2",
+            activeRegions: ["us-west-2", "us-east-1"],
       });
     });
     beforeEach(() => {
@@ -68,9 +68,9 @@ describe('updateActivityStatus', () => {
         
         const event = createBasicEvent();
         event.Records[0].dynamodb.NewImage.activities.M.Rate.M
-        .pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            .pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
         event.Records[0].dynamodb.NewImage.activities.M.Rate.M
-        .post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+            .post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
         const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
         mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
         await updateActivityStatus(event);
