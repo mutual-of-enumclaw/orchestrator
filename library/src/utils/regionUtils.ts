@@ -1,56 +1,67 @@
+import { SSM } from "aws-sdk";
+import { GetParameterRequest,GetParameterResult } from "aws-sdk/clients/ssm"; // TS Types
+
+let envStage: string = process.env.StageName; // EX. "snd"
+let currentRegion: string = process.env.AWS_REGION;
+let ssm = new SSM();
+
+export function setEnvStage(object: any) { envStage = object; }
+export function setCurrentRegion(object: any) { currentRegion = object; }
+export function setSsm(object: any) { ssm = object; }
+export interface AppRegions {
+    primaryRegion: string
+    activeRegions: string
+}
+
 /**
- * Ensure you trim, string, and split the deployed regions prior to passing in: process.env.DeployedRegions?.trim().toString().split(',');
+ * Util function that returns true if the current region is the primaryRegion and in activeRegions.
+ * This is determined using the SSM Parameter: /${envStage}/nucleus/disasterRecovery/appRegions
  */
-export function skipForRegion(rawImage: any, awsRegion: string, deployedRegions: string[], logger: any, logType: any, errorObj: any): Boolean {
-    if (logger) {
-        logger({ rawImage, awsRegion, deployedRegions });
-    } else {
-        console.log({ rawImage, awsRegion, deployedRegions });
-    }
+export async function runInRegion(): Promise<Boolean> {
+    try {
+        if (!envStage || typeof envStage !== 'string') {
+            const errorMessage = `runInRegion must have a valid envStage. Not this: ${envStage}`;
+            throw new Error(errorMessage);  
+        }
+        if (!currentRegion || typeof currentRegion !== 'string') {
+            const errorMessage = `runInRegion must have a valid currentRegion. Not this: ${currentRegion}`;
+            throw new Error(errorMessage);
+        }
+    
+        const ssmRequest: GetParameterRequest = {
+            Name: `/${envStage}/nucleus/disasterRecovery/appRegions`,
+            WithDecryption: false,
+          };
+        const ssmResult: GetParameterResult = await ssm.getParameter(ssmRequest).promise();
+        if (!ssmResult) {
+            const errorMessage = `runInRegion must have a valid Parameter Store result. Not this: ${ssmResult}`;
+            throw new Error(errorMessage);
+        }
+    
+        console.log(`runInRegion details - envStage: ${envStage}, currentRegion: ${currentRegion}`);
+        console.log(ssmResult);
+        
+        const parameterValue: string = ssmResult?.Parameter?.Value;
+        if (!parameterValue) {
+            const errorMessage = `runInRegion must retrieve a valid Parameter Store value. Not this: ${ssmResult}`;
+            throw new Error(errorMessage);
+        }
 
-    // likely a DELETE record, exit function
-    if (Object.keys(rawImage).length === 0) {
+        const parameterObj: AppRegions = JSON.parse(parameterValue);
+        if (!parameterObj.primaryRegion || !parameterObj.activeRegions) {
+            const errorMessage = `runInRegion must have correct properties in Parameter Store value. Not this: ${parameterObj}`;
+            throw new Error(errorMessage);
+        }
+
+        // Continue if the region is the primaryRegion and in activeRegions
+        const isPrimaryRegion = parameterObj.primaryRegion === currentRegion;
+        const isRegionActive = parameterObj.activeRegions.indexOf(currentRegion) !== -1;
+        if (isPrimaryRegion && isRegionActive) {
+            return true;
+        }
+
         return false;
+    } catch(error) {
+        throw error;
     }
-
-    const currentRegion = awsRegion;
-    let recordRegion = rawImage['awsRegion'];
-
-    if (!deployedRegions || deployedRegions.length !== 2) {
-        return false;
-    }
-
-    if (deployedRegions.indexOf(currentRegion) === -1) {
-        throw new Error(`Region ${currentRegion} not in deployed regions list: ${deployedRegions}`);
-    }
-
-    if (deployedRegions.indexOf(recordRegion) === -1) {
-        const err = `awsRegion ${recordRegion} is invalid. Defaulting to the deployed primary region: ${deployedRegions[0]}`;
-
-        if (logger) {
-            logger({ err, currentRegion, deployedRegions, recordRegion, rawImage });
-        } else {
-            console.log({ err, currentRegion, deployedRegions, recordRegion, rawImage });
-        }
-
-        if (errorObj) {
-            errorObj(new Error(err))
-        } else {
-            console.error(new Error(err))
-        }
-
-        recordRegion = deployedRegions[0];
-    }
-
-    if (recordRegion !== currentRegion) {
-        if (logger && logType) {
-            logger(`Skipping replication event. awsRegion: ${recordRegion}`, logType.INFO);
-        } else {
-            console.log(`Skipping replication event. awsRegion: ${recordRegion}`);
-        }
-
-        return true;
-    }
-
-    return false;
 }

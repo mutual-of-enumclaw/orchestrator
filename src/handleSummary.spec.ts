@@ -6,6 +6,7 @@ import { MockDynamoDb, MockStepFunctions } from '@moe-tech/orchestrator/__mock__
 import { OrchestratorComponentState, OrchestratorActivityStatus, OrchestratorPluginDal, OrchestratorStatusDal } from '@moe-tech/orchestrator';
 import { MockOrchestratorPluginDal, MockOrchestratorStatusDal } from '@moe-tech/orchestrator/__mock__/dals';
 import { DynamoDB, StepFunctions } from 'aws-sdk';
+import { testRunInRegionSetup } from "@moe-tech/orchestrator/__mock__/runInRegion";
 
 process.env.environment = 'unit-test';
 const dynamoDal = new MockDynamoDb(DynamoDB.DocumentClient);
@@ -20,6 +21,14 @@ console.log = () => { };
 describe('updateActivityStatus', () => {
     beforeAll(() => {
         global.gc && global.gc()
+        process.env.AWS_REGION = "us-west-2";
+        process.env.DeployedRegions = "us-west-2";
+        testRunInRegionSetup({
+          envStage: "snd",
+          currentRegion: "us-west-2",
+          primaryRegion: "us-west-2",
+          activeRegions: ["us-west-2", "us-east-1"],
+      });
     });
     beforeEach(() => {
         stepFunctions.reset();
@@ -53,6 +62,20 @@ describe('updateActivityStatus', () => {
     test('Basic - no change to status', async () => {
         await updateActivityStatus(createBasicEvent());
         expect(dynamoDal.update).toBeCalledTimes(0);
+    });
+
+    test('If workflow started in current region then only run updateStatus function', async () => {
+        
+        const event = createBasicEvent();
+        event.Records[0].dynamodb.NewImage.activities.M.Rate.M
+        .pre.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+        event.Records[0].dynamodb.NewImage.activities.M.Rate.M
+        .post.M.mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+        const mandatory = event.Records[0].dynamodb.NewImage.activities.M.Rate.M.async.M.mandatory;
+        mandatory.M.test.M.state.S = OrchestratorComponentState.Complete;
+        await updateActivityStatus(event);
+
+        expect(dynamoDal.update).toBeCalled();
     });
 
     describe('deDupe', () => {
