@@ -31,7 +31,7 @@ export async function runInRegion(): Promise<Boolean> {
         const ssmRequest: GetParameterRequest = {
             Name: `/${envStage}/nucleus/disasterRecovery/appRegions`,
             WithDecryption: false,
-          };
+        };
         const ssmResult: GetParameterResult = await ssm.getParameter(ssmRequest).promise();
         if (!ssmResult) {
             const errorMessage = `runInRegion must have a valid Parameter Store result. Not this: ${ssmResult}`;

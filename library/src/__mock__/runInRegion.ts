@@ -34,13 +34,13 @@ const testParamMocker = (envStage: string, primaryRegion: string, activeRegions:
 
 const ssmMocker = (ssmMockSetup: SsmMockSetup) => {
     return {
-      getParameter: (_params) => ({
-        promise: () => new Promise((res, _rej) => {
-          res(testParamMocker(ssmMockSetup.envStage, ssmMockSetup.primaryRegion, ssmMockSetup.activeRegions));
-        })
-      }),
+        getParameter: (_params) => ({
+            promise: () => new Promise((res, _rej) => {
+                res(testParamMocker(ssmMockSetup.envStage, ssmMockSetup.primaryRegion, ssmMockSetup.activeRegions));
+            })
+        }),
     };
-  };
+};
 export const testRunInRegionSetup = ({
     envStage,
     currentRegion,

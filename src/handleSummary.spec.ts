@@ -28,7 +28,7 @@ describe('updateActivityStatus', () => {
             currentRegion: "us-west-2",
             primaryRegion: "us-west-2",
             activeRegions: ["us-west-2", "us-east-1"],
-      });
+        });
     });
     beforeEach(() => {
         stepFunctions.reset();
