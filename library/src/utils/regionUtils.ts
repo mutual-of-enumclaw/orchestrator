@@ -15,7 +15,7 @@ export interface AppRegions {
 
 /**
  * Util function that returns true if the current region is the primaryRegion and in activeRegions.
- * This is determined using the SSM Parameter: /${envStage}/nucleus/disasterRecovery/appRegions
+ * This is determined using the SSM Parameter: /${envStage}/disasterRecovery/appRegions
  */
 export async function runInRegion(): Promise<Boolean> {
     try {

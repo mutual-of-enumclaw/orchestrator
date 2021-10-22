@@ -77,9 +77,7 @@ export const updateActivityStatus = lambdaWrapperAsync(async (event: DynamoDBStr
     }
 
     // Check if the transaction did not originate in current Region Skip transaction 
-    const skipRegion = await runInRegion();
-    console.log(`RunInRegion function returned ${skipRegion}`);
-    if (skipRegion === false) {
+    if (await runInRegion() === false) {
         console.log(`Skipping the update as the function was not started in this region`);
         return;
     }
