@@ -29,7 +29,7 @@ export async function runInRegion(): Promise<Boolean> {
         }
     
         const ssmRequest: GetParameterRequest = {
-            Name: `/${envStage}/nucleus/disasterRecovery/appRegions`,
+            Name: `/${envStage}/disasterRecovery/appRegions`,
             WithDecryption: false,
         };
         const ssmResult: GetParameterResult = await ssm.getParameter(ssmRequest).promise();

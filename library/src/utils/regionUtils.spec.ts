@@ -17,7 +17,7 @@ interface SsmMockSetup {
 }
 
 const paramNameMocker = (envStage: string) => {
-    return `/${envStage}/nucleus/disasterRecovery/appRegions`;
+    return `/${envStage}/disasterRecovery/appRegions`;
 }
 
 const paramValueMocker = (primaryRegion: string, activeRegions: string[]) => {
