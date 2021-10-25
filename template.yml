@@ -123,6 +123,7 @@ Resources:
             - !Ref StatusTable
             - !GetAtt RunStatusDdbGlobalTables.TableName
           traceConfig: !GetAtt OrchestratorResource.Config
+          StageName: !Ref EnvironmentTagName
       Policies:
         - Statement:
             - Effect: Allow
@@ -144,6 +145,12 @@ Resources:
                 - states:SendTaskSuccess
                 - states:SendTaskFailure
               Resource: "*"
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParametersByPath
+              Resource:
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*   
       Events:
         StatusTable:
           Type: DynamoDB

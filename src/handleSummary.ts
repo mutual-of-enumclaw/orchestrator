@@ -10,6 +10,7 @@ import {
     OrchestratorStatusDal, OrchestratorPluginDal,
     lambdaWrapperAsync, setError
 } from '@moe-tech/orchestrator';
+import {runInRegion } from "@moe-tech/orchestrator/utils/regionUtils";
 import { DynamoDB, StepFunctions } from 'aws-sdk';
 
 export class StatusSummary {
@@ -72,6 +73,12 @@ const stepfunctions = new StepFunctions();
 export const updateActivityStatus = lambdaWrapperAsync(async (event: DynamoDBStreamEvent) => {
     console.log(JSON.stringify(event));
     if (!event || !event.Records) {
+        return;
+    }
+
+    // Check if the transaction did not originate in current Region Skip transaction 
+    if (await runInRegion() === false) {
+        console.log(`Skipping the update as the function was not started in this region`);
         return;
     }
 
