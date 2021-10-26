@@ -8,9 +8,8 @@ import {
     OrchestratorWorkflowStatus, OrchestratorStage,
     getPluginRegisterTimeout,
     OrchestratorStatusDal, OrchestratorPluginDal,
-    lambdaWrapperAsync, setError
+    lambdaWrapperAsync, setError, runInRegion
 } from '@moe-tech/orchestrator';
-import {runInRegion } from "@moe-tech/orchestrator/utils/regionUtils";
 import { DynamoDB, StepFunctions } from 'aws-sdk';
 
 export class StatusSummary {
