@@ -1,0 +1,14 @@
+version=0.1
+[default.deploy.parameters]
+base_stack = "orchestrator";
+s3_bucket = "REPLACE_ME"
+s3_prefix = "sam/local/orchestrator"
+region = "us-west-2"
+confirm_changeset = "false"
+capabilities = "CAPABILITY_IAM"
+tags = "environment=\"test\" STAGE=\"test\""
+environment = "test"
+env_aware = "true"
+parm_layer = "true"
+debug_api_port = "8080"
+

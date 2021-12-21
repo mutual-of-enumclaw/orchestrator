@@ -1,33 +1,38 @@
 {
-    "compileOnSave": true,
-    "compilerOptions": {
-        "baseUrl": ".",
-        "outDir": "dist",
-        "sourceMap": true,
-        "declaration": true,
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "types": ["node", "jest"],
-        "target": "es6",
-        "typeRoots": [
-            "node_modules/@types",
-            "node_modules/jest"
-        ],
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true
-    },
-    "include": [
-        "./__mock__",
-        "./dataAccessLayers",
-        "./types",
-        "./utils",
-        "./index.ts"
+  "compileOnSave": true,
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "dist",
+    "sourceMap": true,
+    "declaration": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "types": [
+      "node",
+      "jest"
     ],
-    "exclude": [
-        "./dist",
-        "./node_modules",
-        "**/*.spec.ts"
-    ]
+    "target": "es6",
+    "typeRoots": [
+      "node_modules/@types",
+      "node_modules/jest"
+    ],
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "./__mock__",
+    "./dataAccessLayers",
+    "./types",
+    "./utils",
+    "./index.ts"
+  ],
+  "exclude": [
+    "./dist",
+    "./node_modules",
+    "**/*.spec.ts",
+    "dist/**/*",
+    "node_modules/**/*"
+  ]
 }

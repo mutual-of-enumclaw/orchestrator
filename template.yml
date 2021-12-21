@@ -266,7 +266,7 @@ Resources:
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Layer ${ResourceName}
         - ResourceName: library
-      ContentUri: library
+      ContentUri: .
       RetentionPolicy: Retain
     Metadata:
       BuildMethod: nodejs12.x

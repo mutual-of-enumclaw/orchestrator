@@ -76,4 +76,5 @@ dist
 **/src/**/*.d.ts
 
 # AWS SAM CLI
-samconfig.toml
+# samconfig.toml
+.build
