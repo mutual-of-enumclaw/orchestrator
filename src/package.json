@@ -1,8 +1,8 @@
 {
     "name": "orchestrator-core",
     "version": "1.0.0",
-    "devDependencies": {
-    },
     "dependencies": {
+        "@moe-tech/orchestrator": "file:../library/src",
+        "cfn-response-promise": "^1.1.0"
     }
 }

@@ -46,7 +46,7 @@
         "jest": "^26.6.3",
         "jest-junit": "^7.0.0",
         "rimraf": "^3.0.2",
-        "samtsc": "file:../../../samtsc",
+        "samtsc": "^1.0.63",
         "serverless-webpack": "^5.3.5",
         "source-map-support": "^0.5.13",
         "ts-jest": "^26.4.4",
