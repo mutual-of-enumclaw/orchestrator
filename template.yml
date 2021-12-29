@@ -354,18 +354,18 @@ Resources:
           - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
           - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
 
-    ##
+  ##
   ## Start Activities Section
   ##
 
-  activityRate:
+  activityStep1:
     Type: AWS::Serverless::Application
     DependsOn: OrchestratorResource
     Properties:
       Location: activity/template.yml
       Parameters:
         ParentStackName: !Ref AWS::StackName
-        Name: "Rate"
+        Name: "Step1"
         EnvironmentTagName: !Ref EnvironmentTagName
         StatusTableName: !If
           - IsPrimaryRegion
@@ -378,20 +378,18 @@ Resources:
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
+        OrchestratorConfig: !Sub
+          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+          - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
 
-  activityCancel:
+  activityStep2:
     Type: AWS::Serverless::Application
     DependsOn: OrchestratorResource
     Properties:
       Location: activity/template.yml
       Parameters:
         ParentStackName: !Ref AWS::StackName
-        Name: "Cancel"
+        Name: "Step2"
         EnvironmentTagName: !Ref EnvironmentTagName
         StatusTableName: !If
           - IsPrimaryRegion
@@ -404,20 +402,18 @@ Resources:
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
+        OrchestratorConfig: !Sub
+          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+          - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
 
-  activityIssue:
+  activityStep3:
     Type: AWS::Serverless::Application
     DependsOn: OrchestratorResource
     Properties:
       Location: activity/template.yml
       Parameters:
         ParentStackName: !Ref AWS::StackName
-        Name: "Issue"
+        Name: "Step3"
         EnvironmentTagName: !Ref EnvironmentTagName
         StatusTableName: !If
           - IsPrimaryRegion
@@ -430,349 +426,9 @@ Resources:
         PluginTableName: !Ref PluginTable
         PluginTableArn: !GetAtt PluginTable.Arn
         OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activityPreRateEval:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "PreRateEval"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activityReinstate:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "Reinstate"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activityValidateIssue:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "ValidateIssue"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activitySequenceClone:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "SequenceClone"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activitySequenceDelta:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "SequenceDelta"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activitySequenceEndorse:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "SequenceEndorse"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activitySequenceZeroTrans:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "SequenceZeroTrans"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activityGenSequenceUpdates:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "GenSequenceUpdates"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activityPrepare:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "Prepare"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activityRenewalWrittenPrem:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "RenewalWrittenPrem"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activityNonRenewal:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "NonRenewal"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activityNonRenewalNotify:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "NonRenewalNotify"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
-
-  activityReactivate:
-    Type: AWS::Serverless::Application
-    DependsOn: OrchestratorResource
-    Properties:
-      Location: activity/template.yml
-      Parameters:
-        ParentStackName: !Ref AWS::StackName
-        Name: "Reactivate"
-        EnvironmentTagName: !Ref EnvironmentTagName
-        StatusTableName: !If
-          - IsPrimaryRegion
-          - !Ref StatusTable
-          - !GetAtt RunStatusDdbGlobalTables.TableName
-        StatusTableArn: !If
-          - IsPrimaryRegion
-          - !GetAtt StatusTable.Arn
-          - !GetAtt RunStatusDdbGlobalTables.TableArn
-        PluginTableName: !Ref PluginTable
-        PluginTableArn: !GetAtt PluginTable.Arn
-        OrchestratorLayerArn: !Ref Library
-        OrchestratorConfig: 
-          !Sub 
-            - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
-            - parmStack: !Join ['', !Split ['-', !Ref StackTagName]]
-    
+        OrchestratorConfig: !Sub
+          - /${EnvironmentTagName}/orchestrator/stacks/${parmStack}/config
+          - parmStack: !Join ["", !Split ["-", !Ref StackTagName]]
 
   ##
   ## End Activities Section
@@ -790,8 +446,8 @@ Parameters:
     Description: This is used to force an update of the config if no other changes are made
     Default: "1"
   DeployedRegions:
-    Type: String
-    Default: "us-west-2"
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/nucleus/deployedRegions
   DdbGlobalTableArn:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/nucleus/core/customResources/ddbGlobalTable
