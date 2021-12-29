@@ -75,7 +75,7 @@ async function loadActivities(args) {
     
     let templateContent = fs.readFileSync(yamlFile).toString('utf-8');
     templateContent = templateContent.replace(
-        /\#\#\n\W+\#\# Start Activities Section\n\W+\#\#\n(.|\n)*\n\W+\#\# End Activities Section\n\W+\#\#/,
+        /\#\#\r?\n\W+\#\# Start Activities Section\r?\n\W+\#\#\r?\n(.|\r?\n)*\r?\n\W+\#\# End Activities Section\r?\n\W+\#\#/,
         [].concat(
             `
   ##

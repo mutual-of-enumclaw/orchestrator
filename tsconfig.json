@@ -1,7 +1,6 @@
 {
     "compileOnSave": true,
     "compilerOptions": {
-        "baseUrl": ".",
         "sourceMap": true,
         "declaration": true,
         "module": "commonjs",
@@ -15,10 +14,6 @@
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true
     },
-    "include": [
-        "./src/**/*",
-        "./metrics/src/**/*"
-    ],
     "exclude": [
         "node_modules",
         "**/*.spec.ts"

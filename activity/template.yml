@@ -62,7 +62,7 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: parallelStart
-      Handler: dist/parallelStart.fanOut
+      Handler: parallelStart.fanOut
       MemorySize: 3008
       Policies:
         - Statement:
@@ -99,7 +99,7 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: sncPreProc
-      Handler: dist/syncStage.start
+      Handler: syncStage.start
       Timeout: 900
       Policies:
         - Statement:
@@ -137,7 +137,7 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: syncStage
-      Handler: dist/syncStage.start
+      Handler: syncStage.start
       Timeout: 900
       Policies:
         - Statement:
@@ -175,7 +175,7 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: pluginAdd
-      Handler: dist/pluginAdd.handler
+      Handler: pluginAdd.handler
       Policies:
         - Statement:
             - Effect: Allow
@@ -230,7 +230,7 @@ Resources:
       Description: !Sub
         - Stack ${ParentStackName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: refreshAllRegistrations
-      Handler: dist/refreshAllRegistrations.handler
+      Handler: refreshAllRegistrations.handler
       Timeout: 900
       Policies:
         - AWSXrayWriteOnlyAccess
