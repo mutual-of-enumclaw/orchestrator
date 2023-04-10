@@ -9,7 +9,7 @@
         "orch-utils": "./index.js"
     },
     "dependencies": {
-        "aws-sdk": "^2.810.0",
+        "aws-sdk": "^2.1354.0",
         "glob": "^7.1.6"
     }
 }
